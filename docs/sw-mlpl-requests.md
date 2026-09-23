@@ -189,7 +189,7 @@ Status: not tracked (audit #3, booleans as floats, is *proposed*).
 
 ### 7. Lists that don't need unwrapping
 
-The pain: `list_get` returns a Result (278 × `unwrap(list_get(...))`),
+The pain: `list_get` returns a Result (278 x `unwrap(list_get(...))`),
 `for` cannot iterate a string list, and there is no append. The
 workaround is to join into a delimited string and `str_split` it again.
 
