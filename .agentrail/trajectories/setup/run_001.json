@@ -1,0 +1,11 @@
+{
+  "task_type": "setup",
+  "state": {
+    "number": 1,
+    "step": "scaffold"
+  },
+  "action": "wrote scripts, config, stub, smoke test; created reg-rs baseline; verified failing test and non-ASCII md fail the gate; verified gate in clean clone",
+  "result": "success",
+  "reward": 1,
+  "timestamp": "2026-09-22T20:35:30"
+}

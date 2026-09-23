@@ -1,9 +1,10 @@
 number = 1
 slug = "scaffold"
-status = "in-progress"
+status = "completed"
 description = "docs/plan.md step 1. Create .gitignore (input.txt, parity/out/), scripts/run...."
 role = "production"
 context_files = []
 created_at = "2026-09-22T20:18:45"
+completed_at = "2026-09-22T20:35:30"
 task_type = "setup"
-commits = []
+commits = ["8b68f1e9ff43744783e6114cd415957dec034863"]
