@@ -285,21 +285,25 @@ This file gives Claude Code (and other agentrail-aware agents) the rules for thi
 Plan: `docs/plan.md` (synced into `.agentrail/plan.md` via
 `agentrail plan --update docs/plan.md` whenever it changes).
 
-Interpreter: `$MLPL_REPL`, else `mlpl-repl` on PATH, else
-`~/github/sw-ml-study/sw-mlpl/target/release/mlpl-repl`. Run scripts with
-`--data-dir .`.
+Tools: `mlpl-repl` via `$MLPL` / PATH / `../../sw-ml-study/sw-mlpl`
+(`scripts/select-mlpl`); `mlplunit` via `$MLPLUNIT` / PATH /
+`../mlplunit` (`scripts/select-mlplunit`); `reg-rs` on PATH. `just` lists
+the tasks.
+
+Tests: unit checks are mlplunit suites in `tests/test_*.mlpl` (use
+`u:assert_*` + `@test`, end with `u:run_registered_tests()`). End-to-end
+output is pinned by the reg-rs baseline `microgpt-run` in `work/reg-rs/`
+(`.rgt` + `.out` committed). When a step intentionally changes the
+output, run `just rebaseline`, review the `.out` diff, and mention it in
+the commit message.
 
 ### Pre-commit gate
 
-`scripts/pre-commit.sh` (created in step 1) must pass before every commit.
-It runs:
-
-- ASCII-only check on tracked `*.md` files (sw-mlpl convention),
-  excluding agentrail-generated `CLAUDE.md` / `AGENTS.md`;
-- `scripts/test.sh` (all `tests/*.mlpl`), once tests exist;
-- `bash -n` / shellcheck (if installed) on `scripts/*.sh`;
-- for `tools/*` Rust crates: `cargo fmt --check`, `cargo clippy
-  --all-targets -- -D warnings`, `cargo test`, `sw-checklist`.
+`scripts/pre-commit.sh` (`just check`) must pass before every commit.
+It runs: ASCII-only markdown (except agentrail-generated `CLAUDE.md` /
+`AGENTS.md`), `sh -n` + shellcheck (if installed) on `scripts/*`, the
+mlplunit suites, the reg-rs baselines, and for `tools/*` Rust crates
+`cargo fmt --check`, clippy `-D warnings`, `cargo test`, `sw-checklist`.
 
 ### Step completion protocol
 

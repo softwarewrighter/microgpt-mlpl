@@ -1,0 +1,12 @@
+#!/bin/sh
+# Download input.txt (the makemore names dataset, same pinned URL as
+# microgpt.py) into the repo root if it is missing.
+set -eu
+
+repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+names_url=https://raw.githubusercontent.com/karpathy/makemore/988aa59/names.txt
+if [ ! -f "$repo_root/input.txt" ]; then
+    echo "downloading input.txt" >&2
+    curl -fsSL -o "$repo_root/input.txt.tmp" "$names_url"
+    mv "$repo_root/input.txt.tmp" "$repo_root/input.txt"
+fi

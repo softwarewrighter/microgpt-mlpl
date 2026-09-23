@@ -32,13 +32,14 @@ See [`docs/plan.md`](docs/plan.md) for the design decisions and step plan.
 
 ## Status
 
-Planning complete; implementation not started. Work is tracked as an
+Scaffold in place (scripts, mlplunit tests, reg-rs baseline, pre-commit
+gate); the port itself starts at step 2. Work is tracked as an
 agentrail saga in `.agentrail/`
 (`agentrail status` shows progress):
 
 | step | slug | status |
 |---|---|---|
-| 1 | scaffold | pending |
+| 1 | scaffold | done |
 | 2 | dataset-tokenizer | pending |
 | 3 | params-init | pending |
 | 4 | forward-pass | pending |
@@ -50,24 +51,28 @@ agentrail saga in `.agentrail/`
 
 ## Build and run
 
-Prerequisites: a built sw-MLPL interpreter (`mlpl-repl`, v0.22.0 or
-later).
+Prerequisites:
+
+- a built sw-MLPL interpreter (`mlpl-repl`, v0.22.0 or later);
+- [mlplunit](../mlplunit) for the test suites;
+- `reg-rs` for output regression baselines;
+- `just` (optional; the recipes wrap `scripts/`).
 
 ```sh
 # build the interpreter (in the sw-mlpl checkout)
 cd ~/github/sw-ml-study/sw-mlpl
 cargo build --release --manifest-path components/cli/Cargo.toml -p mlpl-repl
 
-# run the port (from this repo; downloads input.txt on first run)
-scripts/run.sh
-
-# run the MLPL test files (gradient checks, sanity checks)
-scripts/test.sh
+# in this repo
+just run          # scripts/run.sh: train + sample (downloads input.txt on first run)
+just test         # scripts/test.sh: mlplunit suites in tests/
+just regress      # scripts/regress.sh: reg-rs output baselines in work/reg-rs/
+just check        # scripts/pre-commit.sh: the full pre-commit gate
 ```
 
-`scripts/run.sh` finds the interpreter via `$MLPL_REPL`, then `PATH`, then
-`~/github/sw-ml-study/sw-mlpl/target/release/mlpl-repl`. The scripts are
-added in saga step 1.
+The interpreter is found via `$MLPL`, then `PATH`, then
+`../../sw-ml-study/sw-mlpl/target/release/mlpl-repl`; mlplunit via
+`$MLPLUNIT`, then `PATH`, then `../mlplunit/bin/mlplunit`.
 
 Expected output (loss and names will differ from Python's; the RNG
 differs):

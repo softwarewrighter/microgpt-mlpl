@@ -1,0 +1,12 @@
+# microgpt.mlpl -- Karpathy's microgpt.py, ported to sw-MLPL.
+#
+# "The most atomic way to train and run inference for a GPT."
+# Sections follow microgpt.py one-to-one; see docs/plan.md.
+# Run with scripts/run.sh (it supplies --data-dir . and input.txt).
+#
+# Scaffold stub (saga step 1): proves the interpreter, sandbox, and
+# dataset wiring. The real sections land in steps 2-7.
+
+txt = load("input.txt")
+print("input chars:", to_string(str_len(txt)))
+exit(0)

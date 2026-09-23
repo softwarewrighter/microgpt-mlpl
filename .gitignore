@@ -1,0 +1,6 @@
+# makemore names dataset, downloaded on first run by scripts/run.sh
+/input.txt
+# parity run outputs (step 8)
+/parity/out/
+# Rust helper build output (step 8)
+/tools/*/target/

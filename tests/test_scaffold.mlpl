@@ -1,0 +1,11 @@
+# Scaffold smoke tests: the mlplunit wiring and the dataset sandbox.
+
+@test {name: "the dataset loads through the --data-dir sandbox", tags: ["scaffold"]}
+def u:test_dataset_loads() {
+  "input.txt is fetched by scripts/test.sh and readable via load().";
+  txt = load("input.txt");
+  u:assert_gt(str_len(txt), 200000, "names corpus is ~228k chars")?;
+  u:assert_text_eq(str_slice(txt, 0, 5), "emma\n", "first name is emma")
+}
+
+u:run_registered_tests()

@@ -1,6 +1,6 @@
 number = 1
 slug = "scaffold"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 1. Create .gitignore (input.txt, parity/out/), scripts/run...."
 role = "production"
 context_files = []

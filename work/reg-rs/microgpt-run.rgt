@@ -1,0 +1,4 @@
+command = "scripts/run.sh"
+timeout = 600
+exit_code = 0
+desc = "End-to-end output of scripts/run.sh (microgpt.mlpl); rebaseline when a step intentionally changes output"

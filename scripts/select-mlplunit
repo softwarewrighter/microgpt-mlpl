@@ -1,0 +1,22 @@
+#!/bin/sh
+# Print the absolute path of the mlplunit runner.
+# Order: $MLPLUNIT, then mlplunit on PATH, then ../mlplunit/bin/mlplunit.
+set -eu
+
+repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+adjacent="$repo_root/../mlplunit/bin/mlplunit"
+
+if [ -n "${MLPLUNIT:-}" ]; then
+    candidate=$MLPLUNIT
+elif command -v mlplunit >/dev/null 2>&1; then
+    candidate=$(command -v mlplunit)
+else
+    candidate=$adjacent
+fi
+
+case "$candidate" in
+    /*) ;;
+    *) candidate=$(CDPATH= cd -- "$(dirname -- "$candidate")" && pwd)/$(basename -- "$candidate") ;;
+esac
+[ -x "$candidate" ] || { echo "mlplunit not found: $candidate (set MLPLUNIT)" >&2; exit 1; }
+printf '%s\n' "$candidate"

@@ -105,9 +105,16 @@ sample  1: ...
 
 ```
 microgpt.mlpl           the port (single file, sectioned like microgpt.py)
+justfile                run / test / regress / rebaseline / check
+mlplunit.conf           mlplunit suite config (tests/, data_dir .)
 scripts/run.sh          fetch input.txt if missing, run with mlpl-repl
-scripts/test.sh         run the MLPL test files, non-zero exit on failure
-tests/*.mlpl            @test-annotated checks (gradcheck, sanity)
+scripts/test.sh         mlplunit suites (tests/test_*.mlpl)
+scripts/regress.sh      reg-rs output baselines (work/reg-rs/)
+scripts/pre-commit.sh   the pre-commit gate
+scripts/select-mlpl     interpreter discovery; select-mlplunit likewise
+scripts/fetch-data      download input.txt (pinned makemore URL)
+tests/test_*.mlpl       mlplunit suites (@test + u:assert_*)
+work/reg-rs/            reg-rs baselines (.rgt + .out committed)
 tools/rs-init-dump/     tiny Rust bin: microgpt-rs RNG -> init weights + doc order JSON
 parity/                 parity script + recorded loss trajectories
 docs/plan.md            this file
@@ -115,16 +122,25 @@ docs/python-vs-mlpl.md  side-by-side walkthrough
 docs/upstream-issues.md sw-mlpl bugs/gaps found while porting
 ```
 
-`mlpl-repl` is located via `$MLPL_REPL`, else `mlpl-repl` on `PATH`, else
-`~/github/sw-ml-study/sw-mlpl/target/release/mlpl-repl`. Run with
-`--data-dir .` so `load("input.txt")` works inside the sandbox.
+Tools: `mlpl-repl` via `$MLPL`, else PATH, else
+`../../sw-ml-study/sw-mlpl/target/release/mlpl-repl`; `mlplunit` via
+`$MLPLUNIT`, else PATH, else `../mlplunit/bin/mlplunit` (same selection
+scripts as the sw-ml-study demo repos). Scripts run with `--data-dir .`
+so `load("input.txt")` works inside the sandbox.
+
+Testing: unit-level checks are mlplunit suites (`u:assert_*`, `@test`,
+`u:run_registered_tests()`). End-to-end output is pinned by reg-rs
+(`microgpt-run` baseline of `scripts/run.sh`); every step that
+intentionally changes the output re-baselines with `just rebaseline` and
+says so in its commit message.
 
 ## Steps (one agentrail step each)
 
-1. **scaffold** -- `.gitignore` (input.txt, parity outputs), `scripts/run.sh`
-   with repl discovery + dataset download (same makemore URL as Python),
-   `scripts/test.sh`, stub `microgpt.mlpl` that prints the repl version.
-   Done when: `scripts/run.sh` runs the stub end-to-end from a clean clone.
+1. **scaffold** -- `.gitignore`, `justfile`, `scripts/` (run, test via
+   mlplunit, regress via reg-rs, pre-commit gate, tool selection, dataset
+   fetch), `mlplunit.conf`, stub `microgpt.mlpl`, a smoke suite, and the
+   first reg-rs baseline. Done when: `just check` passes from a clean
+   clone.
 2. **dataset-tokenizer** -- load `input.txt`, split lines, drop empties,
    deterministic shuffle of doc order, build `uchars` / BOS / byte-to-id
    table, `u:encode(doc)` producing `[BOS] + ids + [BOS]`. Done when: prints
@@ -138,7 +154,7 @@ docs/upstream-issues.md sw-mlpl bugs/gaps found while porting
    is within 0.1 of ln(27) ~= 3.296, softmax rows sum to 1 +- 1e-9, and the masked forward
    equals a token-by-token prefix recompute on one doc (the design
    decision 2 equivalence, tested).
-5. **gradcheck** -- `tests/gradcheck.mlpl`: central finite differences on a
+5. **gradcheck** -- `tests/test_gradcheck.mlpl`: central finite differences on a
    handful of entries of every param matrix vs `grad(u:loss(), W)`,
    rel tol 1e-5 (MLPL is f64). Write `docs/upstream-issues.md` recording
    the issues reported to sw-mlpl (decisions 4, 5) and their fix status,

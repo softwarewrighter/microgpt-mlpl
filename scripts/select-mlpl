@@ -1,0 +1,23 @@
+#!/bin/sh
+# Print the absolute path of the sw-MLPL interpreter (mlpl-repl).
+# Order: $MLPL, then mlpl-repl on PATH, then the sw-mlpl checkout at
+# ../../sw-ml-study/sw-mlpl relative to this repo.
+set -eu
+
+repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+adjacent="$repo_root/../../sw-ml-study/sw-mlpl/target/release/mlpl-repl"
+
+if [ -n "${MLPL:-}" ]; then
+    candidate=$MLPL
+elif command -v mlpl-repl >/dev/null 2>&1; then
+    candidate=$(command -v mlpl-repl)
+else
+    candidate=$adjacent
+fi
+
+case "$candidate" in
+    /*) ;;
+    *) candidate=$(CDPATH= cd -- "$(dirname -- "$candidate")" && pwd)/$(basename -- "$candidate") ;;
+esac
+[ -x "$candidate" ] || { echo "sw-MLPL executable not found: $candidate (set MLPL)" >&2; exit 1; }
+printf '%s\n' "$candidate"

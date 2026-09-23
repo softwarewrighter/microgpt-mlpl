@@ -1,0 +1,3 @@
+# reg-rs run databases and locks are local; .rgt + .out baselines are committed
+*.tdb
+*.tdb.lock
