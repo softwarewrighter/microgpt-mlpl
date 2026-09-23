@@ -1,0 +1,23 @@
+# Cost of the gradient check's pieces: 9 analytic grads, one FD pair.
+include "../lib/data.mlpl";
+include "../lib/bench.mlpl";
+d = unwrap(u:dataset(load("input.txt")));
+vocab_size = d.vocab_size;
+include "../lib/params.mlpl";
+include "../lib/model.mlpl";
+batch = u:doc_batch(d, u:gather1(shuffle(range(d.n_docs), 42), range(1)), block_size);
+u:set_doc(take(batch.tokens, 0, 0), at(batch.n, 0));
+def u:b_grads() {
+  "grad of u:loss wrt each of the 9 matrices, one tape per param.";
+  grad(u:loss(), wte); grad(u:loss(), wpe); grad(u:loss(), lm_head);
+  grad(u:loss(), layer0_attn_wq); grad(u:loss(), layer0_attn_wk); grad(u:loss(), layer0_attn_wv);
+  grad(u:loss(), layer0_attn_wo); grad(u:loss(), layer0_mlp_fc1); grad(u:loss(), layer0_mlp_fc2)
+}
+def u:b_fd() {
+  "One central difference: two eager losses + three global_set.";
+  w = layer0_mlp_fc2; global_set("layer0_mlp_fc2", w + 0.00001); a = u:loss();
+  global_set("layer0_mlp_fc2", w - 0.00001); b = u:loss(); global_set("layer0_mlp_fc2", w); a - b
+}
+u:bench("9 separate grads", :u:b_grads, 2, 10, 5);
+u:bench("one FD pair", :u:b_fd, 2, 10, 5);
+exit(0)

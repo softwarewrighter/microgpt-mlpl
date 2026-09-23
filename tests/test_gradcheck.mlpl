@@ -1,0 +1,95 @@
+# Gradient check: grad(u:loss(), W) vs central finite differences for
+# every state_dict matrix. The analytic gradients are all taken first;
+# the finite differences then perturb one global at a time via
+# global_set and restore it. f64 throughout, h = 1e-5.
+include "lib/data.mlpl";
+d = unwrap(u:dataset(load("input.txt")));
+vocab_size = d.vocab_size;
+include "lib/params.mlpl";
+include "lib/model.mlpl";
+
+batch = u:doc_batch(d, u:gather1(shuffle(range(d.n_docs), 42), range(1)), block_size);
+doc_n = u:set_doc(take(batch.tokens, 0, 0), at(batch.n, 0));
+
+g_wte = grad(u:loss(), wte);
+g_wpe = grad(u:loss(), wpe);
+g_lm_head = grad(u:loss(), lm_head);
+g_wq = grad(u:loss(), layer0_attn_wq);
+g_wk = grad(u:loss(), layer0_attn_wk);
+g_wv = grad(u:loss(), layer0_attn_wv);
+g_wo = grad(u:loss(), layer0_attn_wo);
+g_fc1 = grad(u:loss(), layer0_mlp_fc1);
+g_fc2 = grad(u:loss(), layer0_mlp_fc2);
+
+h = 0.00001;
+
+def u:unit(shp, i, j) {
+  "Matrix of shape shp with a single 1 at (i, j).";
+  eq(reshape(range(at(shp, 0)), [at(shp, 0), 1]), i) * eq(reshape(range(at(shp, 1)), [1, at(shp, 1)]), j)
+}
+
+def u:fd_dir(name, w, dir) {
+  "Central difference of u:loss() along dir, perturbing global `name` (value w), then restoring it.";
+  global_set(name, w + dir * h);
+  lp = u:loss();
+  global_set(name, w - dir * h);
+  lm = u:loss();
+  global_set(name, w);
+  (lp - lm) / (2 * h)
+}
+
+def u:close(analytic, numeric, what) {
+  "abs 1e-8 + rel 1e-5 agreement.";
+  u:assert_lt(abs(analytic - numeric), 0.00000001 + 0.00001 * abs(numeric), what)
+}
+
+def u:check(name, w, g, i0, j0, i1, j1, i2, j2, seed) {
+  "Three single entries plus one random direction covering every entry.";
+  shp = shape(w);
+  u:close(at(at(g, i0), j0), u:fd_dir(name, w, u:unit(shp, i0, j0)), str_concat(name, " entry 0"))?;
+  u:close(at(at(g, i1), j1), u:fd_dir(name, w, u:unit(shp, i1, j1)), str_concat(name, " entry 1"))?;
+  u:close(at(at(g, i2), j2), u:fd_dir(name, w, u:unit(shp, i2, j2)), str_concat(name, " entry 2"))?;
+  dir = randn(seed, shp);
+  u:close(reduce_add(g * dir), u:fd_dir(name, w, dir), str_concat(name, " random direction"))
+}
+
+@test {name: "gradients are non-trivial", tags: ["gradcheck"]}
+def u:test_nontrivial() {
+  "Every matrix gets a nonzero gradient (the check below is not vacuous).";
+  u:assert_gt(reduce_add(g_wte * g_wte), 0, "wte")?;
+  u:assert_gt(reduce_add(g_wpe * g_wpe), 0, "wpe")?;
+  u:assert_gt(reduce_add(g_lm_head * g_lm_head), 0, "lm_head")?;
+  u:assert_gt(reduce_add(g_wq * g_wq), 0, "attn_wq")?;
+  u:assert_gt(reduce_add(g_wk * g_wk), 0, "attn_wk")?;
+  u:assert_gt(reduce_add(g_wv * g_wv), 0, "attn_wv")?;
+  u:assert_gt(reduce_add(g_wo * g_wo), 0, "attn_wo")?;
+  u:assert_gt(reduce_add(g_fc1 * g_fc1), 0, "mlp_fc1")?;
+  u:assert_gt(reduce_add(g_fc2 * g_fc2), 0, "mlp_fc2")
+}
+
+@test {name: "embeddings: wte (incl. an unused row) and wpe (incl. a position past n)", tags: ["gradcheck"]}
+def u:test_embeddings() {
+  "wte row 26 is BOS, row of the first char is used; wpe rows >= n get zero gradient.";
+  first = at(cur_in, 1);
+  u:check("wte", wte, g_wte, 26, 3, first, 11, 1, 0, 901)?;
+  u:check("wpe", wpe, g_wpe, 0, 5, doc_n - 1, 14, doc_n + 2, 7, 902)
+}
+
+@test {name: "attention projections wq, wk, wv, wo", tags: ["gradcheck"]}
+def u:test_attention() {
+  "All four heads' weights feed through the selectors and softmax.";
+  u:check("layer0_attn_wq", layer0_attn_wq, g_wq, 0, 0, 7, 9, 15, 15, 903)?;
+  u:check("layer0_attn_wk", layer0_attn_wk, g_wk, 3, 12, 8, 1, 14, 6, 904)?;
+  u:check("layer0_attn_wv", layer0_attn_wv, g_wv, 2, 2, 9, 13, 12, 4, 905)?;
+  u:check("layer0_attn_wo", layer0_attn_wo, g_wo, 1, 15, 6, 6, 13, 0, 906)
+}
+
+@test {name: "MLP and lm_head", tags: ["gradcheck"]}
+def u:test_mlp_head() {
+  "Through the ReLU and the output projection.";
+  u:check("layer0_mlp_fc1", layer0_mlp_fc1, g_fc1, 0, 0, 33, 7, 63, 15, 907)?;
+  u:check("layer0_mlp_fc2", layer0_mlp_fc2, g_fc2, 0, 63, 8, 20, 15, 41, 908)?;
+  u:check("lm_head", lm_head, g_lm_head, 26, 0, 4, 9, 0, 15, 909)
+}
+
+u:run_registered_tests()

@@ -35,7 +35,9 @@ See [`docs/plan.md`](docs/plan.md) for the design decisions and step plan.
 Scaffold in place (scripts, mlplunit tests, reg-rs baseline, pre-commit
 gate), dataset, tokenizer and
 parameter init and the forward pass done (`num docs: 32033`, `vocab size: 27`,
-`num params: 4192`; untrained loss ~ ln 27). Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). Work is tracked as an
+`num params: 4192`; untrained loss ~ ln 27), with
+gradients checked against finite differences. sw-MLPL findings:
+[`docs/upstream-issues.md`](docs/upstream-issues.md). Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). Work is tracked as an
 agentrail saga in `.agentrail/`
 (`agentrail status` shows progress):
 
@@ -45,7 +47,7 @@ agentrail saga in `.agentrail/`
 | 2 | dataset-tokenizer | done |
 | 3 | params-init | done |
 | 4 | forward-pass | done |
-| 5 | gradcheck | pending |
+| 5 | gradcheck | done |
 | 6 | training-loop | pending |
 | 7 | inference | pending |
 | 8 | parity-vs-rust | pending |

@@ -1,6 +1,6 @@
 number = 5
 slug = "gradcheck"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 5. tests/gradcheck.mlpl: central finite differences on seve..."
 role = "production"
 context_files = []

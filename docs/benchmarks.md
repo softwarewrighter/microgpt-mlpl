@@ -19,6 +19,7 @@ Host: Apple Silicon (Darwin arm64), mlpl-repl 0.22.0 (ab858695).
 | 2 | dataset + tokenizer | 0.275 s | 254 ms of it is the 256-way vocab scan |
 | 3 | + param init | 0.057 s | sort-based vocab scan; see below |
 | 4 | + model defs (no training yet) | 0.058 s | per-step hot path below |
+| 5 | unchanged (gradcheck is test-only) | 0.061 s | gradcheck suite: 0.26 s |
 
 Step 3 per-operation timings:
 
@@ -43,6 +44,17 @@ Step 4 per-training-step hot path (`benchmarks/bench_model.mlpl`, a
 Projection for step 6: ~0.38 + 0.75 = ~1.1 ms per step, ~1.1 s for 1000
 steps (adam returns the pre-update loss, so no extra forward is needed
 for the progress line). microgpt-rs: 1.0 s total on an M1 Max.
+
+Step 5 gradient-check costs (`benchmarks/bench_gradcheck.mlpl`):
+
+| operation | mean |
+|---|---|
+| 9 separate `grad(u:loss(), W)` calls | 5.77 ms (0.64 ms each) |
+| one central-difference pair (2 eager losses) | 2.68 ms |
+| `adam` over all 9 params (for comparison) | 0.74 ms |
+
+`adam` shares one tape across all its params: 9 gradients for about the
+price of one `grad`. Use `adam` (not a loop of `grad`) in training.
 
 ## Performance notes for this interpreter
 
