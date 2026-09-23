@@ -121,6 +121,7 @@ work/reg-rs/            reg-rs baselines (.rgt + .out committed)
 tools/rs-init-dump/     tiny Rust bin: microgpt-rs RNG -> init weights + doc order JSON
 parity/                 parity script + recorded loss trajectories
 docs/plan.md            this file
+docs/benchmarks.md      speed log per step (scripts/bench.sh, benchmarks/)
 docs/python-vs-mlpl.md  side-by-side walkthrough
 docs/upstream-issues.md sw-mlpl bugs/gaps found while porting
 ```
@@ -195,7 +196,9 @@ says so in its commit message.
 
 - **Interpreter speed.** 1000 steps x (forward + tape backward) on
   ~16-token docs should be seconds, but per-step tape construction
-  overhead is unknown; measure in step 6. If slow, profile with
+  overhead is unknown; measure every step with `just bench` and log it
+  in `docs/benchmarks.md`. Known cost: reading a large array copies it,
+  so training pre-encodes its docs with `u:doc_batch` (step 3 finding). If slow, profile with
   `--trace` before changing the algorithm.
 - **Grad coverage gaps.** Each new gap gets a minimal reproducer in
   `docs/upstream-issues.md`, reported to sw-mlpl, plus a temporary local

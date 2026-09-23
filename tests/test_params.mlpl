@@ -1,0 +1,45 @@
+# Parameter init (lib/params.mlpl) against microgpt.py's state_dict.
+vocab_size = 27;
+include "lib/params.mlpl";
+
+@test {name: "state_dict shapes match microgpt.py's [nout, nin]", tags: ["params"]}
+def u:test_shapes() {
+  "Every matrix has the Python shape; head_dim = n_embd / n_head.";
+  u:assert_shape(wte, [27, 16], "wte")?;
+  u:assert_shape(wpe, [16, 16], "wpe")?;
+  u:assert_shape(lm_head, [27, 16], "lm_head")?;
+  u:assert_shape(layer0_attn_wq, [16, 16], "attn_wq")?;
+  u:assert_shape(layer0_attn_wk, [16, 16], "attn_wk")?;
+  u:assert_shape(layer0_attn_wv, [16, 16], "attn_wv")?;
+  u:assert_shape(layer0_attn_wo, [16, 16], "attn_wo")?;
+  u:assert_shape(layer0_mlp_fc1, [64, 16], "mlp_fc1")?;
+  u:assert_shape(layer0_mlp_fc2, [16, 64], "mlp_fc2")?;
+  u:assert_eq(head_dim, 4, "head_dim")
+}
+
+@test {name: "num params is 4192", tags: ["params"]}
+def u:test_count() {
+  "Same count microgpt.py and microgpt-rs print.";
+  u:assert_eq(num_params, 4192, "num params")
+}
+
+@test {name: "weights look like gauss(0, 0.08)", tags: ["params"]}
+def u:test_moments() {
+  "Pooled over all 4192 weights: mean ~ 0, std ~ 0.08 (loose bounds, deterministic seeds).";
+  s1 = reduce_add(wte) + reduce_add(wpe) + reduce_add(lm_head) + reduce_add(layer0_attn_wq) + reduce_add(layer0_attn_wk) + reduce_add(layer0_attn_wv) + reduce_add(layer0_attn_wo) + reduce_add(layer0_mlp_fc1) + reduce_add(layer0_mlp_fc2);
+  s2 = reduce_add(wte * wte) + reduce_add(wpe * wpe) + reduce_add(lm_head * lm_head) + reduce_add(layer0_attn_wq * layer0_attn_wq) + reduce_add(layer0_attn_wk * layer0_attn_wk) + reduce_add(layer0_attn_wv * layer0_attn_wv) + reduce_add(layer0_attn_wo * layer0_attn_wo) + reduce_add(layer0_mlp_fc1 * layer0_mlp_fc1) + reduce_add(layer0_mlp_fc2 * layer0_mlp_fc2);
+  mean = s1 / num_params;
+  std = sqrt(s2 / num_params - mean * mean);
+  u:assert_approx(mean, 0, 0.005, "mean")?;
+  u:assert_approx(std, 0.08, 0.004, "std")
+}
+
+@test {name: "each matrix has its own seed and init is reproducible", tags: ["params"]}
+def u:test_seeds() {
+  "Same-shape matrices differ; re-drawing a seed reproduces the matrix.";
+  u:assert_ne(layer0_attn_wq, layer0_attn_wk, "wq vs wk")?;
+  u:assert_ne(wte, lm_head, "wte vs lm_head")?;
+  u:assert_eq(layer0_attn_wq, randn(104, [16, 16]) * 0.08, "reproducible")
+}
+
+u:run_registered_tests()

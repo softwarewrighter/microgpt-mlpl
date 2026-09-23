@@ -1,0 +1,43 @@
+# Model parameters for microgpt.mlpl (microgpt.py's "Initialize the
+# parameters" section). Included as top-level statements: the includer
+# must already bind `vocab_size`. Defines the hyperparameters, one
+# `param[...]` leaf per state_dict matrix, and `num_params`.
+#
+# Shapes are Python's [nout, nin] (a linear layer is x @ W^T), so the
+# step-8 parity dump from microgpt-rs copies straight in. Python draws
+# every weight from one Mersenne Twister stream with random.gauss(0, 0.08);
+# MLPL's randn(seed, shape) is a seeded xorshift stream, so each matrix
+# gets its own fixed seed (bit parity with Python is out of scope).
+# n_layer is fixed at 1 (Python's layer loop has one iteration); the
+# layer0_ prefix keeps the state_dict names recognizable.
+
+n_layer = 1;      # depth of the transformer (number of layers)
+n_embd = 16;      # width of the network (embedding dimension)
+block_size = 16;  # maximum context length (the longest name is 15 chars)
+n_head = 4;       # number of attention heads
+head_dim = n_embd / n_head;
+init_std = 0.08;
+
+wte = param[vocab_size, n_embd];
+wte = randn(101, [vocab_size, n_embd]) * init_std;
+wpe = param[block_size, n_embd];
+wpe = randn(102, [block_size, n_embd]) * init_std;
+lm_head = param[vocab_size, n_embd];
+lm_head = randn(103, [vocab_size, n_embd]) * init_std;
+layer0_attn_wq = param[n_embd, n_embd];
+layer0_attn_wq = randn(104, [n_embd, n_embd]) * init_std;
+layer0_attn_wk = param[n_embd, n_embd];
+layer0_attn_wk = randn(105, [n_embd, n_embd]) * init_std;
+layer0_attn_wv = param[n_embd, n_embd];
+layer0_attn_wv = randn(106, [n_embd, n_embd]) * init_std;
+layer0_attn_wo = param[n_embd, n_embd];
+layer0_attn_wo = randn(107, [n_embd, n_embd]) * init_std;
+layer0_mlp_fc1 = param[4 * n_embd, n_embd];
+layer0_mlp_fc1 = randn(108, [4 * n_embd, n_embd]) * init_std;
+layer0_mlp_fc2 = param[n_embd, 4 * n_embd];
+layer0_mlp_fc2 = randn(109, [n_embd, 4 * n_embd]) * init_std;
+
+# Note: there is no `params` list value. An array literal of matrices is
+# an (invalid) array, not a list of leaves; adam takes the param names
+# written inline in its call, e.g. adam(loss, [wte, wpe, ...], ...).
+num_params = size(wte) + size(wpe) + size(lm_head) + size(layer0_attn_wq) + size(layer0_attn_wk) + size(layer0_attn_wv) + size(layer0_attn_wo) + size(layer0_mlp_fc1) + size(layer0_mlp_fc2);

@@ -33,7 +33,9 @@ See [`docs/plan.md`](docs/plan.md) for the design decisions and step plan.
 ## Status
 
 Scaffold in place (scripts, mlplunit tests, reg-rs baseline, pre-commit
-gate), dataset and tokenizer done (`num docs: 32033`, `vocab size: 27`). Work is tracked as an
+gate), dataset, tokenizer and
+parameter init done (`num docs: 32033`, `vocab size: 27`,
+`num params: 4192`). Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). Work is tracked as an
 agentrail saga in `.agentrail/`
 (`agentrail status` shows progress):
 
@@ -41,7 +43,7 @@ agentrail saga in `.agentrail/`
 |---|---|---|
 | 1 | scaffold | done |
 | 2 | dataset-tokenizer | done |
-| 3 | params-init | pending |
+| 3 | params-init | done |
 | 4 | forward-pass | pending |
 | 5 | gradcheck | pending |
 | 6 | training-loop | pending |
@@ -68,6 +70,7 @@ just run          # scripts/run.sh: train + sample (downloads input.txt on first
 just test         # scripts/test.sh: mlplunit suites in tests/
 just regress      # scripts/regress.sh: reg-rs output baselines in work/reg-rs/
 just check        # scripts/pre-commit.sh: the full pre-commit gate
+just bench        # scripts/bench.sh: speed (per-op + end-to-end)
 ```
 
 The interpreter is found via `$MLPL`, then `PATH`, then

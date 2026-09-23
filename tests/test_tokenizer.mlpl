@@ -57,4 +57,23 @@ def u:test_rejects_whitespace() {
   u:assert_err(u:dataset("ab\ncd e\n"), "space in a name")
 }
 
+@test {name: "doc_batch rows equal per-doc tokens, padded with BOS", tags: ["tokenizer"]}
+def u:test_doc_batch() {
+  "The vectorized training encoder agrees with u:doc_tokens and microgpt.py's n = min(block_size, len + 1).";
+  b = u:doc_batch(d, [0, 12345, 32032], 16);
+  u:assert_shape(b.tokens, [3, 18], "block_size + 2 columns")?;
+  u:assert_eq(take(b.tokens, 0, 0), concat(u:doc_tokens(d, 0), zeros(12) + 26), "emma row")?;
+  u:assert_eq(take(b.tokens, 0, 1), concat(u:doc_tokens(d, 12345), zeros(10) + 26), "doc 12345 row")?;
+  u:assert_eq(b.n, [5, 7, 6], "n per doc")
+}
+
+@test {name: "doc_batch clips n at block_size for long docs", tags: ["tokenizer"]}
+def u:test_doc_batch_clip() {
+  "A 20-char doc trains on block_size positions, like Python's min().";
+  t = unwrap(u:dataset("abcdefghijklmnopqrst\nab"));
+  b = u:doc_batch(t, [0, 1], 16);
+  u:assert_eq(b.n, [16, 3], "clipped and short")?;
+  u:assert_eq(take(take(b.tokens, 0, 0), 0, 16), 15, "16th input position is 'p' (id 15)")
+}
+
 u:run_registered_tests()

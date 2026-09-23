@@ -17,5 +17,11 @@ print("num docs:", to_string(d.n_docs));
 # Let there be a Tokenizer: the unique characters become token ids
 # 0..n-1, and one extra id, BOS, marks the beginning (and end) of a doc.
 print("vocab size:", to_string(d.vocab_size));
+vocab_size = d.vocab_size;
+
+# Initialize the parameters, to store the knowledge of the model:
+# hyperparameters and one param[...] leaf per state_dict matrix.
+include "lib/params.mlpl";
+print("num params:", to_string(num_params));
 
 exit(0)

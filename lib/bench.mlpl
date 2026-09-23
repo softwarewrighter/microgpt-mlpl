@@ -1,0 +1,25 @@
+# Minimal timing helper for benchmarks/bench_*.mlpl (run by scripts/bench.sh).
+# Same shape as mlplunit's u:benchmark (warmup, then `samples` timed batches
+# of `iterations` calls, ms per call from clock_ms()), but runnable with the
+# repo root as the sandbox so benchmarks can include lib/ and load input.txt
+# (mlplbench roots the sandbox at each benchmark file's directory).
+
+def u:bench(name, f, warmup, iterations, samples) {
+  "Time zero-arg callable f; print 'bench <name>: mean/min/max ms per call'.";
+  w = 0;
+  while lt(w, warmup) { call(f); w = w + 1 };
+  durations = zeros(samples);
+  s = 0;
+  while lt(s, samples) {
+    i = 0;
+    started = clock_ms();
+    while lt(i, iterations) { call(f); i = i + 1 };
+    durations = scatter(durations, s, (clock_ms() - started) / iterations);
+    s = s + 1
+  };
+  mean = reduce_add(durations) / samples;
+  lo = at(durations, at(grade_up(durations), 0));
+  hi = at(durations, at(grade_down(durations), 0));
+  print("bench", str_concat(name, ":"), "mean", to_string(round(mean * 1000) / 1000), "ms  min", to_string(round(lo * 1000) / 1000), "ms  max", to_string(round(hi * 1000) / 1000), "ms  (", to_string(samples), "x", to_string(iterations), ")");
+  mean
+}

@@ -21,6 +21,10 @@ rebaseline:
     scripts/regress.sh || true
     REG_RS_DATA_DIR="$PWD/work/reg-rs" reg-rs rebase -p microgpt-run
 
+# Speed: per-op benchmarks + end-to-end run.sh wall time (N runs, default 5).
+bench runs="5":
+    scripts/bench.sh {{runs}}
+
 # The full pre-commit gate: ASCII docs, scripts, tests, baselines, Rust tools.
 check:
     scripts/pre-commit.sh

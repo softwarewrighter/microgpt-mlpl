@@ -1,6 +1,6 @@
 number = 3
 slug = "params-init"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 3 (design decisions 1, 3, 7). Declare wte[27,16], wpe[16,16..."
 role = "production"
 context_files = []

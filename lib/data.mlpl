@@ -28,21 +28,23 @@ def u:dataset(txt) {
     lens_all = u:gather1(bounds, range(m) + 1) - starts_all;
     keep = gt(lens_all, 0);
     # Vocabulary: sorted unique chars of the joined docs (newline excluded).
-    present = range(256) * 0;
-    b = 0;
-    repeat 256 {
-      present = scatter(present, b, gt(reduce_add(eq(bytes, b)), 0) * ne(b, 10));
-      b = b + 1
-    };
-    ids = running_sum(present) - 1;
-    vocab = reduce_add(present);
+    # Sort, keep the first byte of each run (one pass, ~13 ms; a 256-way
+    # eq scan is ~220 ms), then invert into a byte -> id lookup table.
+    sorted = u:gather1(bytes, grade_up(bytes));
+    first = concat([1], ne(u:gather1(sorted, range(n - 1) + 1), u:gather1(sorted, range(n - 1))));
+    uniq = compress(first, sorted);
+    uchars = compress(ne(uniq, 10), uniq);
+    vocab = len(uchars);
+    lut = zeros(256) - 1;
+    i = 0;
+    repeat vocab { lut = scatter(lut, at(uchars, i), i); i = i + 1 };
     ok({
       bytes: bytes,
       starts: compress(keep, starts_all),
       lens: compress(keep, lens_all),
       n_docs: reduce_add(keep),
-      uchars: compress(present, range(256)),
-      lut: present * ids + (1 - present) * (0 - 1),
+      uchars: uchars,
+      lut: lut,
       bos: vocab,
       vocab_size: vocab + 1
     })
@@ -72,4 +74,22 @@ def u:doc_bytes(d, i) {
 def u:doc_tokens(d, i) {
   "microgpt.py's tokens for doc i: [BOS] + ids + [BOS].";
   concat(concat([d.bos], u:encode_bytes(d, u:doc_bytes(d, i))), [d.bos])
+}
+
+def u:doc_batch(d, doc_ids, block_size) {
+  "Token rows for many docs at once: {tokens: [m, block_size + 2] = [BOS] + ids + [BOS] padded with BOS, n: [m] positions to train}.";
+  # One vectorized gather for all m docs. Per-doc u:doc_tokens reads the
+  # whole corpus array (reads copy in the interpreter, ~0.4 ms each), so
+  # training pre-encodes the docs it will visit instead. Python's
+  # n = min(block_size, len(tokens) - 1) = min(block_size, len + 1).
+  m = len(doc_ids);
+  lens = u:gather1(d.lens, doc_ids);
+  pos = reshape(range(block_size), [1, block_size]);
+  valid = lt(pos, reshape(lens, [m, 1]));
+  idx = (reshape(u:gather1(d.starts, doc_ids), [m, 1]) + pos) * valid;
+  bytes = reshape(gather_rows(reshape(d.bytes, [len(d.bytes), 1]), idx), [m, block_size]);
+  ids = reshape(gather_rows(reshape(d.lut, [256, 1]), bytes), [m, block_size]);
+  body = valid * ids + (1 - valid) * d.bos;
+  bos = zeros([m, 1]) + d.bos;
+  {tokens: concat(bos, concat(body, bos, 1), 1), n: lens + 1 - relu(lens + 1 - block_size)}
 }

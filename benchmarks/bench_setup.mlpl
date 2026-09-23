@@ -1,0 +1,24 @@
+# Setup costs: dataset parse, doc encoding, parameter init.
+include "../lib/data.mlpl";
+include "../lib/bench.mlpl";
+
+txt = load("input.txt");
+d = unwrap(u:dataset(txt));
+
+def u:b_dataset() { "Parse input.txt into doc spans + vocab + LUT."; u:dataset(txt) }
+def u:b_doc_tokens() { "Encode one doc to [BOS] + ids + [BOS] (reads the whole corpus array)."; u:doc_tokens(d, 12345) }
+order = shuffle(range(d.n_docs), 42);
+steps = u:gather1(order, range(1000));
+def u:b_doc_batch() { "Encode the 1000 training docs at once."; u:doc_batch(d, steps, 16) }
+def u:b_init() {
+  "Draw all 9 state_dict matrices (4192 gaussians).";
+  randn(101, [27, 16]) * 0.08; randn(102, [16, 16]) * 0.08; randn(103, [27, 16]) * 0.08;
+  randn(104, [16, 16]) * 0.08; randn(105, [16, 16]) * 0.08; randn(106, [16, 16]) * 0.08;
+  randn(107, [16, 16]) * 0.08; randn(108, [64, 16]) * 0.08; randn(109, [16, 64]) * 0.08
+}
+
+u:bench("dataset parse", :u:b_dataset, 1, 1, 5);
+u:bench("doc tokens (1 doc)", :u:b_doc_tokens, 10, 100, 5);
+u:bench("doc batch (1000 docs)", :u:b_doc_batch, 2, 10, 5);
+u:bench("param init", :u:b_init, 10, 100, 5);
+exit(0)
