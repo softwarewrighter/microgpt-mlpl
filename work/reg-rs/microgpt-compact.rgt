@@ -1,0 +1,4 @@
+command = '"$(scripts/select-mlpl)" --data-dir . --source-dir . -f microgpt-compact.mlpl'
+timeout = 600
+exit_code = 0
+desc = "Output of microgpt-compact.mlpl (token-stream + DSL chain + KV cache variant)"

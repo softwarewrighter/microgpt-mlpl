@@ -1,6 +1,6 @@
 number = 5
 slug = "variant-compact"
-status = "pending"
+status = "in-progress"
 description = "docs/plan-literate.md step 5. microgpt-compact.mlpl + docs/literate/microgpt-..."
 role = "production"
 context_files = []

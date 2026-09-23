@@ -1,0 +1,238 @@
+#+TITLE: microgpt in compact MLPL
+#+SUBTITLE: A name-generating transformer in about 30 lines of sw-MLPL
+#+AUTHOR: Mike Wright
+#+DATE: 2026-09-23
+#+OPTIONS: toc:2 num:t ^:{}
+#+PROPERTY: header-args:mlpl :session compact :results output :exports both :tangle microgpt-compact.mlpl
+#+HTML_HEAD: <style>
+#+HTML_HEAD: pre.src, pre.example { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; }
+#+HTML_HEAD: .org-mlpl-builtin, .org-builtin { color: #6f42c1; }
+#+HTML_HEAD: .org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #d73a49; font-weight: bold; }
+#+HTML_HEAD: .org-mlpl-number, .org-constant { color: #005cc5; }
+#+HTML_HEAD: .org-string, .org-doc { color: #22863a; }
+#+HTML_HEAD: .org-comment, .org-comment-delimiter { color: #6a737d; font-style: italic; }
+#+HTML_HEAD: .org-mlpl-operator, .org-operator { color: #8a8f98; }
+#+HTML_HEAD: .org-function-name { color: #e36209; }
+#+HTML_HEAD: .org-variable-name, .org-type { color: #b08800; }
+#+HTML_HEAD: @media (prefers-color-scheme: dark) {
+#+HTML_HEAD:   body { background: #16181c; color: #d8dade; } a { color: #79b8ff; }
+#+HTML_HEAD:   pre.src, pre.example { background: #1f2227; border-color: #33373e; color: #d8dade; }
+#+HTML_HEAD:   .org-mlpl-builtin, .org-builtin { color: #b392f0; }
+#+HTML_HEAD:   .org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #f97583; }
+#+HTML_HEAD:   .org-mlpl-number, .org-constant { color: #79b8ff; }
+#+HTML_HEAD:   .org-string, .org-doc { color: #85e89d; }
+#+HTML_HEAD:   .org-comment, .org-comment-delimiter { color: #8b949e; }
+#+HTML_HEAD:   .org-mlpl-operator, .org-operator { color: #7d8590; }
+#+HTML_HEAD:   .org-function-name { color: #ffab70; }
+#+HTML_HEAD:   .org-variable-name, .org-type { color: #ffdf5d; }
+#+HTML_HEAD:   table, th, td { border-color: #33373e; }
+#+HTML_HEAD: }
+#+HTML_HEAD: </style>
+
+* Introduction
+
+How short can microgpt get in MLPL and still do the same job: train a
+1-layer, 4-head, 16-wide causal transformer on 32,033 names, then invent
+new ones? The answer is 32 lines of code, about a seventh of the
+[[file:microgpt-faithful.html][faithful port]] (230) and two thirds of the [[file:microgpt-idiomatic.html][idiomatic one]] (48), at the same
+speed as the idiomatic one.
+
+Three simplifications get it there, each an MLPL idiom:
+
+1. *The data is one token stream.* Instead of treating each name
+   separately, the corpus becomes =BOS emma BOS olivia BOS ...=, and
+   =shift_pairs_x= / =shift_pairs_y= cut it into 16-token input windows and
+   their next-token targets. This is makemore's classic setup: BOS still
+   marks where a name starts and ends, so the model learns the same thing,
+   but a window can span two names.
+2. *The model is one DSL chain*, including the token embedding.
+3. *Sampling uses the KV cache* (=gen_state=, =gen_logits=, =gen_append=).
+   That requires the whole model to be one chain, so this variant has no
+   position embeddings: the DSL has no position layer that can live in a
+   chain. Causal attention still conveys some order.
+
+| | faithful | idiomatic | compact |
+|-+----------+-----------+---------|
+| data | one name per step | one name per step | one 16-token window per step |
+| positions | learned | learned (outside the chain) | none |
+| sampling | recompute prefix | recompute prefix | KV cache |
+| code lines | 230 | 48 | 32 |
+| loss, last 100 steps | 2.37 | 2.47 | 2.56 |
+
+The loss is not strictly comparable: windows are always 16 tokens and
+include name boundaries, whereas names average about 7 positions. The
+missing positions cost something too.
+
+#+name: strip-echo
+#+begin_src emacs-lisp :var text="" :exports none :tangle no
+(let ((lines (split-string (string-trim-right text) "\n")))
+  (string-join (butlast lines) "\n"))
+#+end_src
+
+#+RESULTS: strip-echo
+
+* 1. Data: a stream and its windows
+
+\[
+  s = (\mathrm{BOS},\ e,m,m,a,\ \mathrm{BOS},\ o,l,i,v,i,a,\ \mathrm{BOS}, \dots),
+  \qquad
+  X_w = s_{17w\,..\,17w+15},\quad Y_w = s_{17w+1\,..\,17w+16}
+\]
+
+Each window $w$ pairs 16 inputs with the 16 tokens that follow them. The
+1000 windows used in training are drawn once, up front, and the full
+window matrix is dropped: reading a large array copies it in this
+interpreter, which doubled the run time when each step read from all
+13,420 windows (upstream issue e).
+
+#+begin_src mlpl :results silent
+bytes = tokenize_bytes(load("input.txt"));
+stream = concat(concat([26], (bytes - 97) * (bytes != 10) + 26 * (bytes == 10)), [26]);
+windows = shift_pairs_x(stream, 16);                 # [13420, 16] token windows
+picks = floor(random(42, [1000]) * len(windows));    # one random window per step
+X = gather_rows(windows, picks);                     # inputs  [1000, 16]
+Y = gather_rows(shift_pairs_y(stream, 16), picks);   # targets [1000, 16]: next tokens
+expunge(["bytes", "stream", "windows"]);
+#+end_src
+
+#+begin_src mlpl :tangle no :post strip-echo(text=*this*)
+print("first window, inputs :", decode_bytes(97 + take(X, 0, 0) * (take(X, 0, 0) != 26) - 51 * (take(X, 0, 0) == 26)));
+print("first window, targets:", decode_bytes(97 + take(Y, 0, 0) * (take(Y, 0, 0) != 26) - 51 * (take(Y, 0, 0) == 26)));
+0
+#+end_src
+
+#+RESULTS:
+: first window, inputs : .emma.olivia.ava
+: first window, targets: emma.olivia.ava.
+
+(For display, letters map back to =a..z= and BOS to =.=: the expression
+is $97 - 51 = 46$, ASCII =.=, when the token is BOS. Each target is its
+input shifted by one position.)
+
+* 2. The model
+
+One expression, from token ids to logits:
+
+\[
+  z = \mathrm{Linear}_V\Big(\mathrm{RMS}\big(B_2(B_1(E[\tau_t]))\big)\Big),
+  \quad
+  B_1(x) = x + \mathrm{CausalAttn}_4(\mathrm{RMS}(x)),
+  \quad
+  B_2(x) = x + \mathrm{MLP}(\mathrm{RMS}(x))
+\]
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+model = chain(embed(27, 16, 1),
+              residual(chain(rms_norm(16), causal_attention(16, 4, 2))),
+              residual(chain(rms_norm(16), linear(16, 64, 3), relu_layer(), linear(64, 16, 4))),
+              rms_norm(16), linear(16, 27, 5));
+print("params:", to_string(param_count(model)));
+#+end_src
+
+#+RESULTS:
+: params: 4043
+
+4,043 parameters: 4,192 in microgpt, minus the 256 of the position table,
+plus the DSL's 107 biases.
+
+* 3. Training: one line
+
+\[
+  \mathcal{L}_w = -\frac{1}{16}\sum_{t=0}^{15} \log \mathrm{softmax}(z_t)[Y_{w,t}],
+  \qquad
+  \eta_k = 0.01\,(1 - k/1000)
+\]
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+train 1000 {
+  adam(cross_entropy(apply(model, take(X, 0, step)), take(Y, 0, step)), model, 0.01 * (1 - step / 1000), 0.85, 0.99, 0.00000001)
+};
+print("mean loss, steps 901-1000:", to_string(round(10000 * reduce_add(last_losses * (range(1000) >= 900)) / 100) / 10000));
+#+end_src
+
+#+RESULTS:
+: mean loss, steps 901-1000: 2.558
+
+* 4. Sampling with the KV cache
+
+=gen_state(model, [BOS])= runs the prompt once and caches every
+attention layer's keys and values. =gen_logits= reads the next-token
+logits without recomputation, and =gen_append= feeds the chosen token
+into the cache. Each new token costs one position of work, not the whole
+prefix:
+
+\[
+  p = \mathrm{softmax}(z_{\mathrm{last}} / 0.5), \qquad
+  \mathrm{next} \sim p \quad (\texttt{sample}), \qquad
+  \text{stop at BOS or 16 characters}
+\]
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+print("--- inference (new, hallucinated names) ---");
+bos = [26];
+i = 0;
+while i < 20 {
+  gs = gen_state(model, bos);
+  name = "";
+  next = sample(gen_logits(gs), 0.5, 1000 * i);
+  while (next != 26) * (str_len(name) < 16) {
+    name = str_concat(name, decode_bytes([97 + next]));
+    gen_append(gs, next);
+    next = sample(gen_logits(gs), 0.5, 1000 * i + str_len(name))
+  };
+  print(str_concat("sample ", str_concat(to_string(i + 1), str_concat(": ", name))));
+  i = i + 1
+};
+i
+#+end_src
+
+#+RESULTS:
+#+begin_example
+--- inference (new, hallucinated names) ---
+sample 1: an
+sample 2: cren
+sample 3: an
+sample 4: yn
+sample 5: a
+sample 6: arialilin
+sample 7: ken
+sample 8: ahasoia
+sample 9: kaleririnarli
+sample 10: mon
+sample 11: amian
+sample 12: ana
+sample 13: deyn
+sample 14: ana
+sample 15: an
+sample 16: ah
+sample 17: a
+sample 18: anen
+sample 19: amen
+sample 20: kataliay
+#+end_example
+
+#+begin_src mlpl :exports none :eval never
+exit(0)
+#+end_src
+
+* Trade-offs
+
+- *Gained:*
+  - 32 lines: no helper functions, no per-name bookkeeping, no
+    formatting code.
+  - The data pipeline is three builtins (=tokenize_bytes=,
+    =shift_pairs_x/y=, =gather_rows=), and the model and training are
+    two statements.
+  - Generation uses the KV cache.
+- *Lost:*
+  - Position information. The DSL has no cacheable position layer
+    (request #10 in [[https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/sw-mlpl-requests.md][sw-mlpl-requests.md]]), and it costs some loss.
+  - One-name-per-step fidelity to microgpt.py.
+  - Parameter parity (4,043 vs 4,192).
+- *Best use:* a first look at what an MLPL language model looks like. Read
+  the idiomatic variant next, then the faithful one for every equation
+  spelled out.
+
+# Local Variables:
+# org-babel-mlpl-command: "mlpl-repl --data-dir ../.."
+# End:

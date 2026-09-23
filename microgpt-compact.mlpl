@@ -1,0 +1,45 @@
+# microgpt-compact.mlpl -- the smallest honest microgpt in sw-MLPL.
+#
+# Same capability (a 1-layer, 4-head causal transformer learns names, then
+# invents new ones), stated as compactly as MLPL's built-ins allow: the
+# corpus is one token stream cut into 16-token windows, the model is one
+# Model DSL chain, and sampling uses the KV cache. Diverges from
+# microgpt.py: windows cross name boundaries (BOS separates names), and
+# there are no position embeddings, so the chain stays cacheable.
+# Walkthrough: docs/literate/microgpt-compact.org.
+
+bytes = tokenize_bytes(load("input.txt"));
+stream = concat(concat([26], (bytes - 97) * (bytes != 10) + 26 * (bytes == 10)), [26]);
+windows = shift_pairs_x(stream, 16);                 # [13420, 16] token windows
+picks = floor(random(42, [1000]) * len(windows));    # one random window per step
+X = gather_rows(windows, picks);                     # inputs  [1000, 16]
+Y = gather_rows(shift_pairs_y(stream, 16), picks);   # targets [1000, 16]: next tokens
+expunge(["bytes", "stream", "windows"]);
+
+model = chain(embed(27, 16, 1),
+              residual(chain(rms_norm(16), causal_attention(16, 4, 2))),
+              residual(chain(rms_norm(16), linear(16, 64, 3), relu_layer(), linear(64, 16, 4))),
+              rms_norm(16), linear(16, 27, 5));
+print("params:", to_string(param_count(model)));
+
+train 1000 {
+  adam(cross_entropy(apply(model, take(X, 0, step)), take(Y, 0, step)), model, 0.01 * (1 - step / 1000), 0.85, 0.99, 0.00000001)
+};
+print("mean loss, steps 901-1000:", to_string(round(10000 * reduce_add(last_losses * (range(1000) >= 900)) / 100) / 10000));
+
+print("--- inference (new, hallucinated names) ---");
+bos = [26];
+i = 0;
+while i < 20 {
+  gs = gen_state(model, bos);
+  name = "";
+  next = sample(gen_logits(gs), 0.5, 1000 * i);
+  while (next != 26) * (str_len(name) < 16) {
+    name = str_concat(name, decode_bytes([97 + next]));
+    gen_append(gs, next);
+    next = sample(gen_logits(gs), 0.5, 1000 * i + str_len(name))
+  };
+  print(str_concat("sample ", str_concat(to_string(i + 1), str_concat(": ", name))));
+  i = i + 1
+};
+exit(0)
