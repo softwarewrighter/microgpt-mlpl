@@ -15,10 +15,10 @@ upstream, queued), **fixed** (landed; workaround removed), **by design**,
 | b | grad | infix `<` rejected inside `grad`; `lt()` works | fixing | use `gt()`/`lt()` |
 | c | docs | "tape-lowered for heads=1" is stale | fixing | none needed |
 | d | kv-cache | `gen_state` works only on Model DSL chains | by design | recompute prefix |
-| e | perf | reading a large array value copies it | open | pre-encode with `u:doc_batch` |
+| e | perf | reading a large array copies it; every `u:` call copies all globals | open | `u:doc_batch` + `expunge` big globals |
 | f | lang | a list of param leaves cannot be stored in a variable | open | write `adam`'s list inline |
 | g | mlplbench | sandbox root fixed to the benchmark file's directory | open | `lib/bench.mlpl` |
-| h | perf | eager `u:gpt` slower than tape forward + backward | open | avoid extra eager forwards |
+| h | perf | eager `u:gpt` slower than tape forward + backward | not a bug (was e) | none needed |
 | i | docs | `adam` returns the pre-update loss (undocumented) | open | relied on (step 6) |
 
 ## a. `u:` argument as `cross_entropy` targets inside `grad`
@@ -65,7 +65,7 @@ By design: the cache is per attention layer of a Model DSL chain, and a
 hand-written forward made of `u:` functions has no layers to cache.
 Inference here recomputes the prefix (at most 16 tokens).
 
-## e. Reading a large array copies it
+## e. Reading a large array copies it; `u:` calls copy all globals
 
 Reading a global or a record field holding the 228k-element corpus costs
 ~0.4-0.5 ms per read regardless of how much is used; `gather_rows` of 6
@@ -73,7 +73,23 @@ rows from it costs 0.32 ms; `u:doc_tokens` for one doc 1.8 ms (would be
 ~1.8 s over 1000 training steps). Numbers: `docs/benchmarks.md`.
 Workaround: `u:doc_batch` encodes all visited docs in one vectorized
 pass (1000 docs: 1.78 ms) and the loop reads one small row per step.
-Suggestion: copy-on-write / shared (`Arc`) array storage for reads.
+
+Worse, the cost of calling ANY `u:` function grows with the total size of
+the globals, even ones the function never touches (step 6):
+
+```
+def u:ts() { to_string(6) }
+# u:ts() with only small globals:          0.003 ms
+big = zeros(228145);    # u:ts() now:      0.053 ms
+big2 = zeros(2281450);  # u:ts() now:      0.64  ms
+expunge(["big", "big2"]);  # back to:      0.003 ms
+```
+
+This made microgpt's training loop 2.09 s instead of ~0.8 s while the
+228k corpus record was still global (each step makes dozens of `u:`
+calls). Workaround: `expunge` the corpus after pre-encoding.
+Suggestion: copy-on-write / shared (`Arc`) values for globals and
+reads, so a call frame references rather than clones its environment.
 
 ## f. A list of param leaves cannot be stored in a variable
 
@@ -101,12 +117,13 @@ Related observation: under `mlpl-repl -f`, `include` paths resolve
 relative to the including file (benchmarks use `../lib/...`), while
 mlplunit suites use `lib/...` relative to `source_root`.
 
-## h. Eager forward slower than the tape
+## h. Eager forward slower than the tape (withdrawn: a symptom of e)
 
-`u:gpt` evaluated directly: 1.37 ms per 7-token doc. The same forward
-plus backward inside `grad`/`adam`: 0.71-0.75 ms. The training loop
-therefore never evaluates the loss eagerly (see i). Worth a look at the
-eager `u:` call path (argument binding, global reads per (e)).
+Step 4 measured `u:gpt` eagerly at 1.37 ms vs 0.71 ms for tape forward +
+backward -- with the 228k corpus record still global. Re-measured in
+step 6 with globals trimmed: eager forward 0.28 ms, tape forward +
+backward 0.48 ms, the expected order. The eager path makes more `u:`
+calls, each paying the global-copy cost of (e). Nothing to report.
 
 ## i. `adam` returns the pre-update loss
 

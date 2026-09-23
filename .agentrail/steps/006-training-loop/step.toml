@@ -1,6 +1,6 @@
 number = 6
 slug = "training-loop"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 6 (design decision 6). 1000 steps, one doc per step (order[..."
 role = "production"
 context_files = []

@@ -1,0 +1,24 @@
+# Python-style formatting helpers (lib/format.mlpl).
+include "lib/format.mlpl";
+
+@test {name: "integers are right-aligned like {:4d}", tags: ["format"]}
+def u:test_fmt_int() {
+  "Python: f'{7:4d}' == '   7', f'{1000:4d}' == '1000', f'{12345:4d}' == '12345'.";
+  u:assert_text_eq(u:fmt_int(7, 4), "   7", "pad")?;
+  u:assert_text_eq(u:fmt_int(1000, 4), "1000", "exact width")?;
+  u:assert_text_eq(u:fmt_int(12345, 4), "12345", "overflow is not truncated")?;
+  u:assert_text_eq(u:fmt_int(3, 2), " 3", "sample index")
+}
+
+@test {name: "losses print with 4 decimals like {:.4f}", tags: ["format"]}
+def u:test_fmt_fixed4() {
+  "Zero-padded fraction, rounding at the 4th decimal.";
+  u:assert_text_eq(u:fmt_fixed4(3.2958), "3.2958", "plain")?;
+  u:assert_text_eq(u:fmt_fixed4(1.9146), "1.9146", "microgpt-rs final")?;
+  u:assert_text_eq(u:fmt_fixed4(2.00004), "2.0000", "rounds down")?;
+  u:assert_text_eq(u:fmt_fixed4(2.00005), "2.0001", "rounds half up")?;
+  u:assert_text_eq(u:fmt_fixed4(0.0503), "0.0503", "leading zeros in fraction")?;
+  u:assert_text_eq(u:fmt_fixed4(2.99999), "3.0000", "carry into whole part")
+}
+
+u:run_registered_tests()

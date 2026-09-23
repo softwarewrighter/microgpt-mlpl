@@ -10,6 +10,7 @@ batch = u:doc_batch(d, u:gather1(shuffle(range(d.n_docs), 42), range(1000)), blo
 row = take(batch.tokens, 0, 0);
 n = at(batch.n, 0);
 print("doc n =", to_string(n), " mean n over 1000 steps =", to_string(reduce_add(batch.n) / 1000));
+expunge(["d"]);  # trim globals as microgpt.mlpl does (u: calls copy globals)
 u:set_doc(row, n);
 
 def u:b_set_doc() { "Select the step's doc: row read + in/tgt/pos/mask globals."; u:set_doc(take(batch.tokens, 0, 0), at(batch.n, 0)) }

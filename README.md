@@ -36,7 +36,9 @@ Scaffold in place (scripts, mlplunit tests, reg-rs baseline, pre-commit
 gate), dataset, tokenizer and
 parameter init and the forward pass done (`num docs: 32033`, `vocab size: 27`,
 `num params: 4192`; untrained loss ~ ln 27), with
-gradients checked against finite differences. sw-MLPL findings:
+gradients checked against finite differences, and training
+(1000 steps in ~0.8 s; CPython 78.9 s, microgpt-rs 0.60 s on the same
+machine). sw-MLPL findings:
 [`docs/upstream-issues.md`](docs/upstream-issues.md). Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). Work is tracked as an
 agentrail saga in `.agentrail/`
 (`agentrail status` shows progress):
@@ -48,7 +50,7 @@ agentrail saga in `.agentrail/`
 | 3 | params-init | done |
 | 4 | forward-pass | done |
 | 5 | gradcheck | done |
-| 6 | training-loop | pending |
+| 6 | training-loop | done |
 | 7 | inference | pending |
 | 8 | parity-vs-rust | pending |
 | 9 | docs-and-results | pending |

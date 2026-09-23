@@ -20,6 +20,7 @@ Host: Apple Silicon (Darwin arm64), mlpl-repl 0.22.0 (ab858695).
 | 3 | + param init | 0.057 s | sort-based vocab scan; see below |
 | 4 | + model defs (no training yet) | 0.058 s | per-step hot path below |
 | 5 | unchanged (gradcheck is test-only) | 0.061 s | gradcheck suite: 0.26 s |
+| 6 | + 1000 training steps | 0.79-0.87 s | 2.09 s before expunging big globals |
 
 Step 3 per-operation timings:
 
@@ -31,7 +32,8 @@ Step 3 per-operation timings:
 | param init (4192 gaussians) | 0.155 ms |
 
 Step 4 per-training-step hot path (`benchmarks/bench_model.mlpl`, a
-7-position doc; the 1000 training docs average n = 7.13):
+7-position doc; the 1000 training docs average n = 7.13). Measured with
+the corpus still global; see step 6 for the trimmed numbers:
 
 | operation | mean |
 |---|---|
@@ -56,8 +58,45 @@ Step 5 gradient-check costs (`benchmarks/bench_gradcheck.mlpl`):
 `adam` shares one tape across all its params: 9 gradients for about the
 price of one `grad`. Use `adam` (not a loop of `grad`) in training.
 
+Step 6: training. Same machine, same moment (load average ~50, so
+absolute numbers are noisy; the ratios held across repeats):
+
+| implementation | 1000 steps, wall | notes |
+|---|---|---|
+| `microgpt.py`, CPython 3.14.6 | 78.9 s | includes 20 samples |
+| microgpt-rs, release | 0.60 s | includes 20 samples |
+| **microgpt.mlpl**, mlpl-repl 0.22.0 | **0.79-0.87 s** | training only (inference is step 7) |
+
+Per training step (`benchmarks/bench_train.mlpl`, globals trimmed as in
+`microgpt.mlpl`):
+
+| piece | before trim | after trim |
+|---|---|---|
+| read row + n | 0.13 ms | 0.02 ms |
+| `u:set_doc` (incl. mask) | 0.59 ms | 0.07 ms |
+| `adam` over 9 params (forward + backward + update) | 0.99 ms | 0.66 ms |
+| progress line (format + write) | 0.65 ms | 0.07 ms |
+| whole step | 2.15 ms | 0.76 ms |
+
+Loss curve (mean per 100-step window), all three implementations:
+
+| window | CPython | microgpt-rs | MLPL |
+|---|---|---|---|
+| 1-100 | 2.7725 | 2.6898 | 2.7138 |
+| 401-500 | 2.4640 | 2.4453 | 2.4632 |
+| 901-1000 | 2.2761 | 2.3644 | 2.3680 |
+
+Differences are within what different RNG streams (init, doc order)
+produce; step 8 removes that variable by loading microgpt-rs's init.
+
 ## Performance notes for this interpreter
 
+- **Every `u:` call copies the global environment.** Call overhead grows
+  with the total size of globals: a trivial `u:` call costs 0.003 ms with
+  small globals, 0.053 ms with a 228k-element array in scope, 0.64 ms with
+  2.28M. The fix that took training from 2.09 s to ~0.8 s: after
+  pre-encoding the training docs, `expunge` the corpus record and other
+  large arrays so only small values stay global.
 - **Reading a large array value copies it.** A global or a record field
   read of the 228k-element corpus costs ~0.4-0.5 ms regardless of how
   little of it is then used (`gather_rows` of 6 rows from it: 0.32 ms).
@@ -65,6 +104,7 @@ price of one `grad`. Use `adam` (not a loop of `grad`) in training.
   needs once, vectorized, and read small rows inside the loop.
 - **Prefer one vectorized pass over a scalar loop.** The vocab scan went
   from 256 `eq` passes (220 ms) to sort + run-start mask (13 ms).
-- **Eager is slower than the tape here.** Evaluating `u:gpt` directly
-  (1.37 ms) costs more than tape forward + backward under `grad` / `adam`
-  (0.71-0.75 ms). Avoid extra eager forwards in the training loop.
+- **(Withdrawn) "eager is slower than the tape".** The step-4 numbers
+  (eager 1.37 ms vs tape 0.71 ms) were taken with the corpus still
+  global. With globals trimmed (step 6): eager forward 0.28 ms, tape
+  forward + backward 0.48 ms, adam over 9 params 0.49 ms.

@@ -6,6 +6,7 @@
 # Reusable definitions live in lib/ so the mlplunit suites can test them.
 
 include "lib/data.mlpl";
+include "lib/format.mlpl";
 
 # Let there be a Dataset `docs`: one name per line of input.txt.
 # Python shuffles the list in place; here the docs stay in file order and
@@ -27,5 +28,38 @@ print("num params:", to_string(num_params));
 # Define the model architecture: a function mapping tokens and parameters
 # to logits over what comes next (u:gpt), and the per-doc loss (u:loss).
 include "lib/model.mlpl";
+
+# Let there be Adam, the blessed optimizer. MLPL's adam keeps the m/v
+# moment buffers per param across calls and bias-corrects exactly like
+# microgpt.py; the param list must be written inline in the call.
+learning_rate = 0.01;
+beta1 = 0.85;
+beta2 = 0.99;
+eps_adam = 0.00000001;
+
+# Repeat in sequence. Each step takes one doc (docs[step % len(docs)] in
+# shuffled order). The docs a run visits are encoded up front in one
+# vectorized pass: rows of [BOS] + ids + [BOS], and n = min(block_size,
+# len(tokens) - 1) positions per doc (see docs/benchmarks.md for why).
+num_steps = 1000;
+train_docs = u:doc_batch(d, u:gather1(order, mod(range(num_steps), d.n_docs)), block_size);
+train_tokens = train_docs.tokens;
+train_n = train_docs.n;
+# Keep what inference needs, then drop the big arrays: in this
+# interpreter every u: call copies the global environment, so a 228k
+# corpus left in scope costs ~0.05 ms per call (docs/benchmarks.md).
+uchars = d.uchars;
+BOS = d.bos;
+expunge(["d", "order", "train_docs", "txt"]);
+
+train num_steps {
+  u:set_doc(take(train_tokens, 0, step), at(train_n, step));
+  # Forward the doc, backward the loss, and update every parameter.
+  # adam returns the loss before the update (Python's loss.data).
+  lr_t = learning_rate * (1 - step / num_steps);
+  loss = adam(u:loss(), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], lr_t, beta1, beta2, eps_adam);
+  u:write(str_concat(str_concat(str_concat(str_concat(str_concat("step ", u:fmt_int(step + 1, 4)), " / "), u:fmt_int(num_steps, 4)), " | loss "), str_concat(u:fmt_fixed4(loss), "\r")));
+  loss
+}
 
 exit(0)

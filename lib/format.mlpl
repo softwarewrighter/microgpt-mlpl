@@ -1,0 +1,26 @@
+# Python-style number formatting for microgpt.mlpl's output lines.
+# to_string prints the shortest round-trip decimal; microgpt.py uses
+# f"{x:4d}", f"{x:2d}" and f"{x:.4f}".
+
+def u:pad_left(s, width) {
+  "Right-align string s in width columns, width <= 16 (like Python's {:>width}).";
+  str_concat(str_slice("                ", 0, relu(width - str_len(s))), s)
+}
+
+def u:fmt_int(x, width) {
+  "f'{x:widthd}' for a non-negative integer x.";
+  u:pad_left(to_string(round(x)), width)
+}
+
+def u:fmt_fixed4(x) {
+  "f'{x:.4f}' for x >= 0 (round half up at the 4th decimal).";
+  scaled = floor(x * 10000 + 0.5);
+  whole = floor(scaled / 10000);
+  frac = to_string(scaled - whole * 10000);
+  str_concat(str_concat(to_string(whole), "."), str_concat(str_slice("0000", 0, 4 - str_len(frac)), frac))
+}
+
+def u:write(s) {
+  "Write s to stdout with no trailing newline (for Python's end='\\r').";
+  unwrap(write_stdout(tokenize_bytes(s)))
+}

@@ -84,9 +84,11 @@ sample  1: ...
 6. **Adam.** microgpt uses `lr=0.01, beta1=0.85, beta2=0.99, eps=1e-8`,
    bias-corrected, with linear decay `lr * (1 - step/num_steps)`.
    MLPL's `adam(loss, [params...], lr, b1, b2, eps)` keeps per-param
-   state across calls, so the decayed lr is passed each step. Confirm
-   MLPL's Adam applies bias correction the same way (step 8 parity check
-   will reveal any difference).
+   state across calls, so the decayed lr is passed each step. Verified in
+   step 6: the CPU update (`grad_optim.rs`) is the same bias-corrected
+   rule with a 1-based per-param step counter, and
+   `tests/test_training.mlpl` checks two steps against the formula to
+   1e-12. `adam` returns the pre-update loss (Python's `loss.data`).
 7. **RNG.** Bit-parity with Python's Mersenne Twister is out of scope
    (microgpt-rs does not attempt it either). MLPL init uses
    `randn(seed, shape) * 0.08` with one fixed seed per matrix; the doc
