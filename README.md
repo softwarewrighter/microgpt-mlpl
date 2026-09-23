@@ -41,9 +41,13 @@ The port runs end to end: `scripts/run.sh` prints the same lines as
 - The masked whole-name forward equals microgpt.py's token-by-token
   KV-cache loop to 1e-12.
 - MLPL's `adam` matches microgpt.py's bias-corrected update (tested).
-- Loss per 100-step window tracks CPython and microgpt-rs (last 100
-  steps: 2.37 / 2.28 / 2.36); the differences come from different RNG
-  streams, and the parity step (9) removes them.
+- **Exact parity with microgpt-rs:** `microgpt.mlpl -- --rs-parity` draws
+  every random number from microgpt-rs's SplitMix64 stream, implemented
+  in pure MLPL (`lib/splitmix64`), and its entire output -- 1000 loss
+  lines ending `loss 1.9146` and 20 sampled names -- is byte-identical to
+  microgpt-rs's (`just parity`).
+- In default mode (MLPL's own RNG) the loss per 100-step window tracks
+  CPython and microgpt-rs (last 100 steps: 2.37 / 2.28 / 2.36).
 
 Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). sw-MLPL findings
 (with reproducers): [`docs/upstream-issues.md`](docs/upstream-issues.md).
@@ -59,7 +63,7 @@ Work is tracked as an agentrail saga in `.agentrail/` (`agentrail status`):
 | 6 | training-loop | done |
 | 7 | inference | done |
 | 8 | remove-loss-workaround | done |
-| 9 | parity-vs-rust | pending |
+| 9 | parity-vs-rust | done |
 | 10 | docs-and-results | pending |
 
 ## Build and run
@@ -82,14 +86,15 @@ just test         # scripts/test.sh: mlplunit suites in tests/
 just regress      # scripts/regress.sh: reg-rs output baselines in work/reg-rs/
 just check        # scripts/pre-commit.sh: the full pre-commit gate
 just bench        # scripts/bench.sh: speed (per-op + end-to-end)
+just parity       # scripts/parity.sh: byte-compare --rs-parity with microgpt-rs
 ```
 
 The interpreter is found via `$MLPL`, then `PATH`, then
 `../../sw-ml-study/sw-mlpl/target/release/mlpl-repl`; mlplunit via
 `$MLPLUNIT`, then `PATH`, then `../mlplunit/bin/mlplunit`.
 
-Output (names and losses differ from Python's because the RNG differs;
-two MLPL runs are identical):
+Output in default mode (names and losses differ from Python's because the
+RNG differs; two MLPL runs are identical):
 
 ```
 num docs: 32033
@@ -98,12 +103,15 @@ num params: 4192
 step 1000 / 1000 | loss 2.2948
 --- inference (new, hallucinated names) ---
 sample  1: aline
-sample  2: shiam
-sample  3: arylin
+sample  2: garien
+sample  3: anisn
 ...
-sample 19: marion
-sample 20: brera
+sample 19: rille
+sample 20: kay
 ```
+
+With `-- --rs-parity` the output is microgpt-rs's, byte for byte
+(`step 1000 / 1000 | loss 1.9146`, `sample  1: amanion`, ...).
 
 ## Copyright and license
 

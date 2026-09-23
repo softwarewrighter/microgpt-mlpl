@@ -11,7 +11,7 @@ expunge(["d"]);
 
 @test {name: "sample_token is the inverse CDF of softmax(logits / T)", tags: ["sample"]}
 def u:test_inverse_cdf() {
-  "probs [0.2, 0.3, 0.5] (T = 1): cdf [0.2, 0.5, 1.0]; like random.choices' bisect.";
+  "probs [0.2, 0.3, 0.5] (T = 1): cdf [0.2, 0.5, 1.0]; first index whose cumulative weight reaches u * total (microgpt-rs's choices).";
   lg = log([0.2, 0.3, 0.5]);
   u:assert_eq(u:sample_token(lg, 1, 0.1), 0, "u in [0, 0.2)")?;
   u:assert_eq(u:sample_token(lg, 1, 0.25), 1, "u in [0.2, 0.5)")?;
@@ -31,13 +31,21 @@ def u:test_temperature() {
 @test {name: "generation is well-formed and deterministic", tags: ["sample"]}
 def u:test_generate() {
   "Ids are letters (no BOS), at most block_size long; same uniforms give the same sample.";
-  U = random(4242, [3, block_size]);
-  a = u:generate(take(U, 0, 0), 0.5);
+  U = random(4242, [3 * block_size]);
+  a = u:generate(U, 0, 0.5);
   u:assert_lt(len(a), block_size + 1, "length <= block_size")?;
   u:assert_eq(reduce_add(ge(a, BOS)) + reduce_add(lt(a, 0)), 0, "only letter ids")?;
-  u:assert_eq(u:generate(take(U, 0, 0), 0.5), a, "deterministic")?;
+  u:assert_eq(u:generate(U, 0, 0.5), a, "deterministic")?;
   u:assert_text_eq(u:ids_to_text([0, 1, 2]), "abc", "ids to text")?;
   u:assert_text_eq(u:ids_to_text(u:gather1([1], range(0))), "", "empty sample")
+}
+
+@test {name: "a sample consumes one uniform per token plus the BOS draw", tags: ["sample"]}
+def u:test_consumed() {
+  "Like microgpt-rs's loop: len + 1 draws when it stops on BOS, block_size when it runs out.";
+  u:assert_eq(u:consumed([3, 4, 5]), 4, "stopped on BOS")?;
+  u:assert_eq(u:consumed(u:gather1([1], range(0))), 1, "immediate BOS")?;
+  u:assert_eq(u:consumed(range(block_size)), block_size, "ran to block_size")
 }
 
 u:run_registered_tests()

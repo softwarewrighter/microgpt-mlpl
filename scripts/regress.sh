@@ -1,7 +1,10 @@
 #!/bin/sh
 # Run the reg-rs output baselines stored in work/reg-rs/.
 # Usage: scripts/regress.sh [reg-rs run args]   e.g. -vv for full diffs
-# Re-baseline after an intended output change: just rebaseline
+# Baselines: microgpt-run (default mode; re-baseline after an intended
+# output change with `just rebaseline`) and microgpt-parity (--rs-parity
+# mode; equals microgpt-rs output -- never re-baseline it without
+# `just parity` passing).
 set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)

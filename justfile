@@ -25,6 +25,10 @@ rebaseline:
 bench runs="5":
     scripts/bench.sh {{runs}}
 
+# Byte-compare microgpt.mlpl --rs-parity with microgpt-rs (needs ../microgpt-rs built).
+parity:
+    scripts/parity.sh
+
 # The full pre-commit gate: ASCII docs, scripts, tests, baselines, Rust tools.
 check:
     scripts/pre-commit.sh

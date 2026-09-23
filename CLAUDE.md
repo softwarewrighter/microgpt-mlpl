@@ -295,7 +295,9 @@ Tests: unit checks are mlplunit suites in `tests/test_*.mlpl` (use
 output is pinned by the reg-rs baseline `microgpt-run` in `work/reg-rs/`
 (`.rgt` + `.out` committed). When a step intentionally changes the
 output, run `just rebaseline`, review the `.out` diff, and mention it in
-the commit message.
+the commit message. The second baseline, `microgpt-parity`, is the
+`--rs-parity` output and must equal microgpt-rs's output byte for byte:
+never re-baseline it unless `just parity` passes.
 
 ### Pre-commit gate
 

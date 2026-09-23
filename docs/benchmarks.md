@@ -23,6 +23,7 @@ Host: Apple Silicon (Darwin arm64), mlpl-repl 0.22.0 (ab858695).
 | 6 | + 1000 training steps | 0.79-0.87 s | 2.09 s before expunging big globals (load ~50) |
 | 7 | + 20 samples (complete program) | 0.72-0.74 s | load ~3; microgpt-rs 0.58-0.60 s |
 | 8 | globals workaround removed | 0.70-0.72 s direct, ~0.745 s via run.sh | same as step 7 within noise |
+| 9 | `--rs-parity` mode (default unchanged) | ~1.5 s parity, ~0.8 s default | parity adds the SplitMix64 shuffle trace |
 
 Step 3 per-operation timings:
 
@@ -122,6 +123,18 @@ Per step (`bench_train.mlpl`): select doc 0.063 ms (was `u:set_doc`
 Two lessons: `scripts/run.sh` adds ~25 ms of shell startup, so compare
 like with like; and building the causal mask INSIDE the traced loss
 costs ~70 us/step (adam 0.57 vs 0.49 ms), so the mask is an argument.
+
+Step 9: `lib/splitmix64` (pure-MLPL SplitMix64):
+
+| operation | time |
+|---|---|
+| 50,000 draws, one vectorized pass (limb arithmetic) | 54 ms |
+| Fisher-Yates head (first 1000 of 32033), traced backward as a vector | 0.73 s |
+| same shuffle as 32032 sequential `scatter` swaps (rejected) | 8.1 s |
+
+The backward trace follows the wanted positions through the swap
+sequence instead of materializing the permutation, so no step copies
+the 32k-element array (see note e below).
 
 ## Performance notes for this interpreter
 

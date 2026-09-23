@@ -1,0 +1,4 @@
+command = 'scripts/select-mlpl >/dev/null && "$(scripts/select-mlpl)" --data-dir . --source-dir . -f microgpt.mlpl -- --rs-parity'
+timeout = 600
+exit_code = 0
+desc = "microgpt.mlpl --rs-parity output; must equal microgpt-rs's output byte for byte (scripts/parity.sh). Never rebaseline without re-running parity.sh."

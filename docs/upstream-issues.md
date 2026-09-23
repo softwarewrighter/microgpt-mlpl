@@ -15,12 +15,13 @@ upstream, queued), **fixed** (landed; workaround removed), **by design**,
 | b | grad | infix `<` rejected inside `grad`; `lt()` works | fixed (sw-mlpl 67c2ca86) | `u:causal_mask` uses infix `>` |
 | c | docs | "tape-lowered for heads=1" is stale | fixing | none needed |
 | d | kv-cache | `gen_state` works only on Model DSL chains | by design | recompute prefix |
-| e | perf | reading a large array copies it; every `u:` call copies all globals | open | `u:doc_batch` + `expunge` big globals |
+| e | perf | reading a large array copies it; every `u:` call copies all globals | fix queued upstream | `u:doc_batch` + `expunge` big globals |
 | f | lang | a list of param leaves cannot be stored in a variable | open | write `adam`'s list inline |
 | g | mlplbench | sandbox root fixed to the benchmark file's directory | open | `lib/bench.mlpl` |
 | h | perf | eager `u:gpt` slower than tape forward + backward | not a bug (was e) | none needed |
 | i | docs | `adam` returns the pre-update loss (undocumented) | open | relied on (step 6) |
-| j | eval | `repeat`/`train`/`for` bodies reject string-valued statements | open | use `while` |
+| j | eval | `repeat`/`train`/`for` bodies reject string-valued statements | fix queued upstream | use `while` |
+| k | json | `parse_json` rejects nested arrays (matrices) | info | flat arrays + `reshape` |
 
 ## a. `u:` argument as `cross_entropy` targets inside `grad`
 
@@ -158,3 +159,12 @@ sampling loop). Likely cause: these loops collect or type-check every
 statement value as an array (for `last_losses` / `last_rows`).
 Workaround: the sampling loop in `microgpt.mlpl` is a `while`; the
 training loop's `u:write` returns a byte count, not a string.
+
+## k. `parse_json` rejects nested arrays
+
+`parse_json("[[1, 2], [3, 4]]")` is `err("parse_json: mixed or nested
+array near byte ...")`; a matrix must travel as a flat array (plus a
+shape) or as the tagged `$mlpl` envelope that `to_json(v, {tagged: 1})`
+writes. Found while evaluating a JSON weight dump for parity (step 9);
+not needed in the end (parity uses `lib/splitmix64` instead). Noted for
+anyone exchanging weights with other tools.

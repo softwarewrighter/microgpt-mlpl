@@ -87,13 +87,20 @@ sample  1: ...
    rule with a 1-based per-param step counter, and
    `tests/test_training.mlpl` checks two steps against the formula to
    1e-12. `adam` returns the pre-update loss (Python's `loss.data`).
-7. **RNG.** Bit-parity with Python's Mersenne Twister is out of scope
-   (microgpt-rs does not attempt it either). MLPL init uses
-   `randn(seed, shape) * 0.08` with one fixed seed per matrix; the doc
-   order uses `shuffle(range(N), 42)`; sampling uses
-   `sample(logits, 0.5, seed)` with a deterministic seed per
-   (sample, position). Cross-implementation parity is proven instead by
-   loading microgpt-rs's exact initial weights and doc order (step 8).
+7. **RNG.** Default mode uses MLPL's own seeded generators
+   (`randn(seed, shape)`, `shuffle(range(N), 42)`, `random(4242, ...)`);
+   bit parity with Python's Mersenne Twister is out of scope. Parity with
+   microgpt-rs is exact instead: `lib/splitmix64/` implements its
+   SplitMix64 stream in pure MLPL (64-bit words as four 16-bit limbs;
+   counter-based, so all draws are one vectorized pass), and
+   `microgpt.mlpl -- --rs-parity` takes the doc order, all 4192 weights,
+   and the sampling uniforms from it. Chosen in step 9 over (a) a Rust
+   tool dumping microgpt-rs's init to JSON and (b) a native Rust
+   extension (`load_extension`, as in ../demo-extensions): pure MLPL keeps
+   parity inside the language, runs anywhere mlpl-repl runs (incl. the
+   WASM playground), needs no build step or cross-repo ABI, and is
+   packaged as a reusable library (demo-mlpl-libraries contract:
+   `u:sm64_` prefix, docstrings, no globals) for later promotion.
 8. **Tokenizer.** `uchars` = sorted unique characters of the corpus;
    BOS = `len(uchars)`. Build a 256-entry byte-to-id lookup table from
    `tokenize_bytes` of the joined corpus, so encoding a name is a gather
@@ -124,8 +131,8 @@ scripts/select-mlpl     interpreter discovery; select-mlplunit likewise
 scripts/fetch-data      download input.txt (pinned makemore URL)
 tests/test_*.mlpl       mlplunit suites (@test + u:assert_*)
 work/reg-rs/            reg-rs baselines (.rgt + .out committed)
-tools/rs-init-dump/     tiny Rust bin: microgpt-rs RNG -> init weights + doc order JSON
-parity/                 parity script + recorded loss trajectories
+lib/splitmix64/         reusable pure-MLPL SplitMix64 (microgpt-rs's RNG), u:sm64_
+scripts/parity.sh       byte-compare --rs-parity output with microgpt-rs
 docs/plan.md            this file
 docs/benchmarks.md      speed log per step (scripts/bench.sh, benchmarks/)
 docs/python-vs-mlpl.md  side-by-side walkthrough
@@ -179,12 +186,11 @@ says so in its commit message.
 8. **remove-loss-workaround** (inserted in step 7) -- sw-mlpl 67c2ca86
    fixed upstream issues (a) and (b): make the loss `u:loss(...)` with
    arguments, drop the `cur_*` globals, keep output byte-identical.
-9. **parity-vs-rust** -- `tools/rs-init-dump` reproduces microgpt-rs's
-   `Rng` + `StateDict::init` order and doc shuffle, emits JSON; a parity
-   script loads it (`parse_json` + assignment into the params) and runs
-   1000 steps. Done when: per-step losses match microgpt-rs to ~1e-4
-   (both f64; only reduction order differs) and final loss ~= 1.9146.
-   If they diverge, bisect with 1 doc / 1 step and compare grads.
+9. **parity-vs-rust** -- `lib/splitmix64` (microgpt-rs's RNG in pure
+   MLPL, exact to the bit) and `microgpt.mlpl -- --rs-parity`. Done:
+   the whole output (1000 loss lines + 20 samples) is byte-identical to
+   microgpt-rs's, checked live by `scripts/parity.sh` and pinned by the
+   `microgpt-parity` reg-rs baseline.
 10. **docs-and-results** -- `docs/python-vs-mlpl.md` side-by-side,
    README results table (Python / Rust / MLPL wall time, loss, samples),
    status section updated.

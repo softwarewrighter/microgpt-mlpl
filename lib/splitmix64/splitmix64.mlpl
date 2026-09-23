@@ -1,0 +1,130 @@
+# splitmix64: an exact, vectorized SplitMix64 random stream in pure MLPL.
+#
+# Reproduces the generator used by microgpt-rs (and many Rust/Java
+# programs): state += 0x9E3779B97F4A7C15; z = state; z = (z ^ z>>30) *
+# 0xBF58476D1CE4E5B9; z = (z ^ z>>27) * 0x94D049BB133111EB; out = z ^ z>>31,
+# plus that program's uniform (out >> 11) / 2^53, Box-Muller gauss, and
+# Fisher-Yates shuffle, bit for bit.
+#
+# MLPL numbers are f64 (exact integers only below 2^53), so a 64-bit word
+# is a record of four 16-bit limbs {l0, l1, l2, l3} (l0 least significant)
+# and the bit builtins (band/bor/bxor/shl/shr) work limb-wise. SplitMix64 is
+# counter-based -- draw k (1-based) is mix(seed + k * gamma) -- so any set of
+# draws is computed in ONE vectorized pass: pass a vector of draw indices k
+# and every limb is a vector. Draw k is the k-th value a sequential Rust
+# `Rng::new(seed)` would produce, so callers index the shared stream
+# explicitly (e.g. a shuffle consumes k = 1..n-1, then gauss continues).
+#
+# Public prefix: u:sm64_ (library contract of demo-mlpl-libraries).
+# Capabilities: none beyond the core language (no include, no I/O).
+
+def u:sm64_word(l3, l2, l1, l0) {
+  "A 64-bit word from four 16-bit limbs, most significant first.";
+  {l0: l0, l1: l1, l2: l2, l3: l3}
+}
+
+def u:sm64_carry(c0, c1, c2, c3) {
+  "Carry-propagate raw column sums (each < 2^53) into a word, mod 2^64.";
+  r0 = mod(c0, 65536);
+  c1 = c1 + floor(c0 / 65536);
+  r1 = mod(c1, 65536);
+  c2 = c2 + floor(c1 / 65536);
+  r2 = mod(c2, 65536);
+  c3 = c3 + floor(c2 / 65536);
+  {l0: r0, l1: r1, l2: r2, l3: mod(c3, 65536)}
+}
+
+def u:sm64_mul(x, c) {
+  "x * c mod 2^64 (schoolbook on limbs; every column sum stays below 2^35).";
+  u:sm64_carry(x.l0 * c.l0,
+               x.l0 * c.l1 + x.l1 * c.l0,
+               x.l0 * c.l2 + x.l1 * c.l1 + x.l2 * c.l0,
+               x.l0 * c.l3 + x.l1 * c.l2 + x.l2 * c.l1 + x.l3 * c.l0)
+}
+
+def u:sm64_limb(x, i) {
+  "Limb i of word x, or zeros for i >= 4 (bits shifted in from above).";
+  if eq(i, 0) { x.l0 } else { if eq(i, 1) { x.l1 } else { if eq(i, 2) { x.l2 } else { if eq(i, 3) { x.l3 } else { x.l0 * 0 } } } }
+}
+
+def u:sm64_xorshr(x, s) {
+  "x ^ (x >> s) for a constant shift 0 < s < 64 with s mod 16 != 0.";
+  q = floor(s / 16);
+  r = s - q * 16;
+  y0 = bor(shr(u:sm64_limb(x, q), r), shl(u:sm64_limb(x, q + 1), 16 - r, 16));
+  y1 = bor(shr(u:sm64_limb(x, q + 1), r), shl(u:sm64_limb(x, q + 2), 16 - r, 16));
+  y2 = bor(shr(u:sm64_limb(x, q + 2), r), shl(u:sm64_limb(x, q + 3), 16 - r, 16));
+  y3 = bor(shr(u:sm64_limb(x, q + 3), r), shl(u:sm64_limb(x, q + 4), 16 - r, 16));
+  {l0: bxor(x.l0, y0), l1: bxor(x.l1, y1), l2: bxor(x.l2, y2), l3: bxor(x.l3, y3)}
+}
+
+def u:sm64_next(seed, k) {
+  "Draws k (vector of 1-based indices) of SplitMix64 seeded with integer seed (0 <= seed < 2^48), as a word of limb vectors.";
+  gamma = u:sm64_word(40503, 31161, 32586, 31765);
+  s0 = mod(seed, 65536);
+  s1 = mod(floor(seed / 65536), 65536);
+  s2 = floor(seed / 4294967296);
+  # k < 2^32 keeps k * limb < 2^48: state = seed + k * gamma (mod 2^64)
+  z = u:sm64_carry(k * gamma.l0 + s0, k * gamma.l1 + s1, k * gamma.l2 + s2, k * gamma.l3);
+  z = u:sm64_mul(u:sm64_xorshr(z, 30), u:sm64_word(48984, 18285, 7396, 58809));
+  z = u:sm64_mul(u:sm64_xorshr(z, 27), u:sm64_word(38096, 18875, 4913, 4587));
+  u:sm64_xorshr(z, 31)
+}
+
+def u:sm64_uniform(seed, k) {
+  "Uniform [0, 1) doubles for draws k: (next >> 11) / 2^53, exact.";
+  x = u:sm64_next(seed, k);
+  (x.l3 * 137438953472 + x.l2 * 2097152 + x.l1 * 32 + floor(x.l0 / 2048)) / 9007199254740992
+}
+
+def u:sm64_mod(seed, k, m) {
+  "next % m for draws k and moduli m (vectors of equal length or scalars; 0 < m < 2^36).";
+  x = u:sm64_next(seed, k);
+  r = mod(x.l3, m);
+  r = mod(r * 65536 + x.l2, m);
+  r = mod(r * 65536 + x.l1, m);
+  mod(r * 65536 + x.l0, m)
+}
+
+def u:sm64_gauss(seed, k0, count, mu, sigma) {
+  "count Box-Muller normals from draws k0, k0 + 1, ... (two per value), as ok(values) -- or err if a first uniform is 0 (the sequential generator would redraw, shifting the stream; probability ~2^-53 per value).";
+  u = u:sm64_uniform(seed, k0 + range(2 * count));
+  pairs = reshape(u, [count, 2]);
+  u1 = take(pairs, 1, 0);
+  u2 = take(pairs, 1, 1);
+  if reduce_add(eq(u1, 0)) {
+    err("sm64_gauss: a first uniform is exactly 0; the stream would redraw")
+  } else {
+    ok(mu + sigma * sqrt(0 - 2 * log(u1)) * cos(2 * pi() * u2))
+  }
+}
+
+def u:sm64_shuffle_head(seed, k0, n, m) {
+  "The first m entries of a Fisher-Yates shuffle of range(n) that draws j = next % (i + 1) for i = n-1 down to 1 from draws k0, k0 + 1, ... (n - 1 draws).";
+  # Instead of applying n - 1 swaps to an n-array (each scatter copies it),
+  # trace the m wanted positions backward through the swaps as one vector:
+  # the value that ends at position p started at the traced position.
+  i_all = n - 1 - range(n - 1);
+  j_all = u:sm64_mod(seed, k0 + range(n - 1), i_all + 1);
+  block = 256;
+  nblocks = ceil((n - 1) / block);
+  pad = nblocks * block - (n - 1);
+  # pad with no-op swaps (i = j = n) so the draws reshape into blocks
+  ib = reshape(concat(i_all, zeros(pad) + n), [nblocks, block]);
+  jb = reshape(concat(j_all, zeros(pad) + n), [nblocks, block]);
+  p = range(m);
+  b = nblocks - 1;
+  while ge(b, 0) {
+    irow = take(ib, 0, b);
+    jrow = take(jb, 0, b);
+    t = block - 1;
+    while ge(t, 0) {
+      i = at(irow, t);
+      j = at(jrow, t);
+      p = p + eq(p, i) * (j - i) + eq(p, j) * (i - j);
+      t = t - 1
+    };
+    b = b - 1
+  };
+  p
+}

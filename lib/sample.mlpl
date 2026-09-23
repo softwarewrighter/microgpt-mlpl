@@ -4,30 +4,37 @@
 # Python feeds one token at a time through its KV cache; here each step
 # recomputes u:gpt over the prefix (at most block_size = 16 tokens) and
 # reads the last row -- the same logits (tests/test_model.mlpl checks
-# the prefix equivalence). Draws follow random.choices: inverse CDF of
-# softmax(logits / temperature) at one uniform from a seeded stream.
+# the prefix equivalence). Each draw consumes the next uniform u of one
+# sequential stream (like Python's random.choices / microgpt-rs's
+# rng.choices) and picks the first token whose cumulative weight reaches
+# u * total -- microgpt-rs's rule, so --rs-parity samples match it.
 
 def u:sample_token(logits, temperature, u) {
-  "Token id whose cumulative softmax(logits / temperature) first exceeds uniform u.";
+  "First token id whose cumulative softmax(logits / temperature) weight reaches u * total.";
   cdf = running_sum(softmax(logits / temperature, 0));
-  # count of cdf entries <= u; clamp in case rounding leaves cdf[-1] < u
-  k = reduce_add(le(cdf, u));
+  # count of cdf entries below u * total; clamp in case rounding overshoots
+  k = reduce_add(lt(cdf, u * at(cdf, len(cdf) - 1)));
   k - relu(k - (len(cdf) - 1))
 }
 
-def u:generate(uniforms, temperature) {
-  "Token ids (BOS excluded) of one sample; uniforms[pos] drives position pos.";
+def u:generate(uniforms, start, temperature) {
+  "Token ids (BOS excluded) of one sample, drawing uniforms[start], uniforms[start + 1], ...; it consumes u:consumed(ids) of them.";
   seq = [BOS];
   pos = 0;
   done = 0;
   while lt(pos, block_size) * (1 - done) {
     n = pos + 1;
     logits = last_row(u:gpt(seq, range(n), u:causal_mask(n)));
-    tok = u:sample_token(logits, temperature, at(uniforms, pos));
+    tok = u:sample_token(logits, temperature, at(uniforms, start + pos));
     if eq(tok, BOS) { done = 1 } else { seq = concat(seq, [tok]) };
     pos = pos + 1
   };
   u:gather1(seq, range(len(seq) - 1) + 1)
+}
+
+def u:consumed(ids) {
+  "Uniforms a sample used: one per token plus the closing BOS draw, unless it ran to block_size.";
+  len(ids) + 1 - eq(len(ids), block_size)
 }
 
 def u:ids_to_text(ids) {

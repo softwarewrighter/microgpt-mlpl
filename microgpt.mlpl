@@ -7,12 +7,18 @@
 
 include "lib/data.mlpl";
 include "lib/format.mlpl";
+include "lib/splitmix64/splitmix64.mlpl";
+
+# RNG mode. Default: MLPL's own seeded generators. With `-- --rs-parity`,
+# every random number comes from microgpt-rs's SplitMix64 stream (seed 42:
+# doc shuffle, then weights, then sampling), so the output can be diffed
+# line for line against microgpt-rs (scripts/parity.sh).
+rs_parity = if len(args()) { str_eq(unwrap(list_get(args(), 0)), "--rs-parity") } else { 0 };
 
 # Let there be a Dataset `docs`: one name per line of input.txt.
 # Python shuffles the list in place; here the docs stay in file order and
-# `order` is the shuffled visiting order (a permutation of doc indices).
+# the training loop visits them in a shuffled order (built below).
 d = unwrap(u:dataset(load("input.txt")));
-order = shuffle(range(d.n_docs), 42);
 print("num docs:", to_string(d.n_docs));
 
 # Let there be a Tokenizer: the unique characters become token ids
@@ -23,6 +29,22 @@ vocab_size = d.vocab_size;
 # Initialize the parameters, to store the knowledge of the model:
 # hyperparameters and one param[...] leaf per state_dict matrix.
 include "lib/params.mlpl";
+if rs_parity {
+  # microgpt-rs draws 4192 gauss(0, 0.08) values right after its n - 1
+  # shuffle draws, filling wte, wpe, lm_head, then layer 0, row-major.
+  w = unwrap(u:sm64_gauss(42, d.n_docs, num_params, 0, init_std));
+  o = 0;
+  wte = reshape(u:gather1(w, o + range(size(wte))), shape(wte)); o = o + size(wte);
+  wpe = reshape(u:gather1(w, o + range(size(wpe))), shape(wpe)); o = o + size(wpe);
+  lm_head = reshape(u:gather1(w, o + range(size(lm_head))), shape(lm_head)); o = o + size(lm_head);
+  layer0_attn_wq = reshape(u:gather1(w, o + range(size(layer0_attn_wq))), shape(layer0_attn_wq)); o = o + size(layer0_attn_wq);
+  layer0_attn_wk = reshape(u:gather1(w, o + range(size(layer0_attn_wk))), shape(layer0_attn_wk)); o = o + size(layer0_attn_wk);
+  layer0_attn_wv = reshape(u:gather1(w, o + range(size(layer0_attn_wv))), shape(layer0_attn_wv)); o = o + size(layer0_attn_wv);
+  layer0_attn_wo = reshape(u:gather1(w, o + range(size(layer0_attn_wo))), shape(layer0_attn_wo)); o = o + size(layer0_attn_wo);
+  layer0_mlp_fc1 = reshape(u:gather1(w, o + range(size(layer0_mlp_fc1))), shape(layer0_mlp_fc1)); o = o + size(layer0_mlp_fc1);
+  layer0_mlp_fc2 = reshape(u:gather1(w, o + range(size(layer0_mlp_fc2))), shape(layer0_mlp_fc2));
+  expunge(["w", "o"])
+} else { 0 };
 print("num params:", to_string(num_params));
 
 # Define the model architecture: a function mapping tokens and parameters
@@ -42,7 +64,13 @@ eps_adam = 0.00000001;
 # vectorized pass: rows of [BOS] + ids + [BOS], and n = min(block_size,
 # len(tokens) - 1) positions per doc (see docs/benchmarks.md for why).
 num_steps = 1000;
-train_docs = u:doc_batch(d, u:gather1(order, mod(range(num_steps), d.n_docs)), block_size);
+train_ids = if rs_parity {
+  # microgpt-rs's Fisher-Yates over all docs, first num_steps positions
+  u:sm64_shuffle_head(42, 1, d.n_docs, num_steps)
+} else {
+  u:gather1(shuffle(range(d.n_docs), 42), mod(range(num_steps), d.n_docs))
+};
+train_docs = u:doc_batch(d, train_ids, block_size);
 train_tokens = train_docs.tokens;
 train_n = train_docs.n;
 # Keep what inference needs, then drop the big arrays: in this
@@ -50,7 +78,8 @@ train_n = train_docs.n;
 # corpus left in scope costs ~0.05 ms per call (docs/benchmarks.md).
 uchars = d.uchars;
 BOS = d.bos;
-expunge(["d", "order", "train_docs", "txt"]);
+n_docs = d.n_docs;
+expunge(["d", "train_ids", "train_docs", "txt"]);
 
 train num_steps {
   row = take(train_tokens, 0, step);
@@ -67,19 +96,27 @@ train num_steps {
 }
 
 # Inference: may the model babble back to us. temperature in (0, 1]
-# controls the "creativity" of generated text, low to high. One seeded
-# uniform stream drives every draw (row = sample, column = position).
+# controls the "creativity" of generated text, low to high. One uniform
+# stream drives every draw, consumed in order across samples; in parity
+# mode it continues microgpt-rs's stream after the weight draws.
 include "lib/sample.mlpl";
 temperature = 0.5;
 num_samples = 20;
-sample_uniforms = random(4242, [num_samples, block_size]);
+sample_uniforms = if rs_parity {
+  u:sm64_uniform(42, n_docs + 2 * num_params + range(num_samples * block_size))
+} else {
+  random(4242, [num_samples * block_size])
+};
+cursor = 0;
 print("");
 print("--- inference (new, hallucinated names) ---");
 # (A while loop: repeat/train/for bodies reject string-valued statements
 # in mlpl-repl 0.22.0 -- docs/upstream-issues.md (j).)
 sample_idx = 0;
 while lt(sample_idx, num_samples) {
-  name = u:ids_to_text(u:generate(take(sample_uniforms, 0, sample_idx), temperature));
+  ids = u:generate(sample_uniforms, cursor, temperature);
+  cursor = cursor + u:consumed(ids);
+  name = u:ids_to_text(ids);
   print(str_concat(str_concat(str_concat("sample ", u:fmt_int(sample_idx + 1, 2)), ": "), name));
   sample_idx = sample_idx + 1
 }

@@ -1,6 +1,6 @@
 number = 9
 slug = "parity-vs-rust"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 8. tools/rs-init-dump: small standalone Rust bin that copie..."
 role = "production"
 context_files = []
