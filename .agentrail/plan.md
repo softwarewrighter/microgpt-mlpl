@@ -68,19 +68,17 @@ sample  1: ...
 3. **Linear layer orientation.** Python `linear(x, w)` computes `w @ x`
    with `w : [nout, nin]`. Keep the Python shapes for params (so the
    parity dump is a straight copy) and compute `matmul(X, transpose(W))`.
-4. **Causal mask via `lt()`.** Inside `grad`, the builtin `lt(c, r + 1)`
-   is accepted as a constant mask, but the infix `<` is rejected (sw-mlpl
-   is aligning the two). Build the `[n, n]` mask inside the loss with
-   `lt()`/`gt()` spellings, or precompute it globally -- either is fine.
-5. **Loss is `u:loss(toks, tgt)`.** In mlpl-repl 0.22.0 a `u:`
-   function argument used as `cross_entropy` targets fails inside `grad`
-   with `undefined variable: y` (targets are looked up in globals only;
-   the same bug hits `rotate`'s shift, `pow`'s exponent and
-   `transpose_axes`' axes). sw-mlpl has confirmed it and is fixing all
-   four sites with one shared helper. Target the fixed interpreter; if
-   the fix has not landed when step 4 starts, temporarily bind
-   `toks`/`tgt` as globals with a no-arg `u:loss()` and remove that
-   workaround once it lands.
+4. **Causal mask.** Inside `grad`, sw-mlpl 0.22.0 first accepted only
+   the builtin comparisons (`lt()`/`gt()`) as constant masks and
+   rejected infix `<`; fixed upstream (67c2ca86), so since step 8
+   `u:causal_mask` uses infix `>`. The mask is built eagerly by the
+   caller and passed in (building it inside the traced loss costs
+   ~70 us/step on the tape).
+5. **Loss is `u:loss(inp, tgt, mask)`.** Steps 4-7 had to use globals
+   and a no-arg `u:loss()` because a `u:` argument used as
+   `cross_entropy` targets was "undefined" inside `grad` (upstream issue
+   a). sw-mlpl fixed it (67c2ca86); step 8 removed the workaround with
+   byte-identical output.
 6. **Adam.** microgpt uses `lr=0.01, beta1=0.85, beta2=0.99, eps=1e-8`,
    bias-corrected, with linear decay `lr * (1 - step/num_steps)`.
    MLPL's `adam(loss, [params...], lr, b1, b2, eps)` keeps per-param

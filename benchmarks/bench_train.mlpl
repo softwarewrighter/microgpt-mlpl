@@ -11,14 +11,16 @@ train_docs = u:doc_batch(d, u:gather1(order, range(1000)), block_size);
 train_tokens = train_docs.tokens;
 train_n = train_docs.n;
 expunge(["d", "order", "train_docs"]);  # as microgpt.mlpl does before training
-u:set_doc(take(train_tokens, 0, 0), at(train_n, 0));
+inp = u:doc_in(take(train_tokens, 0, 0), at(train_n, 0));
+tgt = u:doc_tgt(take(train_tokens, 0, 0), at(train_n, 0));
+mask = u:causal_mask(at(train_n, 0));
 
 def u:b_row() { "Read one step's token row + n."; take(train_tokens, 0, 5); at(train_n, 5) }
-def u:b_set_doc() { "u:set_doc for one step."; u:set_doc(take(train_tokens, 0, 5), at(train_n, 5)) }
+def u:b_select() { "Select one step's doc: row read + inp/tgt slices."; r = take(train_tokens, 0, 5); m = at(train_n, 5); u:doc_in(r, m); u:doc_tgt(r, m) }
 def u:b_mask() { "u:causal_mask(7)."; u:causal_mask(7) }
 def u:b_adam() {
   "adam over all 9 params (lr 0).";
-  adam(u:loss(), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], 0, 0.85, 0.99, 0.00000001)
+  adam(u:loss(inp, tgt, mask), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], 0, 0.85, 0.99, 0.00000001)
 }
 def u:b_progress() {
   "Format + write the progress line.";
@@ -26,15 +28,19 @@ def u:b_progress() {
   str_len(s)
 }
 def u:b_step() {
-  "A whole step, as in the train body.";
-  u:set_doc(take(train_tokens, 0, 5), at(train_n, 5));
-  l = adam(u:loss(), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], 0, 0.85, 0.99, 0.00000001);
+  "A whole step, as in microgpt.mlpl's train body.";
+  r = take(train_tokens, 0, 5);
+  m = at(train_n, 5);
+  i = u:doc_in(r, m);
+  t = u:doc_tgt(r, m);
+  k = u:causal_mask(m);
+  l = adam(u:loss(i, t, k), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], 0, 0.85, 0.99, 0.00000001);
   s = str_concat(str_concat(str_concat(str_concat(str_concat("step ", u:fmt_int(6, 4)), " / "), u:fmt_int(1000, 4)), " | loss "), str_concat(u:fmt_fixed4(l), "\r"));
   l
 }
 u:bench("row read", :u:b_row, 5, 50, 5);
 u:bench("causal mask", :u:b_mask, 5, 50, 5);
-u:bench("set_doc", :u:b_set_doc, 5, 50, 5);
+u:bench("select doc", :u:b_select, 5, 50, 5);
 u:bench("adam step", :u:b_adam, 5, 50, 5);
 u:bench("progress line format", :u:b_progress, 5, 50, 5);
 u:bench("whole step", :u:b_step, 5, 50, 5);

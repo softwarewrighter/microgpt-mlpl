@@ -1,6 +1,6 @@
 number = 8
 slug = "remove-loss-workaround"
-status = "pending"
+status = "in-progress"
 description = "sw-mlpl 67c2ca86 fixed upstream issues (a) u:-argument targets inside grad an..."
 role = "production"
 context_files = []

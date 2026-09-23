@@ -11,8 +11,8 @@ upstream, queued), **fixed** (landed; workaround removed), **by design**,
 
 | id | area | summary | status | local workaround |
 |---|---|---|---|---|
-| a | grad | `u:` argument used as `cross_entropy` targets is "undefined" | fixed upstream (67c2ca86) | globals + no-arg `u:loss()`, removal queued (step 8) |
-| b | grad | infix `<` rejected inside `grad`; `lt()` works | fixed upstream (67c2ca86) | use `gt()`/`lt()` |
+| a | grad | `u:` argument used as `cross_entropy` targets is "undefined" | fixed (sw-mlpl 67c2ca86) | removed in step 8: `u:loss(inp, tgt, mask)` |
+| b | grad | infix `<` rejected inside `grad`; `lt()` works | fixed (sw-mlpl 67c2ca86) | `u:causal_mask` uses infix `>` |
 | c | docs | "tape-lowered for heads=1" is stale | fixing | none needed |
 | d | kv-cache | `gen_state` works only on Model DSL chains | by design | recompute prefix |
 | e | perf | reading a large array copies it; every `u:` call copies all globals | open | `u:doc_batch` + `expunge` big globals |
@@ -38,11 +38,12 @@ traced scope. The same mistake is in `rotate`'s shift, `pow`'s exponent,
 and `transpose_axes`' axes; all four are being fixed with one shared
 helper (sw-mlpl saga step `003-traced-scope-args`).
 
-Workaround here (`lib/model.mlpl`): `u:set_doc(tokens, n)` stores the
-current doc in `cur_in` / `cur_tgt` / `cur_pos` / `cur_mask` via
-`global_set`, and `u:loss()` takes no arguments. When the fix lands:
-make it `u:loss(inp, tgt)` (and `u:gpt` already takes arguments), drop
-the globals, update the tests, mark this **fixed**.
+**Fixed** by sw-mlpl 67c2ca86 ("function-parameter targets/args +
+comparison masks"). The workaround (`u:set_doc` storing `cur_in` /
+`cur_tgt` / `cur_pos` / `cur_mask` via `global_set`, and a no-arg
+`u:loss()`) was removed in step 8: the loss is now
+`u:loss(inp, tgt, mask)`. Output is byte-identical (losses and trained
+weights equal at full precision).
 
 ## b. Infix `<` rejected inside `grad`
 
@@ -50,7 +51,8 @@ the globals, update the tests, mark this **fixed**.
 differentiable", while `lt(a, b)` is accepted as a constant 0/1 mask
 (it is a mask, not a claim that comparisons have a gradient). sw-mlpl is
 aligning the two spellings (or at least suggesting `lt()` in the error).
-Here: `u:causal_mask` uses `gt()`.
+**Fixed** by sw-mlpl 67c2ca86: infix comparisons now work inside `grad`
+as masks; `u:causal_mask` uses infix `>` since step 8.
 
 ## c. Stale doc line on multi-head attention
 

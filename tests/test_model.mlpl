@@ -11,13 +11,15 @@ emma = u:doc_batch(d, [0], block_size);
 @test {name: "untrained loss is near uniform, ln(27)", tags: ["model"]}
 def u:test_untrained_loss() {
   "emma within 0.5 (microgpt-rs's bound); mean over 100 docs within 0.1.";
-  u:set_doc(take(emma.tokens, 0, 0), at(emma.n, 0));
-  u:assert_approx(u:loss(), log(27), 0.5, "emma")?;
+  row = take(emma.tokens, 0, 0);
+  n = at(emma.n, 0);
+  u:assert_approx(u:loss(u:doc_in(row, n), u:doc_tgt(row, n), u:causal_mask(n)), log(27), 0.5, "emma")?;
   total = 0;
   i = 0;
   repeat 100 {
-    u:set_doc(take(batch.tokens, 0, i), at(batch.n, i));
-    total = total + u:loss();
+    row = take(batch.tokens, 0, i);
+    n = at(batch.n, i);
+    total = total + u:loss(u:doc_in(row, n), u:doc_tgt(row, n), u:causal_mask(n));
     i = i + 1
   };
   u:assert_approx(total / 100, log(27), 0.1, "mean over 100 docs")
@@ -26,15 +28,17 @@ def u:test_untrained_loss() {
 @test {name: "softmax rows sum to 1", tags: ["model"]}
 def u:test_softmax_rows() {
   "Next-token distributions and attention weights are normalized (1e-9).";
-  n = u:set_doc(take(emma.tokens, 0, 0), at(emma.n, 0));
-  probs = softmax(u:gpt(cur_in, cur_pos, cur_mask), 1);
+  n = at(emma.n, 0);
+  inp = u:doc_in(take(emma.tokens, 0, 0), n);
+  mask = u:causal_mask(n);
+  probs = softmax(u:gpt(inp, range(n), mask), 1);
   u:assert_approx(reduce_add(probs, 1), zeros(n) + 1, 0.000000001, "output probs")?;
-  x = u:rmsnorm(u:rmsnorm(gather_rows(wte, cur_in) + gather_rows(wpe, cur_pos)));
+  x = u:rmsnorm(u:rmsnorm(gather_rows(wte, inp) + gather_rows(wpe, range(n))));
   qh = matmul(u:linear(x, layer0_attn_wq), head_sel2);
   kh = matmul(u:linear(x, layer0_attn_wk), head_sel2);
-  w = softmax(matmul(qh, transpose(kh)) * attn_scale + cur_mask, 1);
+  w = softmax(matmul(qh, transpose(kh)) * attn_scale + mask, 1);
   u:assert_approx(reduce_add(w, 1), zeros(n) + 1, 0.000000001, "attention rows")?;
-  u:assert_approx(reduce_add(w * lt(cur_mask, 0 - 1)), 0, 0.000000001, "no weight on future keys")
+  u:assert_approx(reduce_add(w * lt(mask, 0 - 1)), 0, 0.000000001, "no weight on future keys")
 }
 
 @test {name: "whole-doc masked forward equals the token-by-token KV-cache loop", tags: ["model"]}

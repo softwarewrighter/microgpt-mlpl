@@ -13,8 +13,8 @@ expunge(["d", "batch"]);
 def u:test_learns() {
   "Mean loss over steps 151-200 is below steps 1-50 by more than the ~0.07 noise of a 50-doc mean (observed 2.81 -> 2.55).";
   train 200 {
-    u:set_doc(take(tokens, 0, step), at(ns, step));
-    adam(u:loss(), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], 0.01 * (1 - step / 1000), 0.85, 0.99, 0.00000001)
+    row = take(tokens, 0, step);
+    adam(u:loss(u:doc_in(row, at(ns, step)), u:doc_tgt(row, at(ns, step)), u:causal_mask(at(ns, step))), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], 0.01 * (1 - step / 1000), 0.85, 0.99, 0.00000001)
   };
   first = reduce_add(last_losses * lt(range(200), 50)) / 50;
   last = reduce_add(last_losses * ge(range(200), 150)) / 50;

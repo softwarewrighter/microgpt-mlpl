@@ -22,6 +22,7 @@ Host: Apple Silicon (Darwin arm64), mlpl-repl 0.22.0 (ab858695).
 | 5 | unchanged (gradcheck is test-only) | 0.061 s | gradcheck suite: 0.26 s |
 | 6 | + 1000 training steps | 0.79-0.87 s | 2.09 s before expunging big globals (load ~50) |
 | 7 | + 20 samples (complete program) | 0.72-0.74 s | load ~3; microgpt-rs 0.58-0.60 s |
+| 8 | globals workaround removed | 0.70-0.72 s direct, ~0.745 s via run.sh | same as step 7 within noise |
 
 Step 3 per-operation timings:
 
@@ -106,6 +107,21 @@ alternating:
 | `microgpt.py`, CPython 3.14.6 | 60.6 s (1 run) |
 | microgpt-rs, release | 0.58-0.60 s |
 | **microgpt.mlpl**, mlpl-repl 0.22.0 | **0.72-0.74 s** (1.24x Rust) |
+
+Step 8: loss takes arguments (`u:loss(inp, tgt, mask)`). 12 alternating
+runs each, `mlpl-repl` invoked directly (load ~5):
+
+| version | median | min |
+|---|---|---|
+| step 7 (globals + `u:set_doc`) | 0.704 s | 0.699 s |
+| step 8 (`u:loss(inp, tgt, mask)`) | 0.721 s | 0.704 s |
+| step 8 via `scripts/run.sh` | 0.745 s | 0.739 s |
+
+Per step (`bench_train.mlpl`): select doc 0.063 ms (was `u:set_doc`
+0.073 ms), adam 0.59 ms (was 0.63 ms), whole step 0.69 ms (was 0.74 ms).
+Two lessons: `scripts/run.sh` adds ~25 ms of shell startup, so compare
+like with like; and building the causal mask INSIDE the traced loss
+costs ~70 us/step (adam 0.57 vs 0.49 ms), so the mask is an argument.
 
 ## Performance notes for this interpreter
 

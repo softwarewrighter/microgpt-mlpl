@@ -21,7 +21,7 @@ attn_scale = 1 / sqrt(head_dim);
 
 def u:causal_mask(n) {
   "[n, n] additive mask: 0 where key <= query, -1e9 above the diagonal.";
-  gt(reshape(range(n), [1, n]), reshape(range(n), [n, 1])) * (0 - 1000000000)
+  (reshape(range(n), [1, n]) > reshape(range(n), [n, 1])) * (0 - 1000000000)
 }
 
 def u:linear(x, w) {
@@ -63,22 +63,23 @@ def u:gpt(toks, pos, mask) {
   u:linear(x, lm_head)
 }
 
-# The loss for the current doc, microgpt.py's mean of -log p(target).
-# WORKAROUND (docs/upstream-issues.md): in mlpl-repl 0.22.0 a u: argument
-# used as cross_entropy targets inside grad is "undefined", so the current
-# doc lives in globals set by u:set_doc and u:loss takes no arguments.
-# Once sw-mlpl's traced-scope-args fix lands this becomes u:loss(inp, tgt).
+# The loss for one doc: microgpt.py's mean of -log p(target) over its n
+# positions. inp = tokens[0..n), tgt = tokens[1..n] of a doc row, and
+# mask = u:causal_mask(n). The mask is an argument, built eagerly by the
+# caller: building it inside the traced loss puts its ops on the tape
+# every step (~70 us/step, ~7% of training; docs/benchmarks.md).
 
-def u:set_doc(tokens, n) {
-  "Make a token row ([BOS] + ids + [BOS] ...) with n positions the current doc.";
-  global_set("cur_in", u:gather1(tokens, range(n)));
-  global_set("cur_tgt", u:gather1(tokens, range(n) + 1));
-  global_set("cur_pos", range(n));
-  global_set("cur_mask", u:causal_mask(n));
-  n
+def u:doc_in(tokens, n) {
+  "Input ids of a doc row: tokens[0..n).";
+  u:gather1(tokens, range(n))
 }
 
-def u:loss() {
-  "Mean cross-entropy of the current doc's next-token predictions.";
-  cross_entropy(u:gpt(cur_in, cur_pos, cur_mask), cur_tgt)
+def u:doc_tgt(tokens, n) {
+  "Target ids of a doc row: tokens[1..n] (the next token at each position).";
+  u:gather1(tokens, range(n) + 1)
+}
+
+def u:loss(inp, tgt, mask) {
+  "Mean cross-entropy of next-token predictions for one doc.";
+  cross_entropy(u:gpt(inp, range(len(inp)), mask), tgt)
 }

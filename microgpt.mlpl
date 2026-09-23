@@ -53,11 +53,15 @@ BOS = d.bos;
 expunge(["d", "order", "train_docs", "txt"]);
 
 train num_steps {
-  u:set_doc(take(train_tokens, 0, step), at(train_n, step));
+  row = take(train_tokens, 0, step);
+  n = at(train_n, step);
+  inp = u:doc_in(row, n);
+  tgt = u:doc_tgt(row, n);
+  mask = u:causal_mask(n);
   # Forward the doc, backward the loss, and update every parameter.
   # adam returns the loss before the update (Python's loss.data).
   lr_t = learning_rate * (1 - step / num_steps);
-  loss = adam(u:loss(), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], lr_t, beta1, beta2, eps_adam);
+  loss = adam(u:loss(inp, tgt, mask), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], lr_t, beta1, beta2, eps_adam);
   u:write(str_concat(str_concat(str_concat(str_concat(str_concat("step ", u:fmt_int(step + 1, 4)), " / "), u:fmt_int(num_steps, 4)), " | loss "), str_concat(u:fmt_fixed4(loss), "\r")));
   loss
 }

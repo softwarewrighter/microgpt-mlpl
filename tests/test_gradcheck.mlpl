@@ -1,4 +1,4 @@
-# Gradient check: grad(u:loss(), W) vs central finite differences for
+# Gradient check: grad(u:loss(doc_inp, doc_tgt, doc_mask), W) vs central finite differences for
 # every state_dict matrix. The analytic gradients are all taken first;
 # the finite differences then perturb one global at a time via
 # global_set and restore it. f64 throughout, h = 1e-5.
@@ -9,17 +9,20 @@ include "lib/params.mlpl";
 include "lib/model.mlpl";
 
 batch = u:doc_batch(d, u:gather1(shuffle(range(d.n_docs), 42), range(1)), block_size);
-doc_n = u:set_doc(take(batch.tokens, 0, 0), at(batch.n, 0));
+doc_n = at(batch.n, 0);
+doc_inp = u:doc_in(take(batch.tokens, 0, 0), doc_n);
+doc_tgt = u:doc_tgt(take(batch.tokens, 0, 0), doc_n);
+doc_mask = u:causal_mask(doc_n);
 
-g_wte = grad(u:loss(), wte);
-g_wpe = grad(u:loss(), wpe);
-g_lm_head = grad(u:loss(), lm_head);
-g_wq = grad(u:loss(), layer0_attn_wq);
-g_wk = grad(u:loss(), layer0_attn_wk);
-g_wv = grad(u:loss(), layer0_attn_wv);
-g_wo = grad(u:loss(), layer0_attn_wo);
-g_fc1 = grad(u:loss(), layer0_mlp_fc1);
-g_fc2 = grad(u:loss(), layer0_mlp_fc2);
+g_wte = grad(u:loss(doc_inp, doc_tgt, doc_mask), wte);
+g_wpe = grad(u:loss(doc_inp, doc_tgt, doc_mask), wpe);
+g_lm_head = grad(u:loss(doc_inp, doc_tgt, doc_mask), lm_head);
+g_wq = grad(u:loss(doc_inp, doc_tgt, doc_mask), layer0_attn_wq);
+g_wk = grad(u:loss(doc_inp, doc_tgt, doc_mask), layer0_attn_wk);
+g_wv = grad(u:loss(doc_inp, doc_tgt, doc_mask), layer0_attn_wv);
+g_wo = grad(u:loss(doc_inp, doc_tgt, doc_mask), layer0_attn_wo);
+g_fc1 = grad(u:loss(doc_inp, doc_tgt, doc_mask), layer0_mlp_fc1);
+g_fc2 = grad(u:loss(doc_inp, doc_tgt, doc_mask), layer0_mlp_fc2);
 
 h = 0.00001;
 
@@ -29,11 +32,11 @@ def u:unit(shp, i, j) {
 }
 
 def u:fd_dir(name, w, dir) {
-  "Central difference of u:loss() along dir, perturbing global `name` (value w), then restoring it.";
+  "Central difference of u:loss(doc_inp, doc_tgt, doc_mask) along dir, perturbing global `name` (value w), then restoring it.";
   global_set(name, w + dir * h);
-  lp = u:loss();
+  lp = u:loss(doc_inp, doc_tgt, doc_mask);
   global_set(name, w - dir * h);
-  lm = u:loss();
+  lm = u:loss(doc_inp, doc_tgt, doc_mask);
   global_set(name, w);
   (lp - lm) / (2 * h)
 }
@@ -70,7 +73,7 @@ def u:test_nontrivial() {
 @test {name: "embeddings: wte (incl. an unused row) and wpe (incl. a position past n)", tags: ["gradcheck"]}
 def u:test_embeddings() {
   "wte row 26 is BOS, row of the first char is used; wpe rows >= n get zero gradient.";
-  first = at(cur_in, 1);
+  first = at(doc_inp, 1);
   u:check("wte", wte, g_wte, 26, 3, first, 11, 1, 0, 901)?;
   u:check("wpe", wpe, g_wpe, 0, 5, doc_n - 1, 14, doc_n + 2, 7, 902)
 }

@@ -58,7 +58,7 @@ Work is tracked as an agentrail saga in `.agentrail/` (`agentrail status`):
 | 5 | gradcheck | done |
 | 6 | training-loop | done |
 | 7 | inference | done |
-| 8 | remove-loss-workaround | pending |
+| 8 | remove-loss-workaround | done |
 | 9 | parity-vs-rust | pending |
 | 10 | docs-and-results | pending |
 
