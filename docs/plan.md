@@ -136,6 +136,7 @@ scripts/parity.sh       byte-compare --rs-parity output with microgpt-rs
 docs/plan.md            this file
 docs/benchmarks.md      speed log per step (scripts/bench.sh, benchmarks/)
 docs/python-vs-mlpl.md  side-by-side walkthrough
+docs/microgpt.org       literate program (ob-mlpl); tangles to the same output
 docs/upstream-issues.md sw-mlpl bugs/gaps found while porting
 ```
 

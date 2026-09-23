@@ -1,0 +1,1294 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-09-22 Tue 23:16 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>microgpt in MLPL</title>
+<meta name="author" content="Mike Wright" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">microgpt in MLPL
+<br />
+<span class="subtitle">A literate walk through the sw-MLPL port of Karpathy's <code>microgpt.py</code>, compared with the Python original and the Rust port</span>
+</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org94b758f">1. Introduction</a>
+<ul>
+<li><a href="#org7121636">1.1. The map at a glance</a></li>
+<li><a href="#org81ecdd9">1.2. Running this document</a></li>
+</ul>
+</li>
+<li><a href="#org5324155">2. Small helpers</a></li>
+<li><a href="#org83e3901">3. 1. Dataset</a></li>
+<li><a href="#org89a5cea">4. 2. Tokenizer</a></li>
+<li><a href="#orgd58c773">5. 3. Autograd: nothing to write</a></li>
+<li><a href="#org68cf6fb">6. 4. Parameters</a></li>
+<li><a href="#org30005f5">7. 5. Model</a>
+<ul>
+<li><a href="#org5d02832">7.1. linear and rmsnorm</a></li>
+<li><a href="#orgd718b2a">7.2. Attention: the KV cache becomes a causal mask</a></li>
+<li><a href="#orgf3e7c9b">7.3. The whole forward pass</a></li>
+<li><a href="#org2ccfd35">7.4. The loss</a></li>
+</ul>
+</li>
+<li><a href="#org5ef7116">8. 6. Adam: built in</a></li>
+<li><a href="#org527a129">9. 7. Training</a></li>
+<li><a href="#orgaa0278d">10. 8. Inference</a></li>
+<li><a href="#org7e1933b">11. 9. Three implementations, side by side</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org94b758f" class="outline-2">
+<h2 id="org94b758f"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+Andrej Karpathy's <a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">microgpt.py</a> trains a GPT and samples from it in ~200 lines of
+dependency-free Python. Its docstring sets the rule:
+</p>
+
+<blockquote>
+<p>
+This file is the complete algorithm. Everything else is just efficiency.
+</p>
+</blockquote>
+
+<p>
+Two ports follow that rule in different directions:
+</p>
+
+<ul class="org-ul">
+<li><b>microgpt-rs</b> (<a href="../../microgpt-rs/docs/python-to-rust.html">python-to-rust.org</a>) keeps the algorithm's <i>shape</i>: a scalar
+autograd engine, now a flat tape of nodes, and the same per-scalar loops,
+compiled.</li>
+<li><b>microgpt.mlpl</b> (this repo) changes the shape. sw-MLPL is an array
+language with reverse-mode autograd, <code>adam</code>, <code>cross_entropy</code> and
+<code>softmax</code> built in. The <code>Value</code> class disappears, every per-element loop
+becomes a whole-array expression, and the per-token KV-cache loop becomes
+one masked pass over a whole name.</li>
+</ul>
+
+<p>
+This document is the MLPL program itself, told section by section. Every
+MLPL block below runs in one shared <code>:session</code>, so state carries from block
+to block like lines typed into the REPL, and the output under each block
+was produced by running it. The blocks that make up the program (the ones
+without <code>:tangle no</code>) also tangle, in order, into one standalone script;
+<code>scripts/check-literate.sh</code> runs that script and requires its output to be
+<b>byte-identical</b> to <code>microgpt.mlpl</code>'s. The prose therefore describes code
+that really is the implementation. The production program splits the same
+definitions into <code>lib/*.mlpl</code> so the test suites can include them.
+</p>
+</div>
+<div id="outline-container-org7121636" class="outline-3">
+<h3 id="org7121636"><span class="section-number-3">1.1.</span> The map at a glance</h3>
+<div class="outline-text-3" id="text-1-1">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">#</th>
+<th scope="col" class="org-left">Section</th>
+<th scope="col" class="org-left">Python</th>
+<th scope="col" class="org-left">Rust (microgpt-rs)</th>
+<th scope="col" class="org-left">MLPL (this document)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">Dataset</td>
+<td class="org-left"><code>list[str]</code> of names</td>
+<td class="org-left"><code>Vec&lt;&amp;str&gt;</code></td>
+<td class="org-left">one byte array + <code>(start, length)</code> spans</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">Tokenizer</td>
+<td class="org-left"><code>sorted(set(...))</code>, <code>uchars.index(ch)</code></td>
+<td class="org-left"><code>BTreeSet</code>, <code>HashMap&lt;char, usize&gt;</code></td>
+<td class="org-left">sort + run-start mask, 256-entry lookup table</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left">Autograd</td>
+<td class="org-left"><code>class Value</code> (object graph + DFS)</td>
+<td class="org-left"><code>Tape</code> arena, reverse sweep</td>
+<td class="org-left"><b>built in</b>: <code>param[...]</code>, <code>grad</code>, <code>adam</code></td>
+</tr>
+
+<tr>
+<td class="org-right">4</td>
+<td class="org-left">Parameters</td>
+<td class="org-left"><code>state_dict</code> of <code>Value</code> lists</td>
+<td class="org-left"><code>StateDict</code> structs</td>
+<td class="org-left">nine <code>param[...]</code> matrices, same names and shapes</td>
+</tr>
+
+<tr>
+<td class="org-right">5</td>
+<td class="org-left">Model</td>
+<td class="org-left"><code>linear=/=rmsnorm=/=gpt</code> over scalars</td>
+<td class="org-left">same functions over <code>&amp;[Value]</code></td>
+<td class="org-left"><code>matmul</code> over <code>[n, 16]</code> arrays, causal mask</td>
+</tr>
+
+<tr>
+<td class="org-right">6</td>
+<td class="org-left">Adam</td>
+<td class="org-left"><code>m</code>, <code>v</code> float lists</td>
+<td class="org-left"><code>Vec&lt;f64&gt;</code> buffers</td>
+<td class="org-left"><b>built in</b>: <code>adam(loss, [params], ...)</code></td>
+</tr>
+
+<tr>
+<td class="org-right">7</td>
+<td class="org-left">Training</td>
+<td class="org-left"><code>for step</code> loop, <code>loss.backward()</code></td>
+<td class="org-left"><code>for step</code>, <code>tape.backward</code></td>
+<td class="org-left"><code>train N { ... }</code> around <code>adam</code></td>
+</tr>
+
+<tr>
+<td class="org-right">8</td>
+<td class="org-left">Inference</td>
+<td class="org-left"><code>random.choices</code> per token</td>
+<td class="org-left"><code>rng.choices</code> per token</td>
+<td class="org-left">inverse CDF over one uniform stream</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-org81ecdd9" class="outline-3">
+<h3 id="org81ecdd9"><span class="section-number-3">1.2.</span> Running this document</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+The session needs the repo root as MLPL's data directory, so that
+<code>load("input.txt")</code> works. The file-local variable at the end of this file
+sets <code>org-babel-mlpl-command</code> to <code>mlpl-repl --data-dir ..</code>, relative to
+<code>docs/</code>. Evaluate the buffer with <code>C-c C-v b</code>, or publish it in batch:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sh">scripts/publish-literate.sh     # evaluate every block, bake results, export docs/microgpt.html
+scripts/check-literate.sh       # tangle the program blocks; output must equal microgpt.mlpl's
+</pre>
+</div>
+
+<p>
+A block's last value is echoed by the session, like the REPL. Blocks that
+end in <code>print</code> use a small filter (<code>:post strip-echo</code>) to drop that
+repeated last line.
+</p>
+</div>
+</div>
+</div>
+<div id="outline-container-org5324155" class="outline-2">
+<h2 id="org5324155"><span class="section-number-2">2.</span> Small helpers</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Two kinds of helper that Python gets for free: indexing a vector by a
+vector of positions, and <code>f"{x:4d}"</code> / <code>f"{x:.4f}"</code> formatting. MLPL's
+<code>at</code> and <code>take</code> accept a single index only, so <code>u:gather1</code> reshapes to a
+one-column table and uses the row gather <code>gather_rows</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u:gather1(v, idx) {
+  "Elements of rank-1 v at the (rank-1) integer positions idx.";
+  reshape(gather_rows(reshape(v, [len(v), 1]), idx), [len(idx)])
+}
+
+def u:pad_left(s, width) {
+  "Right-align string s in width columns, width &lt;= 16 (like Python's {:&gt;width}).";
+  str_concat(str_slice("                ", 0, relu(width - str_len(s))), s)
+}
+
+def u:fmt_int(x, width) {
+  "f'{x:widthd}' for a non-negative integer x.";
+  u:pad_left(to_string(round(x)), width)
+}
+
+def u:fmt_fixed4(x) {
+  "f'{x:.4f}' for x &gt;= 0 (round half up at the 4th decimal).";
+  scaled = floor(x * 10000 + 0.5);
+  whole = floor(scaled / 10000);
+  frac = to_string(scaled - whole * 10000);
+  str_concat(str_concat(to_string(whole), "."), str_concat(str_slice("0000", 0, 4 - str_len(frac)), frac))
+}
+
+def u:write(s) {
+  "Write s to stdout with no trailing newline (for Python's end='\\r').";
+  unwrap(write_stdout(tokenize_bytes(s)))
+}
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">[u:fmt_int(7, 4), u:fmt_fixed4(1.91456)]
+</pre>
+</div>
+
+<pre class="example">
+["   7", "1.9146"]
+</pre>
+</div>
+</div>
+<div id="outline-container-org83e3901" class="outline-2">
+<h2 id="org83e3901"><span class="section-number-2">3.</span> 1. Dataset</h2>
+<div class="outline-text-2" id="text-3">
+<div class="org-src-container">
+<pre class="src src-python">docs = [line.strip() for line in open('input.txt') if line.strip()]
+random.shuffle(docs)
+</pre>
+</div>
+
+<p>
+Python holds the 32,033 names as a list of strings; microgpt-rs as a
+<code>Vec&lt;&amp;str&gt;</code>. MLPL is happiest with one flat array, so the corpus stays a
+single byte array (<code>tokenize_bytes</code>). Each name is a span between two
+newlines: find the newline positions, add virtual ones at <code>-1</code> and <code>n</code>, and
+take differences. Blank lines give empty spans and are dropped, which is
+Python's <code>if line.strip()</code>. The names file has nothing to strip, so instead
+of implementing <code>strip()</code> the parser <b>rejects</b> any byte that would need it.
+</p>
+
+<p>
+The same function also finds the vocabulary, sorted unique characters, the
+array way: sort every byte (<code>grade_up</code>), keep the first byte of each run,
+drop the newline. The result is inverted into a 256-entry lookup table from
+byte to token id. The shuffle waits until training (section 7).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u:dataset(txt) {
+  "Parse input.txt: one doc per non-empty line, plus the char vocabulary.";
+  bytes = tokenize_bytes(txt);
+  n = len(bytes);
+  bad = reduce_add(lt(bytes, 33) * ne(bytes, 10)) + reduce_add(gt(bytes, 126));
+  if bad { err(str_concat("corpus has non-name bytes: ", to_string(bad))) } else {
+    nl = compress(eq(bytes, 10), range(n));
+    bounds = concat(concat([0 - 1], nl), [n]);
+    m = len(bounds) - 1;
+    starts_all = u:gather1(bounds, range(m)) + 1;
+    lens_all = u:gather1(bounds, range(m) + 1) - starts_all;
+    keep = gt(lens_all, 0);
+    sorted = u:gather1(bytes, grade_up(bytes));
+    first = concat([1], ne(u:gather1(sorted, range(n - 1) + 1), u:gather1(sorted, range(n - 1))));
+    uniq = compress(first, sorted);
+    uchars = compress(ne(uniq, 10), uniq);
+    vocab = len(uchars);
+    lut = zeros(256) - 1;
+    i = 0;
+    repeat vocab { lut = scatter(lut, at(uchars, i), i); i = i + 1 };
+    ok({
+      bytes: bytes,
+      starts: compress(keep, starts_all),
+      lens: compress(keep, lens_all),
+      n_docs: reduce_add(keep),
+      uchars: uchars,
+      lut: lut,
+      bos: vocab,
+      vocab_size: vocab + 1
+    })
+  }
+}
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">d = unwrap(u:dataset(load("input.txt")));
+print("num docs:", to_string(d.n_docs));
+</pre>
+</div>
+
+<pre class="example">
+num docs: 32033
+</pre>
+
+
+<p>
+The whole parse, vocabulary included, takes about 19 ms. An earlier
+version found the vocabulary with 256 passes of <code>eq</code> over the corpus and
+took 254 ms; see <a href="benchmarks.md">benchmarks.md</a>.
+</p>
+</div>
+</div>
+<div id="outline-container-org89a5cea" class="outline-2">
+<h2 id="org89a5cea"><span class="section-number-2">4.</span> 2. Tokenizer</h2>
+<div class="outline-text-2" id="text-4">
+<div class="org-src-container">
+<pre class="src src-python">uchars = sorted(set(''.join(docs)))
+BOS = len(uchars)
+tokens = [BOS] + [uchars.index(ch) for ch in doc] + [BOS]
+</pre>
+</div>
+
+<p>
+Python searches <code>uchars</code> once per character; microgpt-rs uses a <code>HashMap</code>.
+MLPL encodes a name with one gather through the lookup table. The same
+trick encodes <i>all</i> the names training will visit in one pass
+(<code>u:doc_batch</code>, used in section 7). That matters in this interpreter
+because reading a large array copies it, so per-name access to the corpus
+costs ~1.8 ms, against 1.8 ms for 1000 names at once.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u:encode_bytes(d, bs) {
+  "Token ids for a rank-1 byte array (every byte must be in the vocab).";
+  u:gather1(d.lut, bs)
+}
+
+def u:encode(d, s) {
+  "Token ids for a string (no BOS).";
+  u:encode_bytes(d, tokenize_bytes(s))
+}
+
+def u:decode(d, ids) {
+  "The string for a rank-1 array of non-BOS token ids.";
+  decode_bytes(u:gather1(d.uchars, ids))
+}
+
+def u:doc_bytes(d, i) {
+  "Raw bytes of doc i (file order).";
+  u:gather1(d.bytes, at(d.starts, i) + range(at(d.lens, i)))
+}
+
+def u:doc_tokens(d, i) {
+  "microgpt.py's tokens for doc i: [BOS] + ids + [BOS].";
+  concat(concat([d.bos], u:encode_bytes(d, u:doc_bytes(d, i))), [d.bos])
+}
+
+def u:doc_batch(d, doc_ids, block_size) {
+  "Token rows for many docs at once: {tokens: [m, block_size + 2] = [BOS] + ids + [BOS] padded with BOS, n: [m] positions to train}.";
+  m = len(doc_ids);
+  lens = u:gather1(d.lens, doc_ids);
+  pos = reshape(range(block_size), [1, block_size]);
+  valid = lt(pos, reshape(lens, [m, 1]));
+  idx = (reshape(u:gather1(d.starts, doc_ids), [m, 1]) + pos) * valid;
+  bytes = reshape(gather_rows(reshape(d.bytes, [len(d.bytes), 1]), idx), [m, block_size]);
+  ids = reshape(gather_rows(reshape(d.lut, [256, 1]), bytes), [m, block_size]);
+  body = valid * ids + (1 - valid) * d.bos;
+  bos = zeros([m, 1]) + d.bos;
+  {tokens: concat(bos, concat(body, bos, 1), 1), n: lens + 1 - relu(lens + 1 - block_size)}
+}
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">print("vocab size:", to_string(d.vocab_size));
+vocab_size = d.vocab_size;
+</pre>
+</div>
+
+<pre class="example">
+vocab size: 27
+</pre>
+
+
+<p>
+The first name in the file, <code>emma</code>, encodes exactly as in Python (<code>e</code> is
+4, <code>m</code> is 12, BOS is 26):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">print(decode_bytes(d.uchars));
+u:doc_tokens(d, 0)
+</pre>
+</div>
+
+<pre class="example">
+abcdefghijklmnopqrstuvwxyz
+26 4 12 12 0 26
+</pre>
+</div>
+</div>
+<div id="outline-container-orgd58c773" class="outline-2">
+<h2 id="orgd58c773"><span class="section-number-2">5.</span> 3. Autograd: nothing to write</h2>
+<div class="outline-text-2" id="text-5">
+<div class="org-src-container">
+<pre class="src src-python">class Value:
+    def __init__(self, data, children=(), local_grads=()): ...
+    def __add__(self, other): ...      # +, *, **, log, exp, relu, ...
+    def backward(self): ...            # topological sort, then the chain rule
+</pre>
+</div>
+
+<p>
+This is the largest difference between the three programs:
+</p>
+
+<ul class="org-ul">
+<li><b>Python</b>: ~40 lines. Each <code>Value</code> is a heap object pointing at its
+children; <code>backward()</code> sorts the graph topologically, then applies the
+chain rule. The garbage collector frees each step's graph.</li>
+<li><b>Rust</b>: ~170 lines. Nodes are appended to a flat <code>Vec</code> (the <i>tape</i>) in
+forward order, which is already a topological order, so backward is one
+reverse loop; <code>truncate(num_params)</code> frees a step's graph.</li>
+<li><b>MLPL</b>: 0 lines. <code>param[shape]</code> declares a trainable array leaf.
+<code>grad(expr, W)</code> records <code>expr</code> on the interpreter's tape, whole-array ops
+(<code>matmul</code>, <code>softmax</code>, <code>gather_rows</code>, <code>cross_entropy</code>) rather than
+scalars, and runs it backward. <code>u:</code> functions called inside are inlined
+onto the tape.</li>
+</ul>
+
+<p>
+A tiny example, d/dW of sum(W^2) = 2W:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">W_demo = param[2, 2];
+W_demo = [[1, 2], [3, 4]];
+grad(reduce_add(W_demo * W_demo), W_demo)
+</pre>
+</div>
+
+<pre class="example">
+2 4
+6 8
+</pre>
+
+
+<p>
+For the real model, <code>tests/test_gradcheck.mlpl</code> compares <code>grad</code> with
+central finite differences for all nine matrices; they agree to ~3e-11.
+</p>
+</div>
+</div>
+<div id="outline-container-org68cf6fb" class="outline-2">
+<h2 id="org68cf6fb"><span class="section-number-2">6.</span> 4. Parameters</h2>
+<div class="outline-text-2" id="text-6">
+<div class="org-src-container">
+<pre class="src src-python">matrix = lambda nout, nin, std=0.08: [[Value(random.gauss(0, std)) for _ in range(nin)] for _ in range(nout)]
+state_dict = {'wte': matrix(vocab_size, n_embd), 'wpe': matrix(block_size, n_embd), 'lm_head': matrix(vocab_size, n_embd)}
+for i in range(n_layer):
+    state_dict[f'layer{i}.attn_wq'] = matrix(n_embd, n_embd)    # ... wk, wv, wo
+    state_dict[f'layer{i}.mlp_fc1'] = matrix(4 * n_embd, n_embd)
+    state_dict[f'layer{i}.mlp_fc2'] = matrix(n_embd, 4 * n_embd)
+</pre>
+</div>
+
+<p>
+The same nine matrices, with the same names (<code>layer0_attn_wq</code> for
+<code>layer0.attn_wq</code>) and Python's <code>[nout, nin]</code> shapes. Python draws every
+weight from one Mersenne Twister stream; here each matrix gets its own
+seeded <code>randn</code>. (In <code>--rs-parity</code> mode, not shown here, the weights come
+from microgpt-rs's own SplitMix64 stream instead; see section 9.)
+</p>
+
+<p>
+Python and Rust keep a flat <code>params</code> list for Adam. MLPL cannot store a
+list of param leaves in a variable (an array literal of matrices is an
+array), so the nine names are written inline in the <code>adam</code> call.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">n_layer = 1;      # depth of the transformer (number of layers)
+n_embd = 16;      # width of the network (embedding dimension)
+block_size = 16;  # maximum context length (the longest name is 15 chars)
+n_head = 4;       # number of attention heads
+head_dim = n_embd / n_head;
+init_std = 0.08;
+
+wte = param[vocab_size, n_embd];
+wte = randn(101, [vocab_size, n_embd]) * init_std;
+wpe = param[block_size, n_embd];
+wpe = randn(102, [block_size, n_embd]) * init_std;
+lm_head = param[vocab_size, n_embd];
+lm_head = randn(103, [vocab_size, n_embd]) * init_std;
+layer0_attn_wq = param[n_embd, n_embd];
+layer0_attn_wq = randn(104, [n_embd, n_embd]) * init_std;
+layer0_attn_wk = param[n_embd, n_embd];
+layer0_attn_wk = randn(105, [n_embd, n_embd]) * init_std;
+layer0_attn_wv = param[n_embd, n_embd];
+layer0_attn_wv = randn(106, [n_embd, n_embd]) * init_std;
+layer0_attn_wo = param[n_embd, n_embd];
+layer0_attn_wo = randn(107, [n_embd, n_embd]) * init_std;
+layer0_mlp_fc1 = param[4 * n_embd, n_embd];
+layer0_mlp_fc1 = randn(108, [4 * n_embd, n_embd]) * init_std;
+layer0_mlp_fc2 = param[n_embd, 4 * n_embd];
+layer0_mlp_fc2 = randn(109, [n_embd, 4 * n_embd]) * init_std;
+
+num_params = size(wte) + size(wpe) + size(lm_head) + size(layer0_attn_wq) + size(layer0_attn_wk) + size(layer0_attn_wv) + size(layer0_attn_wo) + size(layer0_mlp_fc1) + size(layer0_mlp_fc2);
+print("num params:", to_string(num_params));
+</pre>
+</div>
+
+<pre class="example">
+num params: 4192
+</pre>
+</div>
+</div>
+<div id="outline-container-org30005f5" class="outline-2">
+<h2 id="org30005f5"><span class="section-number-2">7.</span> 5. Model</h2>
+<div class="outline-text-2" id="text-7">
+<p>
+microgpt.py follows GPT-2 with three simplifications: RMSNorm instead of
+LayerNorm, no biases, and ReLU instead of GeLU. The MLPL functions keep
+Python's names and structure, but each works on an <code>[n, 16]</code> array, one row
+per position of the name, instead of a list of scalars.
+</p>
+</div>
+<div id="outline-container-org5d02832" class="outline-3">
+<h3 id="org5d02832"><span class="section-number-3">7.1.</span> linear and rmsnorm</h3>
+<div class="outline-text-3" id="text-7-1">
+<div class="org-src-container">
+<pre class="src src-python">def linear(x, w): return [sum(wi * xi for wi, xi in zip(wo, x)) for wo in w]
+def rmsnorm(x):
+    ms = sum(xi * xi for xi in x) / len(x)
+    scale = (ms + 1e-5) ** -0.5
+    return [xi * scale for xi in x]
+</pre>
+</div>
+
+<p>
+<code>linear</code> becomes one matrix product with the Python-shaped weight
+transposed. <code>rmsnorm</code>'s per-row mean of squares is <code>x^2 @ (1/16)</code>, an
+<code>[n, 1]</code> column obtained without knowing <code>n</code>. (MLPL's built-in <code>rms_norm</code>
+layer uses eps 1e-8; microgpt uses 1e-5.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">mean_col = zeros([n_embd, 1]) + 1 / n_embd;
+attn_scale = 1 / sqrt(head_dim);
+
+def u:linear(x, w) {
+  "Python linear(x, w) = w @ x for w [nout, nin]; rows of x are positions.";
+  matmul(x, transpose(w))
+}
+
+def u:rmsnorm(x) {
+  "Scale each row to unit root-mean-square (eps 1e-5, no gain).";
+  x * pow(matmul(x * x, mean_col) + 0.00001, 0 - 0.5)
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgd718b2a" class="outline-3">
+<h3 id="orgd718b2a"><span class="section-number-3">7.2.</span> Attention: the KV cache becomes a causal mask</h3>
+<div class="outline-text-3" id="text-7-2">
+<div class="org-src-container">
+<pre class="src src-python">def gpt(token_id, pos_id, keys, values):        # ONE position per call
+    ...
+    keys[li].append(k); values[li].append(v)    # grow the KV cache
+    for h in range(n_head):
+        q_h = q[hs:hs+head_dim]
+        k_h = [ki[hs:hs+head_dim] for ki in keys[li]]    # positions 0..pos_id
+        attn_logits = [sum(q_h[j] * k_h[t][j] for j in range(head_dim)) / head_dim**0.5 for t in range(len(k_h))]
+        attn_weights = softmax(attn_logits)
+        ...
+</pre>
+</div>
+
+<p>
+Python and Rust call <code>gpt()</code> once per position, appending that position's
+key and value to a cache, so the query at position <code>t</code> sees exactly the
+keys <code>0..t</code>. MLPL computes <i>all</i> positions' queries, keys and values at
+once. Row <code>t</code> of <code>q k^T</code> then holds scores for every key <code>0..n-1</code>, and the
+<b>causal mask</b> adds -1e9 to the keys after <code>t</code>. After the max-subtracting
+softmax those weights are <code>exp(-1e9 - max) = 0</code> exactly. So row <code>t</code>'s
+attention is the one Python computes at step <code>t</code>, and everything else in
+the model acts on each position independently. The two formulations are
+the same computation. For training the masked form is simply better: one
+pass of matrix products instead of <code>n</code> passes of scalar loops.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u:causal_mask(n) {
+  "[n, n] additive mask: 0 where key &lt;= query, -1e9 above the diagonal.";
+  0 - (reshape(range(n), [1, n]) &gt; reshape(range(n), [n, 1])) * 1000000000
+}
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">u:causal_mask(4)
+</pre>
+</div>
+
+<pre class="example">
+0 -1000000000 -1000000000 -1000000000
+0 0 -1000000000 -1000000000
+0 0 0 -1000000000
+0 0 0 0
+</pre>
+
+
+<p>
+Heads without slicing: <code>q[hs:hs+head_dim]</code> becomes a product with a
+constant <code>[16, 4]</code> selector matrix, one per head. Multiplying by its
+transpose puts the head's output back in its columns, which is Python's
+<code>x_attn.extend</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">head_cols = reshape(range(n_embd), [n_embd, 1]);
+head_sel0 = eq(head_cols, reshape(range(head_dim) + 0 * head_dim, [1, head_dim]));
+head_sel1 = eq(head_cols, reshape(range(head_dim) + 1 * head_dim, [1, head_dim]));
+head_sel2 = eq(head_cols, reshape(range(head_dim) + 2 * head_dim, [1, head_dim]));
+head_sel3 = eq(head_cols, reshape(range(head_dim) + 3 * head_dim, [1, head_dim]));
+
+def u:head(q, k, v, sel, mask) {
+  "One attention head over all positions: softmax(q k^T / sqrt(d) + mask) v.";
+  qh = matmul(q, sel);
+  kh = matmul(k, sel);
+  vh = matmul(v, sel);
+  w = softmax(matmul(qh, transpose(kh)) * attn_scale + mask, 1);
+  matmul(matmul(w, vh), transpose(sel))
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf3e7c9b" class="outline-3">
+<h3 id="orgf3e7c9b"><span class="section-number-3">7.3.</span> The whole forward pass</h3>
+<div class="outline-text-3" id="text-7-3">
+<p>
+Line for line the same structure as Python's <code>gpt()</code>: embeddings, a first
+RMSNorm, then the attention and MLP blocks with residuals, then <code>lm_head</code>.
+<code>gather_rows(wte, toks)</code> is the embedding lookup for all positions at once.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u:gpt(toks, pos, mask) {
+  "Logits [n, vocab] for token ids toks [n] at positions pos [n] (= range(n)).";
+  x = gather_rows(wte, toks) + gather_rows(wpe, pos);
+  x = u:rmsnorm(x);
+  # 1) Multi-head attention block (n_layer = 1)
+  x_residual = x;
+  x = u:rmsnorm(x);
+  q = u:linear(x, layer0_attn_wq);
+  k = u:linear(x, layer0_attn_wk);
+  v = u:linear(x, layer0_attn_wv);
+  x_attn = u:head(q, k, v, head_sel0, mask) + u:head(q, k, v, head_sel1, mask) + u:head(q, k, v, head_sel2, mask) + u:head(q, k, v, head_sel3, mask);
+  x = u:linear(x_attn, layer0_attn_wo) + x_residual;
+  # 2) MLP block
+  x_residual = x;
+  x = u:rmsnorm(x);
+  x = relu(u:linear(x, layer0_mlp_fc1));
+  x = u:linear(x, layer0_mlp_fc2) + x_residual;
+  u:linear(x, lm_head)
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org2ccfd35" class="outline-3">
+<h3 id="org2ccfd35"><span class="section-number-3">7.4.</span> The loss</h3>
+<div class="outline-text-3" id="text-7-4">
+<div class="org-src-container">
+<pre class="src src-python">losses.append(-probs[target_id].log())
+loss = (1 / n) * sum(losses)
+</pre>
+</div>
+
+<p>
+<code>cross_entropy</code> is a fused, numerically stable log-softmax plus mean
+negative log-likelihood: the same mean over the <code>n</code> positions. The caller
+builds the mask and passes it in; building it inside the traced loss would
+put it on the autograd tape every step (~70 us/step).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u:doc_in(tokens, n) {
+  "Input ids of a doc row: tokens[0..n).";
+  u:gather1(tokens, range(n))
+}
+
+def u:doc_tgt(tokens, n) {
+  "Target ids of a doc row: tokens[1..n] (the next token at each position).";
+  u:gather1(tokens, range(n) + 1)
+}
+
+def u:loss(inp, tgt, mask) {
+  "Mean cross-entropy of next-token predictions for one doc.";
+  cross_entropy(u:gpt(inp, range(len(inp)), mask), tgt)
+}
+</pre>
+</div>
+
+<p>
+Before training, the model should be close to guessing uniformly: loss
+~ ln 27 ~ 3.30. The following block checks that on <code>emma</code>, and checks the
+KV-cache equivalence directly: it runs <code>gpt</code> on the prefixes <code>0..t</code> one at
+a time, as Python does, and compares each prefix's last row with row <code>t</code>
+of the single masked pass.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">row = u:doc_tokens(d, 0);
+n = len(row) - 1;
+print("untrained loss on emma:", u:fmt_fixed4(u:loss(u:doc_in(row, n), u:doc_tgt(row, n), u:causal_mask(n))), " ln 27 =", u:fmt_fixed4(log(27)));
+full = u:gpt(u:doc_in(row, n), range(n), u:causal_mask(n));
+worst = 0;
+t = 0;
+repeat n {
+  prefix = u:gpt(u:doc_in(row, t + 1), range(t + 1), u:causal_mask(t + 1));
+  worst = worst + reduce_add(abs(last_row(prefix) - take(full, 0, t)));
+  t = t + 1
+};
+print("sum |prefix-by-prefix - masked| over all positions:", worst);
+</pre>
+</div>
+
+<pre class="example">
+untrained loss on emma: 3.5086  ln 27 = 3.2958
+sum |prefix-by-prefix - masked| over all positions: 0
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org5ef7116" class="outline-2">
+<h2 id="org5ef7116"><span class="section-number-2">8.</span> 6. Adam: built in</h2>
+<div class="outline-text-2" id="text-8">
+<div class="org-src-container">
+<pre class="src src-python">m[i] = beta1 * m[i] + (1 - beta1) * p.grad
+v[i] = beta2 * v[i] + (1 - beta2) * p.grad ** 2
+m_hat = m[i] / (1 - beta1 ** (step + 1))
+v_hat = v[i] / (1 - beta2 ** (step + 1))
+p.data -= lr_t * m_hat / (v_hat ** 0.5 + eps_adam)
+</pre>
+</div>
+
+<p>
+Python and Rust keep the moment buffers <code>m</code> and <code>v</code> themselves. MLPL's
+<code>adam(loss, [params], lr, b1, b2, eps)</code> keeps them per param across calls
+and applies exactly this bias-corrected rule; <code>tests/test_training.mlpl</code>
+checks two steps against the formula to 1e-12. One <code>adam</code> call records a
+single tape for all nine gradients (0.74 ms, against 5.8 ms for nine
+separate <code>grad</code> calls), and it returns the loss <i>before</i> the update, which
+is Python's <code>loss.data</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">learning_rate = 0.01;
+beta1 = 0.85;
+beta2 = 0.99;
+eps_adam = 0.00000001;
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org527a129" class="outline-2">
+<h2 id="org527a129"><span class="section-number-2">9.</span> 7. Training</h2>
+<div class="outline-text-2" id="text-9">
+<div class="org-src-container">
+<pre class="src src-python">for step in range(num_steps):
+    doc = docs[step % len(docs)]
+    ... forward, loss.backward(), Adam ...
+    print(f"step {step+1:4d} / {num_steps:4d} | loss {loss.data:.4f}", end='\r')
+</pre>
+</div>
+
+<p>
+First, the training data. The shuffled visiting order picks the 1000 names
+the run will see, and <code>u:doc_batch</code> encodes all of them in one pass. Then
+come two performance moves particular to this interpreter:
+</p>
+<ul class="org-ul">
+<li>Keep only what inference needs, and <code>expunge</code> the rest. Every <code>u:</code> call
+copies the global environment, so leaving the 228k-byte corpus in scope
+made the loop 2.6x slower (2.09 s against 0.8 s).</li>
+<li>Encode up front, because reading a large array copies it.</li>
+</ul>
+
+<p>
+Both are recorded as upstream issues.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">num_steps = 1000;
+train_ids = u:gather1(shuffle(range(d.n_docs), 42), mod(range(num_steps), d.n_docs));
+train_docs = u:doc_batch(d, train_ids, block_size);
+train_tokens = train_docs.tokens;
+train_n = train_docs.n;
+uchars = d.uchars;
+BOS = d.bos;
+n_docs = d.n_docs;
+expunge(["d", "train_ids", "train_docs", "txt"]);
+</pre>
+</div>
+
+<p>
+The loop itself. <code>train N { }</code> binds <code>step</code> and collects each iteration's
+final value into <code>last_losses</code>. Each step selects one name's row, runs one
+<code>adam</code> (forward, backward and update of all nine matrices, about 0.6 ms),
+and writes Python's progress line, carriage return included. Its output is
+not kept here; the next block summarizes it.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">train num_steps {
+  row = take(train_tokens, 0, step);
+  n = at(train_n, step);
+  inp = u:doc_in(row, n);
+  tgt = u:doc_tgt(row, n);
+  mask = u:causal_mask(n);
+  lr_t = learning_rate * (1 - step / num_steps);
+  loss = adam(u:loss(inp, tgt, mask), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], lr_t, beta1, beta2, eps_adam);
+  u:write(str_concat(str_concat(str_concat(str_concat(str_concat("step ", u:fmt_int(step + 1, 4)), " / "), u:fmt_int(num_steps, 4)), " | loss "), str_concat(u:fmt_fixed4(loss), "\r")));
+  loss
+}
+</pre>
+</div>
+
+<p>
+The loss per 100-step window. A single name's loss is noisy, so compare
+windows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">w = 0;
+while lt(w, 10) {
+  m = reduce_add(last_losses * ge(range(num_steps), 100 * w) * lt(range(num_steps), 100 * w + 100)) / 100;
+  print(str_concat(str_concat(str_concat("steps ", u:fmt_int(100 * w + 1, 4)), str_concat("-", u:fmt_int(100 * w + 100, 4))), str_concat("  mean loss ", u:fmt_fixed4(m))));
+  w = w + 1
+};
+print(str_concat("step 1000 loss ", u:fmt_fixed4(at(last_losses, num_steps - 1))));
+</pre>
+</div>
+
+<pre class="example" id="org8b80525">
+steps    1- 100  mean loss 2.7501
+steps  101- 200  mean loss 2.5411
+steps  201- 300  mean loss 2.5331
+steps  301- 400  mean loss 2.4659
+steps  401- 500  mean loss 2.4630
+steps  501- 600  mean loss 2.4239
+steps  601- 700  mean loss 2.3984
+steps  701- 800  mean loss 2.4216
+steps  801- 900  mean loss 2.3898
+steps  901-1000  mean loss 2.3630
+step 1000 loss 2.2796
+</pre>
+
+<p>
+The three implementations track each other (CPython / microgpt-rs / MLPL):
+2.77 / 2.69 / 2.71 for steps 1-100, and 2.28 / 2.36 / 2.37 for steps
+901-1000. The small differences come only from their different random
+streams.
+</p>
+</div>
+</div>
+<div id="outline-container-orgaa0278d" class="outline-2">
+<h2 id="orgaa0278d"><span class="section-number-2">10.</span> 8. Inference</h2>
+<div class="outline-text-2" id="text-10">
+<div class="org-src-container">
+<pre class="src src-python">token_id = BOS
+for pos_id in range(block_size):
+    logits = gpt(token_id, pos_id, keys, values)
+    probs = softmax([l / temperature for l in logits])
+    token_id = random.choices(range(vocab_size), weights=[p.data for p in probs])[0]
+    if token_id == BOS: break
+</pre>
+</div>
+
+<p>
+Generation produces one token at a time, so here the KV cache would save
+work. MLPL's cache builtins (<code>gen_state=/=gen_append</code>) serve only Model DSL
+chains, so the port recomputes the prefix: at most 16 tokens, 0.24 ms per
+token. Each draw takes the next uniform from one sequential stream and
+picks the first token whose cumulative weight reaches <code>u * total</code>, which
+is what <code>random.choices</code> and microgpt-rs's <code>choices</code> do.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u:sample_token(logits, temperature, u) {
+  "First token id whose cumulative softmax(logits / temperature) weight reaches u * total.";
+  cdf = running_sum(softmax(logits / temperature, 0));
+  k = reduce_add(lt(cdf, u * at(cdf, len(cdf) - 1)));
+  k - relu(k - (len(cdf) - 1))
+}
+
+def u:generate(uniforms, start, temperature) {
+  "Token ids (BOS excluded) of one sample, drawing uniforms[start], uniforms[start + 1], ...; it consumes u:consumed(ids) of them.";
+  seq = [BOS];
+  pos = 0;
+  done = 0;
+  while lt(pos, block_size) * (1 - done) {
+    n = pos + 1;
+    logits = last_row(u:gpt(seq, range(n), u:causal_mask(n)));
+    tok = u:sample_token(logits, temperature, at(uniforms, start + pos));
+    if eq(tok, BOS) { done = 1 } else { seq = concat(seq, [tok]) };
+    pos = pos + 1
+  };
+  u:gather1(seq, range(len(seq) - 1) + 1)
+}
+
+def u:consumed(ids) {
+  "Uniforms a sample used: one per token plus the closing BOS draw, unless it ran to block_size.";
+  len(ids) + 1 - eq(len(ids), block_size)
+}
+
+def u:ids_to_text(ids) {
+  "Characters for token ids (empty string for no ids).";
+  if len(ids) { decode_bytes(u:gather1(uchars, ids)) } else { "" }
+}
+</pre>
+</div>
+
+<p>
+The sampling loop is a <code>while</code>, not a <code>repeat</code>: in mlpl-repl 0.22.0 a
+string-valued statement inside a <code>repeat=/=train=/=for</code> body fails the
+loop (upstream issue j; a fix is queued).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">temperature = 0.5;
+num_samples = 20;
+sample_uniforms = random(4242, [num_samples * block_size]);
+cursor = 0;
+print("");
+print("--- inference (new, hallucinated names) ---");
+sample_idx = 0;
+while lt(sample_idx, num_samples) {
+  ids = u:generate(sample_uniforms, cursor, temperature);
+  cursor = cursor + u:consumed(ids);
+  name = u:ids_to_text(ids);
+  print(str_concat(str_concat(str_concat("sample ", u:fmt_int(sample_idx + 1, 2)), ": "), name));
+  sample_idx = sample_idx + 1
+};
+sample_idx
+</pre>
+</div>
+
+<pre class="example" id="orgb477f7c">
+--- inference (new, hallucinated names) ---
+sample  1: aline
+sample  2: erish
+sample  3: jani
+sample  4: meei
+sample  5: jade
+sample  6: kayish
+sample  7: zayan
+sample  8: aniai
+sample  9: arari
+sample 10: hayli
+sample 11: arina
+sample 12: arasth
+sample 13: zuyee
+sample 14: barey
+sample 15: meina
+sample 16: rion
+sample 17: azien
+sample 18: onila
+sample 19: renan
+sample 20: rikia
+</pre>
+</div>
+</div>
+<div id="outline-container-org7e1933b" class="outline-2">
+<h2 id="org7e1933b"><span class="section-number-2">11.</span> 9. Three implementations, side by side</h2>
+<div class="outline-text-2" id="text-11">
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left"><code>microgpt.py</code></th>
+<th scope="col" class="org-left">microgpt-rs</th>
+<th scope="col" class="org-left">microgpt.mlpl</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Lines</td>
+<td class="org-left">199</td>
+<td class="org-left">613 (with tests)</td>
+<td class="org-left">124 flow + 292 <code>lib/</code> definitions</td>
+</tr>
+
+<tr>
+<td class="org-left">Autograd</td>
+<td class="org-left"><code>Value</code> class, object graph</td>
+<td class="org-left"><code>Tape</code> arena of scalars</td>
+<td class="org-left">built in, tape of whole arrays</td>
+</tr>
+
+<tr>
+<td class="org-left">Unit of work</td>
+<td class="org-left">a scalar</td>
+<td class="org-left">a scalar</td>
+<td class="org-left">an <code>[n, 16]</code> array</td>
+</tr>
+
+<tr>
+<td class="org-left">Attention</td>
+<td class="org-left">per-token loop + KV cache</td>
+<td class="org-left">per-token loop + KV cache</td>
+<td class="org-left">one masked pass per name</td>
+</tr>
+
+<tr>
+<td class="org-left">Adam</td>
+<td class="org-left">hand-written</td>
+<td class="org-left">hand-written</td>
+<td class="org-left">built-in <code>adam</code></td>
+</tr>
+
+<tr>
+<td class="org-left">RNG</td>
+<td class="org-left">Mersenne Twister</td>
+<td class="org-left">SplitMix64 (hand-written)</td>
+<td class="org-left">seeded <code>randn</code> / <code>shuffle</code> / <code>random</code>; SplitMix64 in <code>lib/splitmix64</code> for parity</td>
+</tr>
+
+<tr>
+<td class="org-left">Wall time (M1 Max)</td>
+<td class="org-left">61.9 s</td>
+<td class="org-left">0.593 s</td>
+<td class="org-left">0.697 s</td>
+</tr>
+</tbody>
+</table>
+
+<ul class="org-ul">
+<li><b>Speed.</b> The MLPL interpreter lands within 1.2x of compiled Rust and
+~90x ahead of CPython. Each MLPL operation processes a whole array,
+while Python pays interpreter overhead per scalar operation. This is
+"everything else is just efficiency" from the other side: the
+efficiency comes from the language's array ops, not from a hand-written
+tape.</li>
+<li><b>Exact parity.</b> Run as <code>microgpt.mlpl -- --rs-parity</code>, the port draws
+every random number from microgpt-rs's SplitMix64 stream, reimplemented
+in pure MLPL with 64-bit words as four 16-bit pieces. Its output (1000
+loss lines ending <code>1.9146</code> and the same 20 names, <code>amanion</code>, <code>alik</code>,
+<code>zarani</code>, &#x2026;) is byte-identical to microgpt-rs's. <code>just parity</code> checks
+this live.</li>
+<li><b>What MLPL made harder.</b> String handling and number formatting;
+interpreter costs (global copies, array-read copies) that shaped the
+data layout; no vector indexing; a loop-body string bug. See
+<a href="upstream-issues.md">upstream-issues.md</a> for all of them, with reproducers.</li>
+</ul>
+
+<p>
+Further reading: <a href="python-vs-mlpl.md">python-vs-mlpl.md</a> (the same comparison as a plain
+walkthrough), <a href="benchmarks.md">benchmarks.md</a> (speed log), <a href="plan.md">plan.md</a> (design decisions).
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Date: 2026-09-22</p>
+<p class="author">Author: Mike Wright</p>
+<p class="date">Created: 2026-09-22 Tue 23:16</p>
+</div>
+</body>
+</html>

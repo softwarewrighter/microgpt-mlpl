@@ -307,6 +307,11 @@ It runs: ASCII-only markdown (except agentrail-generated `CLAUDE.md` /
 mlplunit suites, the reg-rs baselines, and for `tools/*` Rust crates
 `cargo fmt --check`, clippy `-D warnings`, `cargo test`, `sw-checklist`.
 
+`docs/microgpt.org` is a literate copy of the program (ob-mlpl). Code
+changes to `lib/` or `microgpt.mlpl` must be mirrored there:
+`scripts/check-literate.sh` (in the gate) fails if its tangled blocks
+stop producing `microgpt.mlpl`'s output. Re-publish with `just literate`.
+
 ### Step completion protocol
 
 After finishing each saga step: pre-commit gate passes -> commit to `main`

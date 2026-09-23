@@ -21,7 +21,7 @@ attn_scale = 1 / sqrt(head_dim);
 
 def u:causal_mask(n) {
   "[n, n] additive mask: 0 where key <= query, -1e9 above the diagonal.";
-  (reshape(range(n), [1, n]) > reshape(range(n), [n, 1])) * (0 - 1000000000)
+  0 - (reshape(range(n), [1, n]) > reshape(range(n), [n, 1])) * 1000000000
 }
 
 def u:linear(x, w) {

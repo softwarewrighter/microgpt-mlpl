@@ -29,6 +29,11 @@ microgpt-rs: with `-- --rs-parity` the port draws every random number
 from microgpt-rs's SplitMix64 stream (implemented in pure MLPL) and its
 whole output is byte-identical to microgpt-rs's.
 
+- [`docs/microgpt.org`](docs/microgpt.org): the literate program -- the
+  whole implementation as runnable Org-babel (ob-mlpl) blocks with their
+  output, compared section by section with Python and Rust. `just
+  literate` publishes `docs/microgpt.html`; its tangled blocks produce
+  output byte-identical to `microgpt.mlpl` (`just check-literate`).
 - [`docs/python-vs-mlpl.md`](docs/python-vs-mlpl.md): section-by-section
   walkthrough against microgpt.py, including why the masked whole-name
   forward equals the per-token KV-cache loop.
@@ -103,6 +108,7 @@ just regress      # scripts/regress.sh: reg-rs output baselines in work/reg-rs/
 just check        # scripts/pre-commit.sh: the full pre-commit gate
 just bench        # scripts/bench.sh: speed (per-op + end-to-end)
 just parity       # scripts/parity.sh: byte-compare --rs-parity with microgpt-rs
+just literate     # scripts/publish-literate.sh: evaluate docs/microgpt.org, export HTML
 ```
 
 The interpreter is found via `$MLPL`, then `PATH`, then

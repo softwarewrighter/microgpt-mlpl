@@ -16,11 +16,17 @@ if [ -n "$md" ]; then
 fi
 
 step "shell scripts parse"
+shell_scripts=""
 for f in scripts/*; do
+    case "$f" in
+        *.el) continue ;;
+    esac
     sh -n "$f"
+    shell_scripts="$shell_scripts $f"
 done
 if command -v shellcheck >/dev/null 2>&1; then
-    shellcheck -s sh scripts/*
+    # shellcheck disable=SC2086
+    shellcheck -s sh $shell_scripts
 else
     echo "(shellcheck not installed; skipped)"
 fi
@@ -30,6 +36,9 @@ scripts/test.sh --quiet
 
 step "reg-rs output baselines"
 scripts/regress.sh
+
+step "literate doc tangles to the same program (skipped without emacs)"
+scripts/check-literate.sh
 
 for manifest in tools/*/Cargo.toml; do
     [ -f "$manifest" ] || continue

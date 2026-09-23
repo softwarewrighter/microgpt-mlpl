@@ -1,0 +1,784 @@
+#+TITLE: microgpt in MLPL
+#+SUBTITLE: A literate walk through the sw-MLPL port of Karpathy's =microgpt.py=, compared with the Python original and the Rust port
+#+AUTHOR: Mike Wright
+#+DATE: 2026-09-22
+#+OPTIONS: toc:2 num:t ^:{}
+#+PROPERTY: header-args:mlpl :session microgpt :results output :exports both :tangle microgpt-literate.mlpl
+
+* Introduction
+
+Andrej Karpathy's [[https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95][microgpt.py]] trains a GPT and samples from it in ~200 lines of
+dependency-free Python. Its docstring sets the rule:
+
+#+begin_quote
+This file is the complete algorithm. Everything else is just efficiency.
+#+end_quote
+
+Two ports follow that rule in different directions:
+
+- *microgpt-rs* ([[file:../../microgpt-rs/docs/python-to-rust.org][python-to-rust.org]]) keeps the algorithm's /shape/: a scalar
+  autograd engine, now a flat tape of nodes, and the same per-scalar loops,
+  compiled.
+- *microgpt.mlpl* (this repo) changes the shape. sw-MLPL is an array
+  language with reverse-mode autograd, =adam=, =cross_entropy= and
+  =softmax= built in. The =Value= class disappears, every per-element loop
+  becomes a whole-array expression, and the per-token KV-cache loop becomes
+  one masked pass over a whole name.
+
+This document is the MLPL program itself, told section by section. Every
+MLPL block below runs in one shared =:session=, so state carries from block
+to block like lines typed into the REPL, and the output under each block
+was produced by running it. The blocks that make up the program (the ones
+without =:tangle no=) also tangle, in order, into one standalone script;
+=scripts/check-literate.sh= runs that script and requires its output to be
+*byte-identical* to =microgpt.mlpl='s. The prose therefore describes code
+that really is the implementation. The production program splits the same
+definitions into =lib/*.mlpl= so the test suites can include them.
+
+** The map at a glance
+
+| #  | Section    | Python                                   | Rust (microgpt-rs)                    | MLPL (this document)                                   |
+|----+------------+------------------------------------------+---------------------------------------+--------------------------------------------------------|
+| 1  | Dataset    | =list[str]= of names                     | =Vec<&str>=                           | one byte array + =(start, length)= spans               |
+| 2  | Tokenizer  | =sorted(set(...))=, =uchars.index(ch)=   | =BTreeSet=, =HashMap<char, usize>=    | sort + run-start mask, 256-entry lookup table          |
+| 3  | Autograd   | =class Value= (object graph + DFS)       | =Tape= arena, reverse sweep           | *built in*: =param[...]=, =grad=, =adam=               |
+| 4  | Parameters | =state_dict= of =Value= lists            | =StateDict= structs                   | nine =param[...]= matrices, same names and shapes      |
+| 5  | Model      | =linear=/=rmsnorm=/=gpt= over scalars    | same functions over =&[Value]=        | =matmul= over =[n, 16]= arrays, causal mask            |
+| 6  | Adam       | =m=, =v= float lists                     | =Vec<f64>= buffers                    | *built in*: =adam(loss, [params], ...)=                |
+| 7  | Training   | =for step= loop, =loss.backward()=       | =for step=, =tape.backward=           | =train N { ... }= around =adam=                        |
+| 8  | Inference  | =random.choices= per token               | =rng.choices= per token               | inverse CDF over one uniform stream                    |
+
+** Running this document
+
+The session needs the repo root as MLPL's data directory, so that
+=load("input.txt")= works. The file-local variable at the end of this file
+sets =org-babel-mlpl-command= to =mlpl-repl --data-dir ..=, relative to
+=docs/=. Evaluate the buffer with =C-c C-v b=, or publish it in batch:
+
+#+begin_src sh :eval never :tangle no
+scripts/publish-literate.sh     # evaluate every block, bake results, export docs/microgpt.html
+scripts/check-literate.sh       # tangle the program blocks; output must equal microgpt.mlpl's
+#+end_src
+
+A block's last value is echoed by the session, like the REPL. Blocks that
+end in =print= use a small filter (=:post strip-echo=) to drop that
+repeated last line.
+
+#+name: strip-echo
+#+begin_src emacs-lisp :var text="" :exports none :tangle no
+(let ((lines (split-string (string-trim-right text) "\n")))
+  (string-join (butlast lines) "\n"))
+#+end_src
+
+#+RESULTS: strip-echo
+
+* Small helpers
+
+Two kinds of helper that Python gets for free: indexing a vector by a
+vector of positions, and =f"{x:4d}"= / =f"{x:.4f}"= formatting. MLPL's
+=at= and =take= accept a single index only, so =u:gather1= reshapes to a
+one-column table and uses the row gather =gather_rows=.
+
+#+begin_src mlpl :results silent
+def u:gather1(v, idx) {
+  "Elements of rank-1 v at the (rank-1) integer positions idx.";
+  reshape(gather_rows(reshape(v, [len(v), 1]), idx), [len(idx)])
+}
+
+def u:pad_left(s, width) {
+  "Right-align string s in width columns, width <= 16 (like Python's {:>width}).";
+  str_concat(str_slice("                ", 0, relu(width - str_len(s))), s)
+}
+
+def u:fmt_int(x, width) {
+  "f'{x:widthd}' for a non-negative integer x.";
+  u:pad_left(to_string(round(x)), width)
+}
+
+def u:fmt_fixed4(x) {
+  "f'{x:.4f}' for x >= 0 (round half up at the 4th decimal).";
+  scaled = floor(x * 10000 + 0.5);
+  whole = floor(scaled / 10000);
+  frac = to_string(scaled - whole * 10000);
+  str_concat(str_concat(to_string(whole), "."), str_concat(str_slice("0000", 0, 4 - str_len(frac)), frac))
+}
+
+def u:write(s) {
+  "Write s to stdout with no trailing newline (for Python's end='\\r').";
+  unwrap(write_stdout(tokenize_bytes(s)))
+}
+#+end_src
+
+#+begin_src mlpl :tangle no
+[u:fmt_int(7, 4), u:fmt_fixed4(1.91456)]
+#+end_src
+
+#+RESULTS:
+: ["   7", "1.9146"]
+
+* 1. Dataset
+
+#+begin_src python :eval never :tangle no
+docs = [line.strip() for line in open('input.txt') if line.strip()]
+random.shuffle(docs)
+#+end_src
+
+Python holds the 32,033 names as a list of strings; microgpt-rs as a
+=Vec<&str>=. MLPL is happiest with one flat array, so the corpus stays a
+single byte array (=tokenize_bytes=). Each name is a span between two
+newlines: find the newline positions, add virtual ones at =-1= and =n=, and
+take differences. Blank lines give empty spans and are dropped, which is
+Python's =if line.strip()=. The names file has nothing to strip, so instead
+of implementing =strip()= the parser *rejects* any byte that would need it.
+
+The same function also finds the vocabulary, sorted unique characters, the
+array way: sort every byte (=grade_up=), keep the first byte of each run,
+drop the newline. The result is inverted into a 256-entry lookup table from
+byte to token id. The shuffle waits until training (section 7).
+
+#+begin_src mlpl :results silent
+def u:dataset(txt) {
+  "Parse input.txt: one doc per non-empty line, plus the char vocabulary.";
+  bytes = tokenize_bytes(txt);
+  n = len(bytes);
+  bad = reduce_add(lt(bytes, 33) * ne(bytes, 10)) + reduce_add(gt(bytes, 126));
+  if bad { err(str_concat("corpus has non-name bytes: ", to_string(bad))) } else {
+    nl = compress(eq(bytes, 10), range(n));
+    bounds = concat(concat([0 - 1], nl), [n]);
+    m = len(bounds) - 1;
+    starts_all = u:gather1(bounds, range(m)) + 1;
+    lens_all = u:gather1(bounds, range(m) + 1) - starts_all;
+    keep = gt(lens_all, 0);
+    sorted = u:gather1(bytes, grade_up(bytes));
+    first = concat([1], ne(u:gather1(sorted, range(n - 1) + 1), u:gather1(sorted, range(n - 1))));
+    uniq = compress(first, sorted);
+    uchars = compress(ne(uniq, 10), uniq);
+    vocab = len(uchars);
+    lut = zeros(256) - 1;
+    i = 0;
+    repeat vocab { lut = scatter(lut, at(uchars, i), i); i = i + 1 };
+    ok({
+      bytes: bytes,
+      starts: compress(keep, starts_all),
+      lens: compress(keep, lens_all),
+      n_docs: reduce_add(keep),
+      uchars: uchars,
+      lut: lut,
+      bos: vocab,
+      vocab_size: vocab + 1
+    })
+  }
+}
+#+end_src
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+d = unwrap(u:dataset(load("input.txt")));
+print("num docs:", to_string(d.n_docs));
+#+end_src
+
+#+RESULTS:
+: num docs: 32033
+
+The whole parse, vocabulary included, takes about 19 ms. An earlier
+version found the vocabulary with 256 passes of =eq= over the corpus and
+took 254 ms; see [[file:benchmarks.md][benchmarks.md]].
+
+* 2. Tokenizer
+
+#+begin_src python :eval never :tangle no
+uchars = sorted(set(''.join(docs)))
+BOS = len(uchars)
+tokens = [BOS] + [uchars.index(ch) for ch in doc] + [BOS]
+#+end_src
+
+Python searches =uchars= once per character; microgpt-rs uses a =HashMap=.
+MLPL encodes a name with one gather through the lookup table. The same
+trick encodes /all/ the names training will visit in one pass
+(=u:doc_batch=, used in section 7). That matters in this interpreter
+because reading a large array copies it, so per-name access to the corpus
+costs ~1.8 ms, against 1.8 ms for 1000 names at once.
+
+#+begin_src mlpl :results silent
+def u:encode_bytes(d, bs) {
+  "Token ids for a rank-1 byte array (every byte must be in the vocab).";
+  u:gather1(d.lut, bs)
+}
+
+def u:encode(d, s) {
+  "Token ids for a string (no BOS).";
+  u:encode_bytes(d, tokenize_bytes(s))
+}
+
+def u:decode(d, ids) {
+  "The string for a rank-1 array of non-BOS token ids.";
+  decode_bytes(u:gather1(d.uchars, ids))
+}
+
+def u:doc_bytes(d, i) {
+  "Raw bytes of doc i (file order).";
+  u:gather1(d.bytes, at(d.starts, i) + range(at(d.lens, i)))
+}
+
+def u:doc_tokens(d, i) {
+  "microgpt.py's tokens for doc i: [BOS] + ids + [BOS].";
+  concat(concat([d.bos], u:encode_bytes(d, u:doc_bytes(d, i))), [d.bos])
+}
+
+def u:doc_batch(d, doc_ids, block_size) {
+  "Token rows for many docs at once: {tokens: [m, block_size + 2] = [BOS] + ids + [BOS] padded with BOS, n: [m] positions to train}.";
+  m = len(doc_ids);
+  lens = u:gather1(d.lens, doc_ids);
+  pos = reshape(range(block_size), [1, block_size]);
+  valid = lt(pos, reshape(lens, [m, 1]));
+  idx = (reshape(u:gather1(d.starts, doc_ids), [m, 1]) + pos) * valid;
+  bytes = reshape(gather_rows(reshape(d.bytes, [len(d.bytes), 1]), idx), [m, block_size]);
+  ids = reshape(gather_rows(reshape(d.lut, [256, 1]), bytes), [m, block_size]);
+  body = valid * ids + (1 - valid) * d.bos;
+  bos = zeros([m, 1]) + d.bos;
+  {tokens: concat(bos, concat(body, bos, 1), 1), n: lens + 1 - relu(lens + 1 - block_size)}
+}
+#+end_src
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+print("vocab size:", to_string(d.vocab_size));
+vocab_size = d.vocab_size;
+#+end_src
+
+#+RESULTS:
+: vocab size: 27
+
+The first name in the file, =emma=, encodes exactly as in Python (=e= is
+4, =m= is 12, BOS is 26):
+
+#+begin_src mlpl :tangle no
+print(decode_bytes(d.uchars));
+u:doc_tokens(d, 0)
+#+end_src
+
+#+RESULTS:
+: abcdefghijklmnopqrstuvwxyz
+: 26 4 12 12 0 26
+
+* 3. Autograd: nothing to write
+
+#+begin_src python :eval never :tangle no
+class Value:
+    def __init__(self, data, children=(), local_grads=()): ...
+    def __add__(self, other): ...      # +, *, **, log, exp, relu, ...
+    def backward(self): ...            # topological sort, then the chain rule
+#+end_src
+
+This is the largest difference between the three programs:
+
+- *Python*: ~40 lines. Each =Value= is a heap object pointing at its
+  children; =backward()= sorts the graph topologically, then applies the
+  chain rule. The garbage collector frees each step's graph.
+- *Rust*: ~170 lines. Nodes are appended to a flat =Vec= (the /tape/) in
+  forward order, which is already a topological order, so backward is one
+  reverse loop; =truncate(num_params)= frees a step's graph.
+- *MLPL*: 0 lines. =param[shape]= declares a trainable array leaf.
+  =grad(expr, W)= records =expr= on the interpreter's tape, whole-array ops
+  (=matmul=, =softmax=, =gather_rows=, =cross_entropy=) rather than
+  scalars, and runs it backward. =u:= functions called inside are inlined
+  onto the tape.
+
+A tiny example, d/dW of sum(W^2) = 2W:
+
+#+begin_src mlpl :tangle no
+W_demo = param[2, 2];
+W_demo = [[1, 2], [3, 4]];
+grad(reduce_add(W_demo * W_demo), W_demo)
+#+end_src
+
+#+RESULTS:
+: 2 4
+: 6 8
+
+For the real model, =tests/test_gradcheck.mlpl= compares =grad= with
+central finite differences for all nine matrices; they agree to ~3e-11.
+
+* 4. Parameters
+
+#+begin_src python :eval never :tangle no
+matrix = lambda nout, nin, std=0.08: [[Value(random.gauss(0, std)) for _ in range(nin)] for _ in range(nout)]
+state_dict = {'wte': matrix(vocab_size, n_embd), 'wpe': matrix(block_size, n_embd), 'lm_head': matrix(vocab_size, n_embd)}
+for i in range(n_layer):
+    state_dict[f'layer{i}.attn_wq'] = matrix(n_embd, n_embd)    # ... wk, wv, wo
+    state_dict[f'layer{i}.mlp_fc1'] = matrix(4 * n_embd, n_embd)
+    state_dict[f'layer{i}.mlp_fc2'] = matrix(n_embd, 4 * n_embd)
+#+end_src
+
+The same nine matrices, with the same names (=layer0_attn_wq= for
+=layer0.attn_wq=) and Python's =[nout, nin]= shapes. Python draws every
+weight from one Mersenne Twister stream; here each matrix gets its own
+seeded =randn=. (In =--rs-parity= mode, not shown here, the weights come
+from microgpt-rs's own SplitMix64 stream instead; see section 9.)
+
+Python and Rust keep a flat =params= list for Adam. MLPL cannot store a
+list of param leaves in a variable (an array literal of matrices is an
+array), so the nine names are written inline in the =adam= call.
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+n_layer = 1;      # depth of the transformer (number of layers)
+n_embd = 16;      # width of the network (embedding dimension)
+block_size = 16;  # maximum context length (the longest name is 15 chars)
+n_head = 4;       # number of attention heads
+head_dim = n_embd / n_head;
+init_std = 0.08;
+
+wte = param[vocab_size, n_embd];
+wte = randn(101, [vocab_size, n_embd]) * init_std;
+wpe = param[block_size, n_embd];
+wpe = randn(102, [block_size, n_embd]) * init_std;
+lm_head = param[vocab_size, n_embd];
+lm_head = randn(103, [vocab_size, n_embd]) * init_std;
+layer0_attn_wq = param[n_embd, n_embd];
+layer0_attn_wq = randn(104, [n_embd, n_embd]) * init_std;
+layer0_attn_wk = param[n_embd, n_embd];
+layer0_attn_wk = randn(105, [n_embd, n_embd]) * init_std;
+layer0_attn_wv = param[n_embd, n_embd];
+layer0_attn_wv = randn(106, [n_embd, n_embd]) * init_std;
+layer0_attn_wo = param[n_embd, n_embd];
+layer0_attn_wo = randn(107, [n_embd, n_embd]) * init_std;
+layer0_mlp_fc1 = param[4 * n_embd, n_embd];
+layer0_mlp_fc1 = randn(108, [4 * n_embd, n_embd]) * init_std;
+layer0_mlp_fc2 = param[n_embd, 4 * n_embd];
+layer0_mlp_fc2 = randn(109, [n_embd, 4 * n_embd]) * init_std;
+
+num_params = size(wte) + size(wpe) + size(lm_head) + size(layer0_attn_wq) + size(layer0_attn_wk) + size(layer0_attn_wv) + size(layer0_attn_wo) + size(layer0_mlp_fc1) + size(layer0_mlp_fc2);
+print("num params:", to_string(num_params));
+#+end_src
+
+#+RESULTS:
+: num params: 4192
+
+* 5. Model
+
+microgpt.py follows GPT-2 with three simplifications: RMSNorm instead of
+LayerNorm, no biases, and ReLU instead of GeLU. The MLPL functions keep
+Python's names and structure, but each works on an =[n, 16]= array, one row
+per position of the name, instead of a list of scalars.
+
+** linear and rmsnorm
+
+#+begin_src python :eval never :tangle no
+def linear(x, w): return [sum(wi * xi for wi, xi in zip(wo, x)) for wo in w]
+def rmsnorm(x):
+    ms = sum(xi * xi for xi in x) / len(x)
+    scale = (ms + 1e-5) ** -0.5
+    return [xi * scale for xi in x]
+#+end_src
+
+=linear= becomes one matrix product with the Python-shaped weight
+transposed. =rmsnorm='s per-row mean of squares is =x^2 @ (1/16)=, an
+=[n, 1]= column obtained without knowing =n=. (MLPL's built-in =rms_norm=
+layer uses eps 1e-8; microgpt uses 1e-5.)
+
+#+begin_src mlpl :results silent
+mean_col = zeros([n_embd, 1]) + 1 / n_embd;
+attn_scale = 1 / sqrt(head_dim);
+
+def u:linear(x, w) {
+  "Python linear(x, w) = w @ x for w [nout, nin]; rows of x are positions.";
+  matmul(x, transpose(w))
+}
+
+def u:rmsnorm(x) {
+  "Scale each row to unit root-mean-square (eps 1e-5, no gain).";
+  x * pow(matmul(x * x, mean_col) + 0.00001, 0 - 0.5)
+}
+#+end_src
+
+** Attention: the KV cache becomes a causal mask
+
+#+begin_src python :eval never :tangle no
+def gpt(token_id, pos_id, keys, values):        # ONE position per call
+    ...
+    keys[li].append(k); values[li].append(v)    # grow the KV cache
+    for h in range(n_head):
+        q_h = q[hs:hs+head_dim]
+        k_h = [ki[hs:hs+head_dim] for ki in keys[li]]    # positions 0..pos_id
+        attn_logits = [sum(q_h[j] * k_h[t][j] for j in range(head_dim)) / head_dim**0.5 for t in range(len(k_h))]
+        attn_weights = softmax(attn_logits)
+        ...
+#+end_src
+
+Python and Rust call =gpt()= once per position, appending that position's
+key and value to a cache, so the query at position =t= sees exactly the
+keys =0..t=. MLPL computes /all/ positions' queries, keys and values at
+once. Row =t= of =q k^T= then holds scores for every key =0..n-1=, and the
+*causal mask* adds -1e9 to the keys after =t=. After the max-subtracting
+softmax those weights are =exp(-1e9 - max) = 0= exactly. So row =t='s
+attention is the one Python computes at step =t=, and everything else in
+the model acts on each position independently. The two formulations are
+the same computation. For training the masked form is simply better: one
+pass of matrix products instead of =n= passes of scalar loops.
+
+#+begin_src mlpl :results silent
+def u:causal_mask(n) {
+  "[n, n] additive mask: 0 where key <= query, -1e9 above the diagonal.";
+  0 - (reshape(range(n), [1, n]) > reshape(range(n), [n, 1])) * 1000000000
+}
+#+end_src
+
+#+begin_src mlpl :tangle no
+u:causal_mask(4)
+#+end_src
+
+#+RESULTS:
+: 0 -1000000000 -1000000000 -1000000000
+: 0 0 -1000000000 -1000000000
+: 0 0 0 -1000000000
+: 0 0 0 0
+
+Heads without slicing: =q[hs:hs+head_dim]= becomes a product with a
+constant =[16, 4]= selector matrix, one per head. Multiplying by its
+transpose puts the head's output back in its columns, which is Python's
+=x_attn.extend=.
+
+#+begin_src mlpl :results silent
+head_cols = reshape(range(n_embd), [n_embd, 1]);
+head_sel0 = eq(head_cols, reshape(range(head_dim) + 0 * head_dim, [1, head_dim]));
+head_sel1 = eq(head_cols, reshape(range(head_dim) + 1 * head_dim, [1, head_dim]));
+head_sel2 = eq(head_cols, reshape(range(head_dim) + 2 * head_dim, [1, head_dim]));
+head_sel3 = eq(head_cols, reshape(range(head_dim) + 3 * head_dim, [1, head_dim]));
+
+def u:head(q, k, v, sel, mask) {
+  "One attention head over all positions: softmax(q k^T / sqrt(d) + mask) v.";
+  qh = matmul(q, sel);
+  kh = matmul(k, sel);
+  vh = matmul(v, sel);
+  w = softmax(matmul(qh, transpose(kh)) * attn_scale + mask, 1);
+  matmul(matmul(w, vh), transpose(sel))
+}
+#+end_src
+
+** The whole forward pass
+
+Line for line the same structure as Python's =gpt()=: embeddings, a first
+RMSNorm, then the attention and MLP blocks with residuals, then =lm_head=.
+=gather_rows(wte, toks)= is the embedding lookup for all positions at once.
+
+#+begin_src mlpl :results silent
+def u:gpt(toks, pos, mask) {
+  "Logits [n, vocab] for token ids toks [n] at positions pos [n] (= range(n)).";
+  x = gather_rows(wte, toks) + gather_rows(wpe, pos);
+  x = u:rmsnorm(x);
+  # 1) Multi-head attention block (n_layer = 1)
+  x_residual = x;
+  x = u:rmsnorm(x);
+  q = u:linear(x, layer0_attn_wq);
+  k = u:linear(x, layer0_attn_wk);
+  v = u:linear(x, layer0_attn_wv);
+  x_attn = u:head(q, k, v, head_sel0, mask) + u:head(q, k, v, head_sel1, mask) + u:head(q, k, v, head_sel2, mask) + u:head(q, k, v, head_sel3, mask);
+  x = u:linear(x_attn, layer0_attn_wo) + x_residual;
+  # 2) MLP block
+  x_residual = x;
+  x = u:rmsnorm(x);
+  x = relu(u:linear(x, layer0_mlp_fc1));
+  x = u:linear(x, layer0_mlp_fc2) + x_residual;
+  u:linear(x, lm_head)
+}
+#+end_src
+
+** The loss
+
+#+begin_src python :eval never :tangle no
+losses.append(-probs[target_id].log())
+loss = (1 / n) * sum(losses)
+#+end_src
+
+=cross_entropy= is a fused, numerically stable log-softmax plus mean
+negative log-likelihood: the same mean over the =n= positions. The caller
+builds the mask and passes it in; building it inside the traced loss would
+put it on the autograd tape every step (~70 us/step).
+
+#+begin_src mlpl :results silent
+def u:doc_in(tokens, n) {
+  "Input ids of a doc row: tokens[0..n).";
+  u:gather1(tokens, range(n))
+}
+
+def u:doc_tgt(tokens, n) {
+  "Target ids of a doc row: tokens[1..n] (the next token at each position).";
+  u:gather1(tokens, range(n) + 1)
+}
+
+def u:loss(inp, tgt, mask) {
+  "Mean cross-entropy of next-token predictions for one doc.";
+  cross_entropy(u:gpt(inp, range(len(inp)), mask), tgt)
+}
+#+end_src
+
+Before training, the model should be close to guessing uniformly: loss
+~ ln 27 ~ 3.30. The following block checks that on =emma=, and checks the
+KV-cache equivalence directly: it runs =gpt= on the prefixes =0..t= one at
+a time, as Python does, and compares each prefix's last row with row =t=
+of the single masked pass.
+
+#+begin_src mlpl :tangle no :post strip-echo(text=*this*)
+row = u:doc_tokens(d, 0);
+n = len(row) - 1;
+print("untrained loss on emma:", u:fmt_fixed4(u:loss(u:doc_in(row, n), u:doc_tgt(row, n), u:causal_mask(n))), " ln 27 =", u:fmt_fixed4(log(27)));
+full = u:gpt(u:doc_in(row, n), range(n), u:causal_mask(n));
+worst = 0;
+t = 0;
+repeat n {
+  prefix = u:gpt(u:doc_in(row, t + 1), range(t + 1), u:causal_mask(t + 1));
+  worst = worst + reduce_add(abs(last_row(prefix) - take(full, 0, t)));
+  t = t + 1
+};
+print("sum |prefix-by-prefix - masked| over all positions:", worst);
+#+end_src
+
+#+RESULTS:
+: untrained loss on emma: 3.5086  ln 27 = 3.2958
+: sum |prefix-by-prefix - masked| over all positions: 0
+
+* 6. Adam: built in
+
+#+begin_src python :eval never :tangle no
+m[i] = beta1 * m[i] + (1 - beta1) * p.grad
+v[i] = beta2 * v[i] + (1 - beta2) * p.grad ** 2
+m_hat = m[i] / (1 - beta1 ** (step + 1))
+v_hat = v[i] / (1 - beta2 ** (step + 1))
+p.data -= lr_t * m_hat / (v_hat ** 0.5 + eps_adam)
+#+end_src
+
+Python and Rust keep the moment buffers =m= and =v= themselves. MLPL's
+=adam(loss, [params], lr, b1, b2, eps)= keeps them per param across calls
+and applies exactly this bias-corrected rule; =tests/test_training.mlpl=
+checks two steps against the formula to 1e-12. One =adam= call records a
+single tape for all nine gradients (0.74 ms, against 5.8 ms for nine
+separate =grad= calls), and it returns the loss /before/ the update, which
+is Python's =loss.data=.
+
+#+begin_src mlpl :results silent
+learning_rate = 0.01;
+beta1 = 0.85;
+beta2 = 0.99;
+eps_adam = 0.00000001;
+#+end_src
+
+* 7. Training
+
+#+begin_src python :eval never :tangle no
+for step in range(num_steps):
+    doc = docs[step % len(docs)]
+    ... forward, loss.backward(), Adam ...
+    print(f"step {step+1:4d} / {num_steps:4d} | loss {loss.data:.4f}", end='\r')
+#+end_src
+
+First, the training data. The shuffled visiting order picks the 1000 names
+the run will see, and =u:doc_batch= encodes all of them in one pass. Then
+come two performance moves particular to this interpreter:
+- Keep only what inference needs, and =expunge= the rest. Every =u:= call
+  copies the global environment, so leaving the 228k-byte corpus in scope
+  made the loop 2.6x slower (2.09 s against 0.8 s).
+- Encode up front, because reading a large array copies it.
+
+Both are recorded as upstream issues.
+
+#+begin_src mlpl :results silent
+num_steps = 1000;
+train_ids = u:gather1(shuffle(range(d.n_docs), 42), mod(range(num_steps), d.n_docs));
+train_docs = u:doc_batch(d, train_ids, block_size);
+train_tokens = train_docs.tokens;
+train_n = train_docs.n;
+uchars = d.uchars;
+BOS = d.bos;
+n_docs = d.n_docs;
+expunge(["d", "train_ids", "train_docs", "txt"]);
+#+end_src
+
+The loop itself. =train N { }= binds =step= and collects each iteration's
+final value into =last_losses=. Each step selects one name's row, runs one
+=adam= (forward, backward and update of all nine matrices, about 0.6 ms),
+and writes Python's progress line, carriage return included. Its output is
+not kept here; the next block summarizes it.
+
+#+begin_src mlpl :results silent
+train num_steps {
+  row = take(train_tokens, 0, step);
+  n = at(train_n, step);
+  inp = u:doc_in(row, n);
+  tgt = u:doc_tgt(row, n);
+  mask = u:causal_mask(n);
+  lr_t = learning_rate * (1 - step / num_steps);
+  loss = adam(u:loss(inp, tgt, mask), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], lr_t, beta1, beta2, eps_adam);
+  u:write(str_concat(str_concat(str_concat(str_concat(str_concat("step ", u:fmt_int(step + 1, 4)), " / "), u:fmt_int(num_steps, 4)), " | loss "), str_concat(u:fmt_fixed4(loss), "\r")));
+  loss
+}
+#+end_src
+
+The loss per 100-step window. A single name's loss is noisy, so compare
+windows:
+
+#+begin_src mlpl :tangle no :post strip-echo(text=*this*)
+w = 0;
+while lt(w, 10) {
+  m = reduce_add(last_losses * ge(range(num_steps), 100 * w) * lt(range(num_steps), 100 * w + 100)) / 100;
+  print(str_concat(str_concat(str_concat("steps ", u:fmt_int(100 * w + 1, 4)), str_concat("-", u:fmt_int(100 * w + 100, 4))), str_concat("  mean loss ", u:fmt_fixed4(m))));
+  w = w + 1
+};
+print(str_concat("step 1000 loss ", u:fmt_fixed4(at(last_losses, num_steps - 1))));
+#+end_src
+
+#+RESULTS:
+#+begin_example
+steps    1- 100  mean loss 2.7138
+steps  101- 200  mean loss 2.5343
+steps  201- 300  mean loss 2.5226
+steps  301- 400  mean loss 2.4757
+steps  401- 500  mean loss 2.4632
+steps  501- 600  mean loss 2.4256
+steps  601- 700  mean loss 2.3954
+steps  701- 800  mean loss 2.4237
+steps  801- 900  mean loss 2.3857
+steps  901-1000  mean loss 2.3680
+step 1000 loss 2.2948
+#+end_example
+
+The three implementations track each other (CPython / microgpt-rs / MLPL):
+2.77 / 2.69 / 2.71 for steps 1-100, and 2.28 / 2.36 / 2.37 for steps
+901-1000. The small differences come only from their different random
+streams.
+
+* 8. Inference
+
+#+begin_src python :eval never :tangle no
+token_id = BOS
+for pos_id in range(block_size):
+    logits = gpt(token_id, pos_id, keys, values)
+    probs = softmax([l / temperature for l in logits])
+    token_id = random.choices(range(vocab_size), weights=[p.data for p in probs])[0]
+    if token_id == BOS: break
+#+end_src
+
+Generation produces one token at a time, so here the KV cache would save
+work. MLPL's cache builtins (=gen_state=/=gen_append=) serve only Model DSL
+chains, so the port recomputes the prefix: at most 16 tokens, 0.24 ms per
+token. Each draw takes the next uniform from one sequential stream and
+picks the first token whose cumulative weight reaches =u * total=, which
+is what =random.choices= and microgpt-rs's =choices= do.
+
+#+begin_src mlpl :results silent
+def u:sample_token(logits, temperature, u) {
+  "First token id whose cumulative softmax(logits / temperature) weight reaches u * total.";
+  cdf = running_sum(softmax(logits / temperature, 0));
+  k = reduce_add(lt(cdf, u * at(cdf, len(cdf) - 1)));
+  k - relu(k - (len(cdf) - 1))
+}
+
+def u:generate(uniforms, start, temperature) {
+  "Token ids (BOS excluded) of one sample, drawing uniforms[start], uniforms[start + 1], ...; it consumes u:consumed(ids) of them.";
+  seq = [BOS];
+  pos = 0;
+  done = 0;
+  while lt(pos, block_size) * (1 - done) {
+    n = pos + 1;
+    logits = last_row(u:gpt(seq, range(n), u:causal_mask(n)));
+    tok = u:sample_token(logits, temperature, at(uniforms, start + pos));
+    if eq(tok, BOS) { done = 1 } else { seq = concat(seq, [tok]) };
+    pos = pos + 1
+  };
+  u:gather1(seq, range(len(seq) - 1) + 1)
+}
+
+def u:consumed(ids) {
+  "Uniforms a sample used: one per token plus the closing BOS draw, unless it ran to block_size.";
+  len(ids) + 1 - eq(len(ids), block_size)
+}
+
+def u:ids_to_text(ids) {
+  "Characters for token ids (empty string for no ids).";
+  if len(ids) { decode_bytes(u:gather1(uchars, ids)) } else { "" }
+}
+#+end_src
+
+The sampling loop is a =while=, not a =repeat=: in mlpl-repl 0.22.0 a
+string-valued statement inside a =repeat=/=train=/=for= body fails the
+loop (upstream issue j; a fix is queued).
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+temperature = 0.5;
+num_samples = 20;
+sample_uniforms = random(4242, [num_samples * block_size]);
+cursor = 0;
+print("");
+print("--- inference (new, hallucinated names) ---");
+sample_idx = 0;
+while lt(sample_idx, num_samples) {
+  ids = u:generate(sample_uniforms, cursor, temperature);
+  cursor = cursor + u:consumed(ids);
+  name = u:ids_to_text(ids);
+  print(str_concat(str_concat(str_concat("sample ", u:fmt_int(sample_idx + 1, 2)), ": "), name));
+  sample_idx = sample_idx + 1
+};
+sample_idx
+#+end_src
+
+#+RESULTS:
+#+begin_example
+--- inference (new, hallucinated names) ---
+sample  1: aline
+sample  2: garien
+sample  3: anisn
+sample  4: alilia
+sample  5: thayn
+sample  6: arylin
+sample  7: alilai
+sample  8: arari
+sample  9: jayir
+sample 10: arena
+sample 11: araste
+sample 12: zryda
+sample 13: carey
+sample 14: meina
+sample 15: rion
+sample 16: aynce
+sample 17: raria
+sample 18: renan
+sample 19: rille
+sample 20: kay
+#+end_example
+
+#+begin_src mlpl :exports none :eval never
+exit(0)
+#+end_src
+
+* 9. Three implementations, side by side
+
+| | =microgpt.py= | microgpt-rs | microgpt.mlpl |
+|-+---------------+-------------+---------------|
+| Lines | 199 | 613 (with tests) | 124 flow + 292 =lib/= definitions |
+| Autograd | =Value= class, object graph | =Tape= arena of scalars | built in, tape of whole arrays |
+| Unit of work | a scalar | a scalar | an =[n, 16]= array |
+| Attention | per-token loop + KV cache | per-token loop + KV cache | one masked pass per name |
+| Adam | hand-written | hand-written | built-in =adam= |
+| RNG | Mersenne Twister | SplitMix64 (hand-written) | seeded =randn= / =shuffle= / =random=; SplitMix64 in =lib/splitmix64= for parity |
+| Wall time (M1 Max) | 61.9 s | 0.593 s | 0.697 s |
+
+- *Speed.* The MLPL interpreter lands within 1.2x of compiled Rust and
+  ~90x ahead of CPython. Each MLPL operation processes a whole array,
+  while Python pays interpreter overhead per scalar operation. This is
+  "everything else is just efficiency" from the other side: the
+  efficiency comes from the language's array ops, not from a hand-written
+  tape.
+- *Exact parity.* Run as =microgpt.mlpl -- --rs-parity=, the port draws
+  every random number from microgpt-rs's SplitMix64 stream, reimplemented
+  in pure MLPL with 64-bit words as four 16-bit pieces. Its output (1000
+  loss lines ending =1.9146= and the same 20 names, =amanion=, =alik=,
+  =zarani=, ...) is byte-identical to microgpt-rs's. =just parity= checks
+  this live.
+- *What MLPL made harder.* String handling and number formatting;
+  interpreter costs (global copies, array-read copies) that shaped the
+  data layout; no vector indexing; a loop-body string bug. See
+  [[file:upstream-issues.md][upstream-issues.md]] for all of them, with reproducers.
+
+Further reading: [[file:python-vs-mlpl.md][python-vs-mlpl.md]] (the same comparison as a plain
+walkthrough), [[file:benchmarks.md][benchmarks.md]] (speed log), [[file:plan.md][plan.md]] (design decisions).
+
+# Local Variables:
+# org-babel-mlpl-command: "mlpl-repl --data-dir .."
+# End:

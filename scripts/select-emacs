@@ -1,0 +1,15 @@
+#!/bin/sh
+# Print the absolute path of an Emacs binary.
+# Order: $EMACS, then emacs on PATH, then the macOS app bundles.
+set -eu
+
+for candidate in "${EMACS:-}" "$(command -v emacs 2>/dev/null || true)" \
+    /Applications/Emacs.app/Contents/MacOS/Emacs \
+    "$HOME/Applications/Emacs.app/Contents/MacOS/Emacs"; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+        printf '%s\n' "$candidate"
+        exit 0
+    fi
+done
+echo "emacs not found (set EMACS)" >&2
+exit 1

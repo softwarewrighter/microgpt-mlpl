@@ -29,6 +29,14 @@ bench runs="5":
 parity:
     scripts/parity.sh
 
+# Evaluate docs/microgpt.org (bake results) and export docs/microgpt.html.
+literate:
+    scripts/publish-literate.sh
+
+# Tangle docs/microgpt.org and require the same output as microgpt.mlpl.
+check-literate:
+    scripts/check-literate.sh
+
 # The full pre-commit gate: ASCII docs, scripts, tests, baselines, Rust tools.
 check:
     scripts/pre-commit.sh
