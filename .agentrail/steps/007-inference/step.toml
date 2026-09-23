@@ -1,9 +1,10 @@
 number = 7
 slug = "inference"
-status = "in-progress"
+status = "completed"
 description = "docs/plan.md step 7 (design decision 9). 20 samples at temperature 0.5: start..."
 role = "production"
 context_files = []
 created_at = "2026-09-22T20:18:45"
+completed_at = "2026-09-22T21:43:27"
 task_type = "feature"
-commits = []
+commits = ["443fe961afd219b0f80c8ca6e52e7bb655c441de"]
