@@ -1,0 +1,1 @@
+Removed (j) workarounds after sw-mlpl e6ee2203: sampling loops (3 scripts, 3 orgs) and faithful window demo back to repeat; all baselines/parity/tangle byte-identical; docs updated; pages rebuilt. Next step (e) blocked on cow-values saga upstream.
