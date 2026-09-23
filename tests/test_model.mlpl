@@ -1,0 +1,69 @@
+# Forward pass (lib/model.mlpl) against microgpt.py's gpt().
+include "lib/data.mlpl";
+d = unwrap(u:dataset(load("input.txt")));
+vocab_size = d.vocab_size;
+include "lib/params.mlpl";
+include "lib/model.mlpl";
+
+batch = u:doc_batch(d, u:gather1(shuffle(range(d.n_docs), 42), range(100)), block_size);
+emma = u:doc_batch(d, [0], block_size);
+
+@test {name: "untrained loss is near uniform, ln(27)", tags: ["model"]}
+def u:test_untrained_loss() {
+  "emma within 0.5 (microgpt-rs's bound); mean over 100 docs within 0.1.";
+  u:set_doc(take(emma.tokens, 0, 0), at(emma.n, 0));
+  u:assert_approx(u:loss(), log(27), 0.5, "emma")?;
+  total = 0;
+  i = 0;
+  repeat 100 {
+    u:set_doc(take(batch.tokens, 0, i), at(batch.n, i));
+    total = total + u:loss();
+    i = i + 1
+  };
+  u:assert_approx(total / 100, log(27), 0.1, "mean over 100 docs")
+}
+
+@test {name: "softmax rows sum to 1", tags: ["model"]}
+def u:test_softmax_rows() {
+  "Next-token distributions and attention weights are normalized (1e-9).";
+  n = u:set_doc(take(emma.tokens, 0, 0), at(emma.n, 0));
+  probs = softmax(u:gpt(cur_in, cur_pos, cur_mask), 1);
+  u:assert_approx(reduce_add(probs, 1), zeros(n) + 1, 0.000000001, "output probs")?;
+  x = u:rmsnorm(u:rmsnorm(gather_rows(wte, cur_in) + gather_rows(wpe, cur_pos)));
+  qh = matmul(u:linear(x, layer0_attn_wq), head_sel2);
+  kh = matmul(u:linear(x, layer0_attn_wk), head_sel2);
+  w = softmax(matmul(qh, transpose(kh)) * attn_scale + cur_mask, 1);
+  u:assert_approx(reduce_add(w, 1), zeros(n) + 1, 0.000000001, "attention rows")?;
+  u:assert_approx(reduce_add(w * lt(cur_mask, 0 - 1)), 0, 0.000000001, "no weight on future keys")
+}
+
+@test {name: "whole-doc masked forward equals the token-by-token KV-cache loop", tags: ["model"]}
+def u:test_prefix_equivalence() {
+  "microgpt.py feeds one token at a time; row t of the masked forward must equal the logits after feeding tokens 0..t.";
+  row = take(batch.tokens, 0, 7);
+  n = at(batch.n, 7);
+  full = u:gpt(u:gather1(row, range(n)), range(n), u:causal_mask(n));
+  t = 0;
+  worst = 0;
+  repeat n {
+    prefix = u:gpt(u:gather1(row, range(t + 1)), range(t + 1), u:causal_mask(t + 1));
+    diff = reduce_add(abs(last_row(prefix) - take(full, 0, t)));
+    worst = worst + diff;
+    t = t + 1
+  };
+  u:assert_approx(worst, 0, 0.000000000001, "summed |diff| over all positions")
+}
+
+@test {name: "building blocks: mask, rmsnorm, head selectors", tags: ["model"]}
+def u:test_blocks() {
+  "Mask is 0 on/below the diagonal; rmsnorm rows have unit RMS; the 4 head selectors partition the 16 columns.";
+  u:assert_eq(u:causal_mask(3), [[0, 0 - 1000000000, 0 - 1000000000], [0, 0, 0 - 1000000000], [0, 0, 0]], "3x3 mask")?;
+  x = randn(7, [5, 16]) * 3;
+  r = u:rmsnorm(x);
+  u:assert_approx(reduce_add(r * r, 1) / 16, zeros(5) + 1, 0.0001, "unit rms (eps 1e-5)")?;
+  q = randn(8, [5, 16]);
+  back = matmul(matmul(q, head_sel0), transpose(head_sel0)) + matmul(matmul(q, head_sel1), transpose(head_sel1)) + matmul(matmul(q, head_sel2), transpose(head_sel2)) + matmul(matmul(q, head_sel3), transpose(head_sel3));
+  u:assert_eq(back, q, "split + reassemble is the identity")
+}
+
+u:run_registered_tests()

@@ -24,4 +24,8 @@ vocab_size = d.vocab_size;
 include "lib/params.mlpl";
 print("num params:", to_string(num_params));
 
+# Define the model architecture: a function mapping tokens and parameters
+# to logits over what comes next (u:gpt), and the per-doc loss (u:loss).
+include "lib/model.mlpl";
+
 exit(0)

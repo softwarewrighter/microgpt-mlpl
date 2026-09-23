@@ -60,6 +60,9 @@ sample  1: ...
    tokens at once (`gather_rows(wte, toks) + gather_rows(wpe, range(n))`),
    computes `Q, K, V : [n, 16]`, splits heads with `reshape` to
    `[n, 4, 4]` + `take(_, 1, h)`, and applies `softmax(QK^T/2 + mask, 1)`.
+   (As built in step 4: heads are split with constant `[16, 4]` column
+   selectors, `q @ sel_h`, and RMSNorm's row mean is `x^2 @ (1/16)`, so
+   nothing in the forward depends on n except the mask.)
    The docs explain this equivalence explicitly (it is the single biggest
    conceptual step between the two files).
 3. **Linear layer orientation.** Python `linear(x, w)` computes `w @ x`

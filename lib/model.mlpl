@@ -1,0 +1,84 @@
+# Model architecture for microgpt.mlpl (microgpt.py's "Define the model
+# architecture" section): GPT-2 with rmsnorm instead of layernorm, no
+# biases, ReLU instead of GeLU. Needs lib/params.mlpl's globals.
+#
+# microgpt.py calls gpt() once per position and grows a KV cache. Here
+# u:gpt runs all n positions of a doc at once: row t of the causal mask
+# hides keys t+1..n-1, so each row sees exactly the prefix the Python KV
+# cache holds at step t -- same numbers, one array pass.
+
+# Per-head column selectors: q_h = q @ head_sel_h picks head h's head_dim
+# columns (Python's q[hs:hs+head_dim]); x_attn = sum_h out_h @ head_sel_h^T
+# puts them back (Python's x_attn.extend). Constant, so no per-doc reshape.
+head_cols = reshape(range(n_embd), [n_embd, 1]);
+head_sel0 = eq(head_cols, reshape(range(head_dim) + 0 * head_dim, [1, head_dim]));
+head_sel1 = eq(head_cols, reshape(range(head_dim) + 1 * head_dim, [1, head_dim]));
+head_sel2 = eq(head_cols, reshape(range(head_dim) + 2 * head_dim, [1, head_dim]));
+head_sel3 = eq(head_cols, reshape(range(head_dim) + 3 * head_dim, [1, head_dim]));
+# Row mean via matmul: x^2 @ mean_col is [n, 1] without knowing n.
+mean_col = zeros([n_embd, 1]) + 1 / n_embd;
+attn_scale = 1 / sqrt(head_dim);
+
+def u:causal_mask(n) {
+  "[n, n] additive mask: 0 where key <= query, -1e9 above the diagonal.";
+  gt(reshape(range(n), [1, n]), reshape(range(n), [n, 1])) * (0 - 1000000000)
+}
+
+def u:linear(x, w) {
+  "Python linear(x, w) = w @ x for w [nout, nin]; rows of x are positions.";
+  matmul(x, transpose(w))
+}
+
+def u:rmsnorm(x) {
+  "Scale each row to unit root-mean-square (eps 1e-5, no gain).";
+  x * pow(matmul(x * x, mean_col) + 0.00001, 0 - 0.5)
+}
+
+def u:head(q, k, v, sel, mask) {
+  "One attention head over all positions: softmax(q k^T / sqrt(d) + mask) v.";
+  qh = matmul(q, sel);
+  kh = matmul(k, sel);
+  vh = matmul(v, sel);
+  w = softmax(matmul(qh, transpose(kh)) * attn_scale + mask, 1);
+  matmul(matmul(w, vh), transpose(sel))
+}
+
+def u:gpt(toks, pos, mask) {
+  "Logits [n, vocab] for token ids toks [n] at positions pos [n] (= range(n)).";
+  x = gather_rows(wte, toks) + gather_rows(wpe, pos);
+  x = u:rmsnorm(x);
+  # 1) Multi-head attention block (n_layer = 1)
+  x_residual = x;
+  x = u:rmsnorm(x);
+  q = u:linear(x, layer0_attn_wq);
+  k = u:linear(x, layer0_attn_wk);
+  v = u:linear(x, layer0_attn_wv);
+  x_attn = u:head(q, k, v, head_sel0, mask) + u:head(q, k, v, head_sel1, mask) + u:head(q, k, v, head_sel2, mask) + u:head(q, k, v, head_sel3, mask);
+  x = u:linear(x_attn, layer0_attn_wo) + x_residual;
+  # 2) MLP block
+  x_residual = x;
+  x = u:rmsnorm(x);
+  x = relu(u:linear(x, layer0_mlp_fc1));
+  x = u:linear(x, layer0_mlp_fc2) + x_residual;
+  u:linear(x, lm_head)
+}
+
+# The loss for the current doc, microgpt.py's mean of -log p(target).
+# WORKAROUND (docs/upstream-issues.md): in mlpl-repl 0.22.0 a u: argument
+# used as cross_entropy targets inside grad is "undefined", so the current
+# doc lives in globals set by u:set_doc and u:loss takes no arguments.
+# Once sw-mlpl's traced-scope-args fix lands this becomes u:loss(inp, tgt).
+
+def u:set_doc(tokens, n) {
+  "Make a token row ([BOS] + ids + [BOS] ...) with n positions the current doc.";
+  global_set("cur_in", u:gather1(tokens, range(n)));
+  global_set("cur_tgt", u:gather1(tokens, range(n) + 1));
+  global_set("cur_pos", range(n));
+  global_set("cur_mask", u:causal_mask(n));
+  n
+}
+
+def u:loss() {
+  "Mean cross-entropy of the current doc's next-token predictions.";
+  cross_entropy(u:gpt(cur_in, cur_pos, cur_mask), cur_tgt)
+}

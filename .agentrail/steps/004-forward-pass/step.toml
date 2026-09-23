@@ -1,6 +1,6 @@
 number = 4
 slug = "forward-pass"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 4 (design decisions 2, 4, 5). Implement rmsnorm (no gain, e..."
 role = "production"
 context_files = []

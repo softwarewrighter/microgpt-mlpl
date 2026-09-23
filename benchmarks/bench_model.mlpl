@@ -1,0 +1,29 @@
+# Per-training-step hot path: set doc, forward, loss, grad, adam step.
+include "../lib/data.mlpl";
+include "../lib/bench.mlpl";
+d = unwrap(u:dataset(load("input.txt")));
+vocab_size = d.vocab_size;
+include "../lib/params.mlpl";
+include "../lib/model.mlpl";
+
+batch = u:doc_batch(d, u:gather1(shuffle(range(d.n_docs), 42), range(1000)), block_size);
+row = take(batch.tokens, 0, 0);
+n = at(batch.n, 0);
+print("doc n =", to_string(n), " mean n over 1000 steps =", to_string(reduce_add(batch.n) / 1000));
+u:set_doc(row, n);
+
+def u:b_set_doc() { "Select the step's doc: row read + in/tgt/pos/mask globals."; u:set_doc(take(batch.tokens, 0, 0), at(batch.n, 0)) }
+def u:b_forward() { "u:gpt logits for the current doc (no tape)."; u:gpt(cur_in, cur_pos, cur_mask) }
+def u:b_loss() { "Forward + cross_entropy (no tape)."; u:loss() }
+def u:b_grad1() { "Tape forward + backward, gradient of one param."; grad(u:loss(), layer0_mlp_fc1) }
+def u:b_adam() {
+  "One full training step's update: adam over all 9 params (lr 0).";
+  adam(u:loss(), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], 0, 0.85, 0.99, 0.00000001)
+}
+
+u:bench("set doc", :u:b_set_doc, 5, 50, 5);
+u:bench("forward", :u:b_forward, 5, 50, 5);
+u:bench("loss", :u:b_loss, 5, 50, 5);
+u:bench("grad (1 param)", :u:b_grad1, 3, 20, 5);
+u:bench("adam step (9 params)", :u:b_adam, 3, 20, 5);
+exit(0)
