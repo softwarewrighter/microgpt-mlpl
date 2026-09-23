@@ -1,0 +1,1 @@
+docs/plan-literate.md step 5. microgpt-compact.mlpl + docs/literate/microgpt-compact.org: token-stream + shift_pairs + DSL chain, minimal lines; equations; baseline; tests; bench. Gate: just check.

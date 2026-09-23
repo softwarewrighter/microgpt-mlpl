@@ -1,0 +1,1 @@
+docs/plan-literate.md step 3. Move docs/microgpt.org(+html) to docs/literate/microgpt-faithful.org; generalize publish/check scripts to docs/literate/*.org; add LaTeX equations (MathJax) and @formula annotations with an annotations() read-back block. Tangle check must still equal microgpt.mlpl output. Gate: just check.

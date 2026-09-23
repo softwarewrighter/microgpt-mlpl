@@ -1,0 +1,1 @@
+docs/plan-literate.md step 6. docs/literate.md comparing the three variants (LOC, speed, loss, idioms, divergences, pros/cons); README/benchmarks updates. Gate: just check.

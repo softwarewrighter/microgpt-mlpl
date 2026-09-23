@@ -1,0 +1,1 @@
+docs/plan-literate.md step 1. Write docs/idiomatic-mlpl.md: idioms from the companion demo-* repos (survey results), snippets with paths, and how each applies to microgpt. ASCII-only markdown. Gate: just check.

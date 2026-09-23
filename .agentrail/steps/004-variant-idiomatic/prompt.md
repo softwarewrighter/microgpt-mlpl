@@ -1,0 +1,1 @@
+docs/plan-literate.md step 4. microgpt-idiomatic.mlpl + docs/literate/microgpt-idiomatic.org: Model DSL layers, adam over the model, KV-cached sampling; same data regime; @formula annotations + equations; reg-rs baseline; mlplunit tests; bench. Gate: just check.

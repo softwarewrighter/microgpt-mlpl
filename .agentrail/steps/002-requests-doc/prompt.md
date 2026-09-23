@@ -1,0 +1,1 @@
+docs/plan-literate.md step 2. Write docs/sw-mlpl-requests.md: language/library suggestions for conciseness and readability (macros, destructuring, comprehensions, slicing, formatting, unicode, ...), grounded in workarounds here and in downstream repos, marked against what sw-mlpl already tracks or rejected. Gate: just check.
