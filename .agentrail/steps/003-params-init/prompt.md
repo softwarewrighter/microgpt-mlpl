@@ -1,0 +1,1 @@
+docs/plan.md step 3 (design decisions 1, 3, 7). Declare wte[27,16], wpe[16,16], lm_head[27,16], attn_wq/wk/wv/wo[16,16], mlp_fc1[64,16], mlp_fc2[16,64] as param[...] with the Python [nout, nin] shapes, init randn(seed_i, shape) * 0.08 with a fixed distinct seed per matrix. Print 'num params: 4192' computed from shapes.

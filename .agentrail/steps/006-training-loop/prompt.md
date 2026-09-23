@@ -1,0 +1,1 @@
+docs/plan.md step 6 (design decision 6). 1000 steps, one doc per step (order[step % N]), adam(u:loss(), [all params], 0.01 * (1 - step/1000), 0.85, 0.99, 1e-8). Print 'step  k / 1000 | loss x.xxxx'. Verify MLPL adam bias correction matches microgpt.py. Done when loss falls from ~3.3 into ~2.0-2.2, two runs are bit-identical, and wall time is recorded in the step summary.

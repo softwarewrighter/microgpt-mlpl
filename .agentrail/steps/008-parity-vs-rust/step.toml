@@ -1,0 +1,9 @@
+number = 8
+slug = "parity-vs-rust"
+status = "pending"
+description = "docs/plan.md step 8. tools/rs-init-dump: small standalone Rust bin that copie..."
+role = "production"
+context_files = []
+created_at = "2026-09-22T20:18:45"
+task_type = "validation"
+commits = []

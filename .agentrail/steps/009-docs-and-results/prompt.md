@@ -1,0 +1,1 @@
+docs/plan.md step 9. Write docs/python-vs-mlpl.md (side-by-side of each microgpt.py section and its MLPL equivalent, including the KV-cache vs causal-mask equivalence). Update README: results table (Python / microgpt-rs / MLPL wall time, final loss, sample names, same machine), status section, run instructions.

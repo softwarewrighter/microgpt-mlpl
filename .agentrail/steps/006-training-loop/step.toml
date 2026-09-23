@@ -1,0 +1,9 @@
+number = 6
+slug = "training-loop"
+status = "pending"
+description = "docs/plan.md step 6 (design decision 6). 1000 steps, one doc per step (order[..."
+role = "production"
+context_files = []
+created_at = "2026-09-22T20:18:45"
+task_type = "feature"
+commits = []

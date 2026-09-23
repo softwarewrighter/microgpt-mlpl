@@ -1,0 +1,1 @@
+docs/plan.md step 7 (design decision 9). 20 samples at temperature 0.5: start from BOS, recompute forward over the prefix, last_row of logits, sample(logits, 0.5, seed) with a deterministic per-(sample,pos) seed, stop on BOS or block_size. Print '--- inference (new, hallucinated names) ---' and 'sample %2d: name' like microgpt.py. Done when outputs look like plausible names.

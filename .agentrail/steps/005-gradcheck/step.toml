@@ -1,0 +1,9 @@
+number = 5
+slug = "gradcheck"
+status = "pending"
+description = "docs/plan.md step 5. tests/gradcheck.mlpl: central finite differences on seve..."
+role = "production"
+context_files = []
+created_at = "2026-09-22T20:18:45"
+task_type = "test"
+commits = []
