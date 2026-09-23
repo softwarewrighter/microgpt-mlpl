@@ -1,9 +1,10 @@
 number = 6
 slug = "training-loop"
-status = "in-progress"
+status = "completed"
 description = "docs/plan.md step 6 (design decision 6). 1000 steps, one doc per step (order[..."
 role = "production"
 context_files = []
 created_at = "2026-09-22T20:18:45"
+completed_at = "2026-09-22T21:28:09"
 task_type = "feature"
-commits = []
+commits = ["3f2c2f040750458add4096ea0475a9fc68608aa7"]
