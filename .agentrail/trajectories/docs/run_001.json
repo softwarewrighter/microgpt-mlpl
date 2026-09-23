@@ -1,0 +1,11 @@
+{
+  "task_type": "docs",
+  "state": {
+    "number": 1,
+    "step": "idiomatic-doc"
+  },
+  "action": "two Explore surveys, spot-checked citations, wrote doc",
+  "result": "success",
+  "reward": 1,
+  "timestamp": "2026-09-23T08:26:28"
+}

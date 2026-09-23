@@ -1,0 +1,1 @@
+docs/idiomatic-mlpl.md written from surveys of 18 companion repos: array idioms, functions-as-values, Result/records/libraries, Model DSL, @formula/@ascii math annotations + demo-ml-utils notation rules, style/testing, anti-pattern table, port-specific idioms, variant mapping (idiomatic: learned positions outside chain, no cache; compact: no positions, KV cache).

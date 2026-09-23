@@ -1,9 +1,10 @@
 number = 1
 slug = "idiomatic-doc"
-status = "in-progress"
+status = "completed"
 description = "docs/plan-literate.md step 1. Write docs/idiomatic-mlpl.md: idioms from the c..."
 role = "production"
 context_files = []
 created_at = "2026-09-23T08:23:26"
+completed_at = "2026-09-23T08:26:28"
 task_type = "docs"
-commits = []
+commits = ["e122a6b3f17bc248d91ffaaf96ee45431a922712"]
