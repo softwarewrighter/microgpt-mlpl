@@ -1,0 +1,11 @@
+{
+  "task_type": "docs",
+  "state": {
+    "number": 4,
+    "step": "variant-idiomatic"
+  },
+  "action": "wrote variant, measured LOC/speed, found init-scale issue, wrote org, baseline, published",
+  "result": "success",
+  "reward": 1,
+  "timestamp": "2026-09-23T09:03:31"
+}

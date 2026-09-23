@@ -1,0 +1,1 @@
+Idiomatic variant: microgpt-idiomatic.mlpl (Model DSL, stream tokenizer, learned pos outside chain, adam over models, sample()); 48 code lines vs 230; ~0.5s; loss 2.47; 4299 params. Found DSL linear init std ~0.6 (untrained loss 20.5). Literate org with equations + annotations; reg-rs baseline; tangle check passes.

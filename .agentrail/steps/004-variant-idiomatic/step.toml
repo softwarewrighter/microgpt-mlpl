@@ -1,9 +1,10 @@
 number = 4
 slug = "variant-idiomatic"
-status = "in-progress"
+status = "completed"
 description = "docs/plan-literate.md step 4. microgpt-idiomatic.mlpl + docs/literate/microgp..."
 role = "production"
 context_files = []
 created_at = "2026-09-23T08:23:26"
+completed_at = "2026-09-23T09:03:31"
 task_type = "docs"
-commits = []
+commits = ["5cee1a84267a8e94d7f91ecaac41dd0912fbefa4"]
