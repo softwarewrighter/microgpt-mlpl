@@ -753,7 +753,7 @@ windows:
 
 #+begin_src mlpl :tangle no :post strip-echo(text=*this*)
 w = 0;
-while lt(w, 10) {
+repeat 10 {
   m = reduce_add(last_losses * ge(range(num_steps), 100 * w) * lt(range(num_steps), 100 * w + 100)) / 100;
   print(str_concat(str_concat(str_concat("steps ", u:fmt_int(100 * w + 1, 4)), str_concat("-", u:fmt_int(100 * w + 100, 4))), str_concat("  mean loss ", u:fmt_fixed4(m))));
   w = w + 1
@@ -843,9 +843,9 @@ def u:ids_to_text(ids) {
 }
 #+end_src
 
-The sampling loop is a =while=, not a =repeat=: in mlpl-repl 0.22.0 a
-string-valued statement inside a =repeat=/=train=/=for= body fails the
-loop (upstream issue j; a fix is queued).
+The loop over samples is a plain =repeat=. (Until sw-mlpl e6ee2203, a
+string-valued statement inside a =repeat= body failed the loop, and this
+block had to use a =while=; upstream issue j.)
 
 #+begin_src mlpl :post strip-echo(text=*this*)
 temperature = 0.5;
@@ -855,7 +855,7 @@ cursor = 0;
 print("");
 print("--- inference (new, hallucinated names) ---");
 sample_idx = 0;
-while lt(sample_idx, num_samples) {
+repeat num_samples {
   ids = u:generate(sample_uniforms, cursor, temperature);
   cursor = cursor + u:consumed(ids);
   name = u:ids_to_text(ids);

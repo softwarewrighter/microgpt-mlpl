@@ -97,10 +97,13 @@ steps + 20 samples; wall time, median of 7 runs (CPython: 1 run).
 
 ## Status
 
-Complete: all ten saga steps are done (`agentrail status`). Remaining
-work is upstream-dependent cleanup: when sw-MLPL fixes issues (e) and
-(j) (`docs/upstream-issues.md`), the `expunge` of the corpus and the
-`while` sampling loop can go.
+Complete: the port, the parity work, three variants with literate
+programs, and the live demo (sagas archived in `.agentrail-archive/`).
+Upstream fixes are folded in as they land (`upstream-cleanups` saga):
+issue (j) is fixed in sw-mlpl e6ee2203, so the sampling loops are
+`repeat` again. Issue (e), copies of large values and globals, is queued
+upstream as copy-on-write values; once it lands, the `expunge` and
+pre-gathering workarounds can be re-measured and removed.
 
 | step | slug | status |
 |---|---|---|

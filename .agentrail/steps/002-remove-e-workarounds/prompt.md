@@ -1,0 +1,1 @@
+docs/plan-upstream.md step 2: blocked until sw-mlpl's cow-values saga lands (issue e). Re-measure; drop expunge/pre-gather moves that no longer matter; update benchmarks and the readability-vs-speed table. Gate: just check.

@@ -305,7 +305,7 @@ names = raw |> str_split("\n") |> select(:u:nonempty);
 - **`mlpl-mode` keywords:** `def`, `if`, `else`, `while` and `for` are not
   highlighted today.
 - **Error spans:** a line and column on script errors (queued,
-  `error-spans`). The loop-body string bug (issue j) was slow to find
+  `error-spans`). The loop-body string bug (issue j, since fixed) was slow to find
   because the error named no statement.
 
 ### 14. Compile to a native binary: close the gaps microgpt hits

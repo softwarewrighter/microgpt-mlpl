@@ -110,10 +110,8 @@ sample_uniforms = if rs_parity {
 cursor = 0;
 print("");
 print("--- inference (new, hallucinated names) ---");
-# (A while loop: repeat/train/for bodies reject string-valued statements
-# in mlpl-repl 0.22.0 -- docs/upstream-issues.md (j).)
 sample_idx = 0;
-while lt(sample_idx, num_samples) {
+repeat num_samples {
   ids = u:generate(sample_uniforms, cursor, temperature);
   cursor = cursor + u:consumed(ids);
   name = u:ids_to_text(ids);

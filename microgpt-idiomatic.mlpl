@@ -57,7 +57,7 @@ print("mean loss, steps 901-1000:", to_string(round(10000 * reduce_add(last_loss
 # Sample: built-in categorical sampling at temperature 0.5, until BOS.
 print("--- inference (new, hallucinated names) ---");
 i = 0;
-while i < 20 {
+repeat 20 {
   seq = [26];
   done = 0;
   while (len(seq) <= T) * (1 - done) {

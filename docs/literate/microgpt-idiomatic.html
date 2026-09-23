@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-09-23 Wed 09:03 -->
+<!-- 2026-09-23 Wed 09:30 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>microgpt in idiomatic MLPL</title>
@@ -260,18 +260,18 @@ table, th, td { border-color: #33373e; }
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgddcd7f0">1. Introduction</a></li>
-<li><a href="#orgb50e193">2. 1. One helper</a></li>
-<li><a href="#orga988dc3">3. 2. Tokens: the corpus as one stream</a></li>
-<li><a href="#org24d72ba">4. 3. The model is a sentence</a></li>
-<li><a href="#org68f4c53">5. 4. Training: one line of work per step</a></li>
-<li><a href="#orgc8c205f">6. 5. Sampling with the built-in sampler</a></li>
-<li><a href="#org579450c">7. What the DSL bought, and what it cost</a></li>
+<li><a href="#org7e3053b">1. Introduction</a></li>
+<li><a href="#orgbad77e8">2. 1. One helper</a></li>
+<li><a href="#org189484e">3. 2. Tokens: the corpus as one stream</a></li>
+<li><a href="#org2624658">4. 3. The model is a sentence</a></li>
+<li><a href="#org155a072">5. 4. Training: one line of work per step</a></li>
+<li><a href="#org83439e3">6. 5. Sampling with the built-in sampler</a></li>
+<li><a href="#org8d4c4c9">7. What the DSL bought, and what it cost</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgddcd7f0" class="outline-2">
-<h2 id="orgddcd7f0"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-org7e3053b" class="outline-2">
+<h2 id="org7e3053b"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 The <a href="microgpt-faithful.html">faithful port</a> follows <a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">microgpt.py</a> line by line: nine hand-declared
@@ -367,8 +367,8 @@ script's output to equal <code>microgpt-idiomatic.mlpl</code>'s reg-rs baseline.
 </p>
 </div>
 </div>
-<div id="outline-container-orgb50e193" class="outline-2">
-<h2 id="orgb50e193"><span class="section-number-2">2.</span> 1. One helper</h2>
+<div id="outline-container-orgbad77e8" class="outline-2">
+<h2 id="orgbad77e8"><span class="section-number-2">2.</span> 1. One helper</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 MLPL's <code>at</code> / <code>take</code> accept a single index. Selecting many elements is a
@@ -385,8 +385,8 @@ shape. (A built-in <code>gather(x, idx)</code> is request #2 in <a href="https:/
 </div>
 </div>
 </div>
-<div id="outline-container-orga988dc3" class="outline-2">
-<h2 id="orga988dc3"><span class="section-number-2">3.</span> 2. Tokens: the corpus as one stream</h2>
+<div id="outline-container-org189484e" class="outline-2">
+<h2 id="org189484e"><span class="section-number-2">3.</span> 2. Tokens: the corpus as one stream</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 The names file is lowercase ASCII, one name per line. Subtracting 97 maps
@@ -450,8 +450,8 @@ call copies the globals in this interpreter (upstream issue e).
 </p>
 </div>
 </div>
-<div id="outline-container-org24d72ba" class="outline-2">
-<h2 id="org24d72ba"><span class="section-number-2">4.</span> 3. The model is a sentence</h2>
+<div id="outline-container-org2624658" class="outline-2">
+<h2 id="org2624658"><span class="section-number-2">4.</span> 3. The model is a sentence</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 The faithful port spends ~60 lines on 9 weight matrices, RMSNorm,
@@ -535,8 +535,8 @@ request list.
 </p>
 </div>
 </div>
-<div id="outline-container-org68f4c53" class="outline-2">
-<h2 id="org68f4c53"><span class="section-number-2">5.</span> 4. Training: one line of work per step</h2>
+<div id="outline-container-org155a072" class="outline-2">
+<h2 id="org155a072"><span class="section-number-2">5.</span> 4. Training: one line of work per step</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 \[
@@ -576,8 +576,8 @@ initialization.
 </p>
 </div>
 </div>
-<div id="outline-container-orgc8c205f" class="outline-2">
-<h2 id="orgc8c205f"><span class="section-number-2">6.</span> 5. Sampling with the built-in sampler</h2>
+<div id="outline-container-org83439e3" class="outline-2">
+<h2 id="org83439e3"><span class="section-number-2">6.</span> 5. Sampling with the built-in sampler</h2>
 <div class="outline-text-2" id="text-6">
 <p>
 <code>sample(logits, temperature, seed)</code> draws from
@@ -593,14 +593,14 @@ initialization.
 
 <p>
 Each step recomputes the logits for the whole prefix, at most 16
-tokens. The loop is a <code>while</code> because string statements break <code>repeat</code>
-bodies (upstream issue j).
+tokens. The outer loop is a <code>repeat</code> over the 20 samples, and the inner
+<code>while</code> stops at BOS.
 </p>
 
 <div class="org-src-container">
 <pre class="src src-mlpl">print(<span class="org-string">"--- inference (new, hallucinated names) ---"</span>)<span class="org-mlpl-operator">;</span>
 i <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
-while i <span class="org-mlpl-operator">&lt;</span> <span class="org-mlpl-number">20</span> {
+<span class="org-mlpl-keyword">repeat</span> <span class="org-mlpl-number">20</span> {
   seq <span class="org-mlpl-operator">=</span> [<span class="org-mlpl-number">26</span>]<span class="org-mlpl-operator">;</span>
   done <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
   while (len(seq) <span class="org-mlpl-operator">&lt;=</span> T) * (<span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> done) {
@@ -615,7 +615,7 @@ i
 </pre>
 </div>
 
-<pre class="example" id="org31841d1">
+<pre class="example" id="orgbebea25">
 --- inference (new, hallucinated names) ---
 sample 1: jiafini
 sample 2: tamesin
@@ -640,8 +640,8 @@ sample 20: deidei
 </pre>
 </div>
 </div>
-<div id="outline-container-org579450c" class="outline-2">
-<h2 id="org579450c"><span class="section-number-2">7.</span> What the DSL bought, and what it cost</h2>
+<div id="outline-container-org8d4c4c9" class="outline-2">
+<h2 id="org8d4c4c9"><span class="section-number-2">7.</span> What the DSL bought, and what it cost</h2>
 <div class="outline-text-2" id="text-7">
 <ul class="org-ul">
 <li><b>Gained:</b>
@@ -675,7 +675,7 @@ match the paper and its initialization exactly;</li>
 <div id="postamble" class="status">
 <p class="date">Date: 2026-09-23</p>
 <p class="author">Author: Mike Wright</p>
-<p class="date">Created: 2026-09-23 Wed 09:03</p>
+<p class="date">Created: 2026-09-23 Wed 09:30</p>
 </div>
 </body>
 </html>

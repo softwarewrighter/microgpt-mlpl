@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-09-23 Wed 08:46 -->
+<!-- 2026-09-23 Wed 09:30 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>microgpt in MLPL</title>
@@ -260,35 +260,35 @@ table, th, td { border-color: #33373e; }
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orga9bfb8f">1. Introduction</a>
+<li><a href="#org2436488">1. Introduction</a>
 <ul>
-<li><a href="#org636e9ef">1.1. The map at a glance</a></li>
-<li><a href="#orgae27ce5">1.2. Running this document</a></li>
+<li><a href="#orgfbd01c3">1.1. The map at a glance</a></li>
+<li><a href="#org9dbf504">1.2. Running this document</a></li>
 </ul>
 </li>
-<li><a href="#org7b1530c">2. Small helpers</a></li>
-<li><a href="#org4317a8b">3. 1. Dataset</a></li>
-<li><a href="#org0b1b6c9">4. 2. Tokenizer</a></li>
-<li><a href="#orgbc77b0c">5. 3. Autograd: nothing to write</a></li>
-<li><a href="#orge795e21">6. 4. Parameters</a></li>
-<li><a href="#orgf1f4542">7. 5. Model</a>
+<li><a href="#orgb592316">2. Small helpers</a></li>
+<li><a href="#orgf8fd142">3. 1. Dataset</a></li>
+<li><a href="#org9c1d232">4. 2. Tokenizer</a></li>
+<li><a href="#org800a67f">5. 3. Autograd: nothing to write</a></li>
+<li><a href="#org0427d35">6. 4. Parameters</a></li>
+<li><a href="#org74e4c21">7. 5. Model</a>
 <ul>
-<li><a href="#org3b84579">7.1. linear and rmsnorm</a></li>
-<li><a href="#orgf87fe43">7.2. Attention: the KV cache becomes a causal mask</a></li>
-<li><a href="#orgdbb0215">7.3. The whole forward pass</a></li>
-<li><a href="#orgda08dee">7.4. The loss</a></li>
-<li><a href="#org974777e">7.5. The equations as data</a></li>
+<li><a href="#org5200198">7.1. linear and rmsnorm</a></li>
+<li><a href="#org4edb2f0">7.2. Attention: the KV cache becomes a causal mask</a></li>
+<li><a href="#org08f6716">7.3. The whole forward pass</a></li>
+<li><a href="#org7607043">7.4. The loss</a></li>
+<li><a href="#org0d7d91d">7.5. The equations as data</a></li>
 </ul>
 </li>
-<li><a href="#orge27cf77">8. 6. Adam: built in</a></li>
-<li><a href="#orgcf6b52a">9. 7. Training</a></li>
-<li><a href="#org53c0ab1">10. 8. Inference</a></li>
-<li><a href="#orgcca69a8">11. 9. Three implementations, side by side</a></li>
+<li><a href="#orgbaae583">8. 6. Adam: built in</a></li>
+<li><a href="#org7b61646">9. 7. Training</a></li>
+<li><a href="#orgc8178a1">10. 8. Inference</a></li>
+<li><a href="#orga6eb105">11. 9. Three implementations, side by side</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orga9bfb8f" class="outline-2">
-<h2 id="orga9bfb8f"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-org2436488" class="outline-2">
+<h2 id="org2436488"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Andrej Karpathy's <a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">microgpt.py</a> trains a GPT and samples from it in ~200 lines of
@@ -342,8 +342,8 @@ for line. The idiomatic and compact variants trade that fidelity for
 shorter code built from MLPL's Model DSL.
 </p>
 </div>
-<div id="outline-container-org636e9ef" class="outline-3">
-<h3 id="org636e9ef"><span class="section-number-3">1.1.</span> The map at a glance</h3>
+<div id="outline-container-orgfbd01c3" class="outline-3">
+<h3 id="orgfbd01c3"><span class="section-number-3">1.1.</span> The map at a glance</h3>
 <div class="outline-text-3" id="text-1-1">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -436,8 +436,8 @@ shorter code built from MLPL's Model DSL.
 </table>
 </div>
 </div>
-<div id="outline-container-orgae27ce5" class="outline-3">
-<h3 id="orgae27ce5"><span class="section-number-3">1.2.</span> Running this document</h3>
+<div id="outline-container-org9dbf504" class="outline-3">
+<h3 id="org9dbf504"><span class="section-number-3">1.2.</span> Running this document</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 The session needs the repo root as MLPL's data directory, so that
@@ -460,8 +460,8 @@ repeated last line.
 </div>
 </div>
 </div>
-<div id="outline-container-org7b1530c" class="outline-2">
-<h2 id="org7b1530c"><span class="section-number-2">2.</span> Small helpers</h2>
+<div id="outline-container-orgb592316" class="outline-2">
+<h2 id="orgb592316"><span class="section-number-2">2.</span> Small helpers</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Two kinds of helper that Python gets for free: indexing a vector by a
@@ -511,8 +511,8 @@ def u<span class="org-mlpl-operator">:</span>write(s) {
 </pre>
 </div>
 </div>
-<div id="outline-container-org4317a8b" class="outline-2">
-<h2 id="org4317a8b"><span class="section-number-2">3.</span> 1. Dataset</h2>
+<div id="outline-container-orgf8fd142" class="outline-2">
+<h2 id="orgf8fd142"><span class="section-number-2">3.</span> 1. Dataset</h2>
 <div class="outline-text-2" id="text-3">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">docs</span> <span class="org-operator">=</span> [line.strip() <span class="org-keyword">for</span> line <span class="org-keyword">in</span> <span class="org-builtin">open</span>(<span class="org-string">'input.txt'</span>) <span class="org-keyword">if</span> line.strip()]
@@ -591,8 +591,8 @@ took 254 ms; see <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob
 </p>
 </div>
 </div>
-<div id="outline-container-org0b1b6c9" class="outline-2">
-<h2 id="org0b1b6c9"><span class="section-number-2">4.</span> 2. Tokenizer</h2>
+<div id="outline-container-org9c1d232" class="outline-2">
+<h2 id="org9c1d232"><span class="section-number-2">4.</span> 2. Tokenizer</h2>
 <div class="outline-text-2" id="text-4">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">uchars</span> <span class="org-operator">=</span> <span class="org-builtin">sorted</span>(<span class="org-builtin">set</span>(<span class="org-string">''</span>.join(docs)))
@@ -693,8 +693,8 @@ abcdefghijklmnopqrstuvwxyz
 </pre>
 </div>
 </div>
-<div id="outline-container-orgbc77b0c" class="outline-2">
-<h2 id="orgbc77b0c"><span class="section-number-2">5.</span> 3. Autograd: nothing to write</h2>
+<div id="outline-container-org800a67f" class="outline-2">
+<h2 id="org800a67f"><span class="section-number-2">5.</span> 3. Autograd: nothing to write</h2>
 <div class="outline-text-2" id="text-5">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">class</span> <span class="org-type">Value</span>:
@@ -745,8 +745,8 @@ central finite differences for all nine matrices; they agree to ~3e-11.
 </p>
 </div>
 </div>
-<div id="outline-container-orge795e21" class="outline-2">
-<h2 id="orge795e21"><span class="section-number-2">6.</span> 4. Parameters</h2>
+<div id="outline-container-org0427d35" class="outline-2">
+<h2 id="org0427d35"><span class="section-number-2">6.</span> 4. Parameters</h2>
 <div class="outline-text-2" id="text-6">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">matrix</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> <span class="org-variable-name">nout</span>, <span class="org-variable-name">nin</span>, <span class="org-variable-name">std</span><span class="org-operator">=</span>0.08: [[Value(random.gauss(0, std)) <span class="org-keyword">for</span> _ <span class="org-keyword">in</span> <span class="org-builtin">range</span>(nin)] <span class="org-keyword">for</span> _ <span class="org-keyword">in</span> <span class="org-builtin">range</span>(nout)]
@@ -840,8 +840,8 @@ num params: 4192
 </pre>
 </div>
 </div>
-<div id="outline-container-orgf1f4542" class="outline-2">
-<h2 id="orgf1f4542"><span class="section-number-2">7.</span> 5. Model</h2>
+<div id="outline-container-org74e4c21" class="outline-2">
+<h2 id="org74e4c21"><span class="section-number-2">7.</span> 5. Model</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 microgpt.py follows GPT-2 with three simplifications: RMSNorm instead of
@@ -850,8 +850,8 @@ Python's names and structure, but each works on an <code>[n, 16]</code> array, o
 per position of the name, instead of a list of scalars.
 </p>
 </div>
-<div id="outline-container-org3b84579" class="outline-3">
-<h3 id="org3b84579"><span class="section-number-3">7.1.</span> linear and rmsnorm</h3>
+<div id="outline-container-org5200198" class="outline-3">
+<h3 id="org5200198"><span class="section-number-3">7.1.</span> linear and rmsnorm</h3>
 <div class="outline-text-3" id="text-7-1">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">linear</span>(x, w): <span class="org-keyword">return</span> [<span class="org-builtin">sum</span>(wi <span class="org-operator">*</span> xi <span class="org-keyword">for</span> wi, xi <span class="org-keyword">in</span> <span class="org-builtin">zip</span>(wo, x)) <span class="org-keyword">for</span> wo <span class="org-keyword">in</span> w]
@@ -910,8 +910,8 @@ def u<span class="org-mlpl-operator">:</span>rmsnorm(x) {
 </div>
 </div>
 </div>
-<div id="outline-container-orgf87fe43" class="outline-3">
-<h3 id="orgf87fe43"><span class="section-number-3">7.2.</span> Attention: the KV cache becomes a causal mask</h3>
+<div id="outline-container-org4edb2f0" class="outline-3">
+<h3 id="org4edb2f0"><span class="section-number-3">7.2.</span> Attention: the KV cache becomes a causal mask</h3>
 <div class="outline-text-3" id="text-7-2">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">gpt</span>(token_id, pos_id, keys, values):        <span class="org-comment-delimiter"># </span><span class="org-comment">ONE position per call
@@ -1011,8 +1011,8 @@ def u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operato
 </div>
 </div>
 </div>
-<div id="outline-container-orgdbb0215" class="outline-3">
-<h3 id="orgdbb0215"><span class="section-number-3">7.3.</span> The whole forward pass</h3>
+<div id="outline-container-org08f6716" class="outline-3">
+<h3 id="org08f6716"><span class="section-number-3">7.3.</span> The whole forward pass</h3>
 <div class="outline-text-3" id="text-7-3">
 <p>
 Line for line the same structure as Python's <code>gpt()</code>: embeddings, a first
@@ -1057,8 +1057,8 @@ RMSNorm, then the attention and MLP blocks with residuals, then <code>lm_head</c
 </div>
 </div>
 </div>
-<div id="outline-container-orgda08dee" class="outline-3">
-<h3 id="orgda08dee"><span class="section-number-3">7.4.</span> The loss</h3>
+<div id="outline-container-org7607043" class="outline-3">
+<h3 id="org7607043"><span class="section-number-3">7.4.</span> The loss</h3>
 <div class="outline-text-3" id="text-7-4">
 <div class="org-src-container">
 <pre class="src src-python">losses.append(<span class="org-operator">-</span>probs[target_id].log())
@@ -1133,8 +1133,8 @@ sum |prefix-by-prefix - masked| over all positions: 0
 </pre>
 </div>
 </div>
-<div id="outline-container-org974777e" class="outline-3">
-<h3 id="org974777e"><span class="section-number-3">7.5.</span> The equations as data</h3>
+<div id="outline-container-org0d7d91d" class="outline-3">
+<h3 id="org0d7d91d"><span class="section-number-3">7.5.</span> The equations as data</h3>
 <div class="outline-text-3" id="text-7-5">
 <p>
 The <code>@formula</code> annotations are ordinary data on each function, so the
@@ -1157,8 +1157,8 @@ L = −(1/n) ∑(t=0..n−1) log softmax(z_t)[y_t],   z = gpt(inp)
 </div>
 </div>
 </div>
-<div id="outline-container-orge27cf77" class="outline-2">
-<h2 id="orge27cf77"><span class="section-number-2">8.</span> 6. Adam: built in</h2>
+<div id="outline-container-orgbaae583" class="outline-2">
+<h2 id="orgbaae583"><span class="section-number-2">8.</span> 6. Adam: built in</h2>
 <div class="outline-text-2" id="text-8">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">m</span>[i] <span class="org-operator">=</span> beta1 <span class="org-operator">*</span> m[i] <span class="org-operator">+</span> (1 <span class="org-operator">-</span> beta1) <span class="org-operator">*</span> p.grad
@@ -1204,8 +1204,8 @@ eps_adam <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">
 </div>
 </div>
 </div>
-<div id="outline-container-orgcf6b52a" class="outline-2">
-<h2 id="orgcf6b52a"><span class="section-number-2">9.</span> 7. Training</h2>
+<div id="outline-container-org7b61646" class="outline-2">
+<h2 id="org7b61646"><span class="section-number-2">9.</span> 7. Training</h2>
 <div class="outline-text-2" id="text-9">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">for</span> step <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_steps):
@@ -1274,7 +1274,7 @@ windows:
 
 <div class="org-src-container">
 <pre class="src src-mlpl">w <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
-while <span class="org-mlpl-builtin">lt</span>(w<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">10</span>) {
+<span class="org-mlpl-keyword">repeat</span> <span class="org-mlpl-number">10</span> {
   m <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reduce_add</span>(last_losses * ge(range(num_steps)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">100</span> * w) * <span class="org-mlpl-builtin">lt</span>(range(num_steps)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">100</span> * w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">100</span>)) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">100</span><span class="org-mlpl-operator">;</span>
   print(str_concat(str_concat(str_concat(<span class="org-string">"steps "</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_int(<span class="org-mlpl-number">100</span> * w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>))<span class="org-mlpl-operator">,</span> str_concat(<span class="org-string">"-"</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_int(<span class="org-mlpl-number">100</span> * w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">100</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>)))<span class="org-mlpl-operator">,</span> str_concat(<span class="org-string">"  mean loss "</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(m))))<span class="org-mlpl-operator">;</span>
   w <span class="org-mlpl-operator">=</span> w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
@@ -1283,7 +1283,7 @@ print(str_concat(<span class="org-string">"step 1000 loss "</span><span class="o
 </pre>
 </div>
 
-<pre class="example" id="orgf2625c5">
+<pre class="example" id="org21e73ba">
 steps    1- 100  mean loss 2.7501
 steps  101- 200  mean loss 2.5411
 steps  201- 300  mean loss 2.5331
@@ -1305,8 +1305,8 @@ streams.
 </p>
 </div>
 </div>
-<div id="outline-container-org53c0ab1" class="outline-2">
-<h2 id="org53c0ab1"><span class="section-number-2">10.</span> 8. Inference</h2>
+<div id="outline-container-orgc8178a1" class="outline-2">
+<h2 id="orgc8178a1"><span class="section-number-2">10.</span> 8. Inference</h2>
 <div class="outline-text-2" id="text-10">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">token_id</span> <span class="org-operator">=</span> BOS
@@ -1377,9 +1377,9 @@ def u<span class="org-mlpl-operator">:</span>ids_to_text(ids) {
 </div>
 
 <p>
-The sampling loop is a <code>while</code>, not a <code>repeat</code>: in mlpl-repl 0.22.0 a
-string-valued statement inside a <code>repeat=/=train=/=for</code> body fails the
-loop (upstream issue j; a fix is queued).
+The loop over samples is a plain <code>repeat</code>. (Until sw-mlpl e6ee2203, a
+string-valued statement inside a <code>repeat</code> body failed the loop, and this
+block had to use a <code>while</code>; upstream issue j.)
 </p>
 
 <div class="org-src-container">
@@ -1390,7 +1390,7 @@ cursor <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0<
 print(<span class="org-string">""</span>)<span class="org-mlpl-operator">;</span>
 print(<span class="org-string">"--- inference (new, hallucinated names) ---"</span>)<span class="org-mlpl-operator">;</span>
 sample_idx <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
-while <span class="org-mlpl-builtin">lt</span>(sample_idx<span class="org-mlpl-operator">,</span> num_samples) {
+<span class="org-mlpl-keyword">repeat</span> num_samples {
   ids <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>generate(sample_uniforms<span class="org-mlpl-operator">,</span> cursor<span class="org-mlpl-operator">,</span> temperature)<span class="org-mlpl-operator">;</span>
   cursor <span class="org-mlpl-operator">=</span> cursor <span class="org-mlpl-operator">+</span> u<span class="org-mlpl-operator">:</span>consumed(ids)<span class="org-mlpl-operator">;</span>
   name <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>ids_to_text(ids)<span class="org-mlpl-operator">;</span>
@@ -1401,7 +1401,7 @@ sample_idx
 </pre>
 </div>
 
-<pre class="example" id="org7f6fc3f">
+<pre class="example" id="org4d24a28">
 --- inference (new, hallucinated names) ---
 sample  1: aline
 sample  2: erish
@@ -1426,8 +1426,8 @@ sample 20: rikia
 </pre>
 </div>
 </div>
-<div id="outline-container-orgcca69a8" class="outline-2">
-<h2 id="orgcca69a8"><span class="section-number-2">11.</span> 9. Three implementations, side by side</h2>
+<div id="outline-container-orga6eb105" class="outline-2">
+<h2 id="orga6eb105"><span class="section-number-2">11.</span> 9. Three implementations, side by side</h2>
 <div class="outline-text-2" id="text-11">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -1530,7 +1530,7 @@ walkthrough), <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/ma
 <div id="postamble" class="status">
 <p class="date">Date: 2026-09-22</p>
 <p class="author">Author: Mike Wright</p>
-<p class="date">Created: 2026-09-23 Wed 08:46</p>
+<p class="date">Created: 2026-09-23 Wed 09:30</p>
 </div>
 </body>
 </html>

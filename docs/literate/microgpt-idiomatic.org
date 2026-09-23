@@ -242,13 +242,13 @@ $\mathrm{softmax}(z/\tau_s)$ by inverse CDF on one seeded uniform:
 \]
 
 Each step recomputes the logits for the whole prefix, at most 16
-tokens. The loop is a =while= because string statements break =repeat=
-bodies (upstream issue j).
+tokens. The outer loop is a =repeat= over the 20 samples, and the inner
+=while= stops at BOS.
 
 #+begin_src mlpl :post strip-echo(text=*this*)
 print("--- inference (new, hallucinated names) ---");
 i = 0;
-while i < 20 {
+repeat 20 {
   seq = [26];
   done = 0;
   while (len(seq) <= T) * (1 - done) {

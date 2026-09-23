@@ -108,7 +108,7 @@ Idioms used by all three (see [idiomatic-mlpl.md](idiomatic-mlpl.md)):
 - `gather_rows` for embeddings and row selection;
 - `train N { }` with `last_losses`;
 - `adam` returning the pre-update loss;
-- a `while` for loops whose body produces strings (issue j).
+- `repeat` over the 20 samples (a `while` until sw-mlpl fixed issue j).
 
 The faithful and idiomatic variants also filter with `compress` and carry
 `@formula` / `@ascii` annotations, read back with `annotations()`.

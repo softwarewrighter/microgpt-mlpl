@@ -172,7 +172,7 @@ returns them as a record. In use: `@test` 1048, `@formula` 6, `@ascii` 6,
 | every `scatter` / `concat` copies the whole value, so point updates and appends are quadratic | demo-algorithms/docs/plan.md, demo-file-processing, demo-decision-model RC01, this repo (Fisher-Yates) | build once vectorized; trace instead of mutate (`lib/splitmix64` shuffle head) |
 | reading a big array or calling any `u:` function copies the globals | this repo (docs/upstream-issues.md e) | pre-encode; `expunge` big globals before hot loops |
 | string lists have no append; `for` cannot iterate them | moe-microscope/docs/reference/sw-mlpl-blockers.md:50 | `;`-joined string + `str_split` + `while` / `list_get` |
-| string-valued statements fail inside `repeat` / `train` / `for` | this repo (issue j) | `while` |
+| string-valued statements failed inside `repeat` / `train` / `for` (fixed in sw-mlpl e6ee2203) | this repo (issue j) | was `while`; no longer needed |
 | no vector indexing (`at` / `take` are scalar-only) | this repo | `gather_rows` on a reshaped column (`u:gather1`) |
 | a list of params cannot be stored in a variable | this repo (issue f) | write `adam`'s list inline |
 | a DSL chain has no position layer; the KV cache needs a pure chain | moe-microscope, this repo | positions outside the chain (no cache), or no positions (cache) |

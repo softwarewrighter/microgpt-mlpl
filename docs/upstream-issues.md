@@ -22,7 +22,7 @@ upstream, queued), **fixed** (landed; workaround removed), **by design**,
 | g | mlplbench | sandbox root fixed to the benchmark file's directory | open | `lib/bench.mlpl` |
 | h | perf | eager `u:gpt` slower than tape forward + backward | not a bug (was e) | none needed |
 | i | docs | `adam` returns the pre-update loss (undocumented) | open | relied on (step 6) |
-| j | eval | `repeat`/`train`/`for` bodies reject string-valued statements | queued: sw-mlpl step `005-loop-body-string-stmts`; still reproduces at d9ad501d | use `while` |
+| j | eval | `repeat`/`train`/`for` bodies reject string-valued statements | fixed (sw-mlpl e6ee2203) | removed: sampling loops are `repeat` again |
 | k | json | `parse_json` rejects nested arrays (matrices) | info | flat arrays + `reshape` |
 
 ## a. `u:` argument as `cross_entropy` targets inside `grad`
@@ -159,8 +159,10 @@ The error has no line number and points at no statement, which made it
 slow to find (the failing statement was a name-string assignment in the
 sampling loop). Likely cause: these loops collect or type-check every
 statement value as an array (for `last_losses` / `last_rows`).
-Workaround: the sampling loop in `microgpt.mlpl` is a `while`; the
-training loop's `u:write` returns a byte count, not a string.
+**Fixed** in sw-mlpl e6ee2203 ("string-valued statements inside
+repeat/train/for bodies"). The `while` workarounds in the three variants
+and their literate docs went back to `repeat` (upstream-cleanups saga,
+step 1), with every baseline byte-identical.
 
 ## k. `parse_json` rejects nested arrays
 

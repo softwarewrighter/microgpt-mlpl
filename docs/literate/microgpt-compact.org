@@ -171,7 +171,7 @@ prefix:
 print("--- inference (new, hallucinated names) ---");
 bos = [26];
 i = 0;
-while i < 20 {
+repeat 20 {
   gs = gen_state(model, bos);
   name = "";
   next = sample(gen_logits(gs), 0.5, 1000 * i);
