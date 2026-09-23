@@ -1,0 +1,1 @@
+docs/literate.md comparison (LOC measured uniformly, speed medians of 7: idiomatic 0.468s beats rs 0.589s; loss/params; idioms/divergences; compile-to-binary; pros/cons). Compile attempt: nothing compiles; request #14 added with gap table; splitmix64 integer core lowers but generated Rust fails (47 E0308). README variants section.
