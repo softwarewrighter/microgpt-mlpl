@@ -245,10 +245,12 @@ Each item below forced this port to hand-write layers the DSL almost has:
   `pos_embed(block_size, d, seed)`. Today, positions go outside the chain
   and `gen_state` then cannot cache, or they are dropped. The KV-cache
   design's supported-layer list has no position layer.
-- **options on existing layers:** `linear(in, out, seed, {bias: 0})` and
-  `rms_norm(d, {eps: 1e-5})`, so textbook models can match their
-  equations and parameter counts. microgpt: 4,192 params vs 4,043 with
-  DSL biases and no positions.
+- **options on existing layers:** `linear(in, out, seed, {bias: 0, std: 0.08})`
+  and `rms_norm(d, {eps: 1e-5})`, so textbook models can match their
+  equations, parameter counts and initialization. microgpt: 4,192 params
+  vs 4,299 in the DSL variant (biases). The DSL `linear` initializes with
+  weight std ~0.6, against microgpt's 0.08, so the untrained loss is 20.5
+  instead of ~ln 27 = 3.3 (`docs/literate/microgpt-idiomatic.org`).
 - **rank-3 input for `rms_norm`**, so `[B, T, d]` batches work. Today it
   is rank-2 only, which forces one sequence per step.
 - **reading and setting a layer's weights**

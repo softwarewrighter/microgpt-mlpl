@@ -1,0 +1,317 @@
+#+TITLE: microgpt in idiomatic MLPL
+#+SUBTITLE: The same capability as =microgpt.py=, written with sw-MLPL's Model DSL
+#+AUTHOR: Mike Wright
+#+DATE: 2026-09-23
+#+OPTIONS: toc:2 num:t ^:{}
+#+PROPERTY: header-args:mlpl :session idiomatic :results output :exports both :tangle microgpt-idiomatic.mlpl
+#+HTML_HEAD: <style>
+#+HTML_HEAD: pre.src, pre.example { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; }
+#+HTML_HEAD: .org-mlpl-builtin, .org-builtin { color: #6f42c1; }
+#+HTML_HEAD: .org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #d73a49; font-weight: bold; }
+#+HTML_HEAD: .org-mlpl-number, .org-constant { color: #005cc5; }
+#+HTML_HEAD: .org-string, .org-doc { color: #22863a; }
+#+HTML_HEAD: .org-comment, .org-comment-delimiter { color: #6a737d; font-style: italic; }
+#+HTML_HEAD: .org-mlpl-operator, .org-operator { color: #8a8f98; }
+#+HTML_HEAD: .org-function-name { color: #e36209; }
+#+HTML_HEAD: .org-variable-name, .org-type { color: #b08800; }
+#+HTML_HEAD: @media (prefers-color-scheme: dark) {
+#+HTML_HEAD:   body { background: #16181c; color: #d8dade; } a { color: #79b8ff; }
+#+HTML_HEAD:   pre.src, pre.example { background: #1f2227; border-color: #33373e; color: #d8dade; }
+#+HTML_HEAD:   .org-mlpl-builtin, .org-builtin { color: #b392f0; }
+#+HTML_HEAD:   .org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #f97583; }
+#+HTML_HEAD:   .org-mlpl-number, .org-constant { color: #79b8ff; }
+#+HTML_HEAD:   .org-string, .org-doc { color: #85e89d; }
+#+HTML_HEAD:   .org-comment, .org-comment-delimiter { color: #8b949e; }
+#+HTML_HEAD:   .org-mlpl-operator, .org-operator { color: #7d8590; }
+#+HTML_HEAD:   .org-function-name { color: #ffab70; }
+#+HTML_HEAD:   .org-variable-name, .org-type { color: #ffdf5d; }
+#+HTML_HEAD:   table, th, td { border-color: #33373e; }
+#+HTML_HEAD: }
+#+HTML_HEAD: </style>
+
+* Introduction
+
+The [[file:microgpt-faithful.html][faithful port]] follows [[https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95][microgpt.py]] line by line: nine hand-declared
+weight matrices, a hand-written forward pass, attention heads split with
+selector matrices, and a hand-written sampler. It is exact: with
+=--rs-parity= its output is byte-identical to [[https://github.com/softwarewrighter/microgpt-rs][microgpt-rs]]. But it reads
+like a transcription.
+
+This variant keeps the /capability/ and the data regime:
+- the same 32,033 names;
+- one name per training step, 1000 Adam steps with the same
+  hyperparameters and linear learning-rate decay;
+- a 1-layer, 4-head, 16-wide causal transformer;
+- 20 samples at temperature 0.5.
+
+It lets MLPL's built-ins do the work: the Model DSL for the network,
+=adam= over whole models, and =sample= for generation. The result is 48
+lines of code instead of 230 (comments, blank lines and docstrings not
+counted), and it runs about 1.5x faster (see
+[[https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/literate.md][literate.md]]).
+
+What changes on purpose, and why the numbers differ from the faithful run:
+
+| | faithful | idiomatic |
+|-+----------+-----------|
+| layers | hand-written =matmul= | =embed=, =causal_attention=, =rms_norm=, =linear=, =residual=, =chain= |
+| biases | none (as microgpt.py) | DSL =linear= has biases |
+| RMSNorm | $\epsilon = 10^{-5}$, no gain | DSL =rms_norm= ($\epsilon = 10^{-8}$) |
+| parameters | 4,192 | 4,299 |
+| sampling | inverse CDF over a uniform stream | built-in =sample(logits, T, seed)= |
+| tokenizer | vocabulary discovered from the corpus | ASCII shortcut: =a..z -> 0..25=, newline -> BOS |
+
+As in the faithful doc, every program block below runs in one =:session=
+and tangles into a script. =scripts/check-literate.sh= requires that
+script's output to equal =microgpt-idiomatic.mlpl='s reg-rs baseline.
+
+#+name: strip-echo
+#+begin_src emacs-lisp :var text="" :exports none :tangle no
+(let ((lines (split-string (string-trim-right text) "\n")))
+  (string-join (butlast lines) "\n"))
+#+end_src
+
+#+RESULTS: strip-echo
+
+* 1. One helper
+
+MLPL's =at= / =take= accept a single index. Selecting many elements is a
+row gather on a one-column view; =u:pick= names it once, for any index
+shape. (A built-in =gather(x, idx)= is request #2 in [[https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/sw-mlpl-requests.md][sw-mlpl-requests.md]].)
+
+#+begin_src mlpl :results silent
+def u:pick(v, idx) {
+  "Elements of rank-1 v at integer positions idx (any shape).";
+  reshape(gather_rows(reshape(v, [len(v), 1]), idx), shape(idx))
+}
+#+end_src
+
+* 2. Tokens: the corpus as one stream
+
+The names file is lowercase ASCII, one name per line. Subtracting 97 maps
+=a..z= to =0..25=, and every newline becomes BOS (26), so the whole corpus
+is one token stream. A mask and an arithmetic blend do the mapping, with
+no lookup table:
+
+\[
+  s_i = \begin{cases} b_i - 97 & b_i \ne \text{newline} \\ 26 & b_i = \text{newline} \end{cases}
+  \qquad\Longrightarrow\qquad
+  s = (\mathrm{BOS},\ e,m,m,a,\ \mathrm{BOS},\ o,l,i,v,i,a,\ \mathrm{BOS}, \dots)
+\]
+
+(The faithful variant discovers the vocabulary from the data instead;
+this shortcut assumes the ASCII names file, like microgpt-rs's =a..z=
+tests do.)
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+bytes = tokenize_bytes(load("input.txt"));
+stream = concat(concat([26], (bytes - 97) * (bytes != 10) + 26 * (bytes == 10)), [26]);
+V = 27; d = 16; T = 16;
+
+bos_at = compress(stream == 26, range(len(stream)));
+starts = u:pick(bos_at, range(len(bos_at) - 1));
+lens = u:pick(bos_at, range(len(bos_at) - 1) + 1) - starts - 1;
+print("num docs:", to_string(len(starts)));
+print("vocab size:", to_string(V));
+#+end_src
+
+#+RESULTS:
+: num docs: 32033
+: vocab size: 27
+
+Names are the spans between consecutive BOS positions. The 1000 names
+training visits become the rows of one matrix in a single gather: row $i$
+holds $\tau^{(i)}_{0..T}$ (BOS, the name, BOS, then whatever follows,
+which is never read), and $n_i = \min(T, L_i + 1)$ positions are trained.
+
+#+begin_src mlpl :results silent
+names = u:pick(shuffle(range(len(starts)), 42), range(1000));
+rows = u:pick(stream, reshape(u:pick(starts, names), [1000, 1]) + reshape(range(T + 1), [1, T + 1]));
+ns = u:pick(lens, names) + 1;
+ns = ns - relu(ns - T);
+expunge(["bytes", "stream", "bos_at", "starts", "lens", "names"]);
+#+end_src
+
+The =expunge= drops the 228k-token stream before training: every =u:=
+call copies the globals in this interpreter (upstream issue e).
+
+* 3. The model is a sentence
+
+The faithful port spends ~60 lines on 9 weight matrices, RMSNorm,
+linear, 4 selector-based heads and the residual forward pass. The Model
+DSL says it in one expression:
+
+\[
+  z = \mathrm{Linear}_{V}\Big(B_2\big(B_1(\mathrm{RMS}(E_{tok}[\tau_t] + E_{pos}[t]))\big)\Big),
+  \qquad t = 0 \dots n-1
+\]
+\[
+  B_1(x) = x + \mathrm{CausalAttn}_{4\ \mathrm{heads}}(\mathrm{RMS}(x)),
+  \qquad
+  B_2(x) = x + \mathrm{Linear}_{d}\big(\mathrm{ReLU}(\mathrm{Linear}_{4d}(\mathrm{RMS}(x)))\big)
+\]
+
+=residual(b)= is $x \mapsto x + b(x)$. =causal_attention(d, 4, seed)= is
+multi-head attention with the causal mask built in (the faithful doc
+derives the mask and heads by hand). Positions are a second =embed=
+applied to =range(n)=: a DSL =chain= has no position layer, so the two
+embeddings are added /outside/ the chain. That is the moe-microscope
+idiom, and it is why this variant cannot use the KV cache (see the
+compact variant).
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+tok = embed(V, d, 1);
+pos = embed(T, d, 2);
+body = chain(rms_norm(d),
+             residual(chain(rms_norm(d), causal_attention(d, 4, 3))),
+             residual(chain(rms_norm(d), linear(d, 4 * d, 4), relu_layer(), linear(4 * d, d, 5))),
+             linear(d, V, 6));
+print("num params:", to_string(param_count(tok) + param_count(pos) + param_count(body)));
+#+end_src
+
+#+RESULTS:
+: num params: 4299
+
+The whole forward pass is one function, annotated with its equation:
+
+#+begin_src mlpl :results silent
+@formula "z = body( E_tok[τ_t] + E_pos[t] ),   t = 0..n−1"
+@ascii "z = body(E_tok[tau_t] + E_pos[t]),   t = 0..n-1"
+def u:logits(toks) {
+  "Next-token logits [n, V] for a token sequence.";
+  apply(body, apply(tok, toks) + apply(pos, range(len(toks))))
+}
+#+end_src
+
+#+begin_src mlpl :tangle no :post strip-echo(text=*this*)
+print(annotations("u:logits").formula);
+print("untrained loss on the first training name:", to_string(round(10000 * cross_entropy(u:logits(u:pick(take(rows, 0, 0), range(at(ns, 0)))), u:pick(take(rows, 0, 0), range(at(ns, 0)) + 1))) / 10000), " ln 27 =", to_string(round(10000 * log(27)) / 10000));
+0
+#+end_src
+
+#+RESULTS:
+: z = body( E_tok[τ_t] + E_pos[t] ),   t = 0..n−1
+: untrained loss on the first training name: 20.5445  ln 27 = 3.2958
+
+The untrained loss is far above the uniform-guess value ln 27 = 3.30. The
+DSL's =linear= initializes much larger than microgpt's =gauss(0, 0.08)=:
+it gives output std ~2.4 on unit input, which means weights around 0.6,
+while =embed= uses ~0.1. The first logits are therefore large and
+confidently wrong, and the early steps spend their updates shrinking
+them. Training recovers (below), but an init-scale option is on the
+request list.
+
+* 4. Training: one line of work per step
+
+\[
+  \mathcal{L} = -\frac{1}{n} \sum_{t=0}^{n-1} \log \mathrm{softmax}(z_t)[\tau_{t+1}],
+  \qquad
+  \theta \leftarrow \mathrm{Adam}_{\eta_k}(\theta, \nabla_\theta \mathcal{L}),
+  \quad \eta_k = 0.01\,(1 - k/1000)
+\]
+
+=adam= takes the three models as a list and updates every parameter
+inside them: there are no names to spell out, unlike the faithful
+variant's nine. =train= records each step's loss in =last_losses=.
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+train 1000 {
+  n = at(ns, step);
+  row = take(rows, 0, step);
+  adam(cross_entropy(u:logits(u:pick(row, range(n))), u:pick(row, range(n) + 1)), [tok, pos, body], 0.01 * (1 - step / 1000), 0.85, 0.99, 0.00000001)
+};
+print("mean loss, steps 901-1000:", to_string(round(10000 * reduce_add(last_losses * (range(1000) >= 900)) / 100) / 10000));
+#+end_src
+
+#+RESULTS:
+: mean loss, steps 901-1000: 2.4684
+
+The faithful variant's last-100-step mean is 2.37. The difference comes
+from the architecture choices in the table above (biases, eps, the extra
+leading RMSNorm) and, most likely, the DSL's larger =linear=
+initialization.
+
+* 5. Sampling with the built-in sampler
+
+=sample(logits, temperature, seed)= draws from
+$\mathrm{softmax}(z/\tau_s)$ by inverse CDF on one seeded uniform:
+
+\[
+  p = \mathrm{softmax}(z_{n-1} / 0.5), \qquad
+  i^{*} = \min\Big\{ i : \sum_{j=0}^{i} p_j \ge u \Big\}
+\]
+
+Each step recomputes the logits for the whole prefix, at most 16
+tokens. The loop is a =while= because string statements break =repeat=
+bodies (upstream issue j).
+
+#+begin_src mlpl :post strip-echo(text=*this*)
+print("--- inference (new, hallucinated names) ---");
+i = 0;
+while i < 20 {
+  seq = [26];
+  done = 0;
+  while (len(seq) <= T) * (1 - done) {
+    next = sample(last_row(u:logits(seq)), 0.5, 1000 * i + len(seq));
+    if next == 26 { done = 1 } else { seq = concat(seq, [next]) }
+  };
+  name = if len(seq) > 1 { decode_bytes(97 + u:pick(seq, range(len(seq) - 1) + 1)) } else { "" };
+  print(str_concat("sample ", str_concat(to_string(i + 1), str_concat(": ", name))));
+  i = i + 1
+};
+i
+#+end_src
+
+#+RESULTS:
+#+begin_example
+--- inference (new, hallucinated names) ---
+sample 1: jiafini
+sample 2: tamesin
+sample 3: jali
+sample 4: kair
+sample 5: tasen
+sample 6: maleri
+sample 7: onia
+sample 8: airka
+sample 9: jamio
+sample 10: zarilon
+sample 11: dlanyn
+sample 12: jaral
+sample 13: meliw
+sample 14: jarel
+sample 15: korli
+sample 16: aryle
+sample 17: tapal
+sample 18: kalia
+sample 19: iiiel
+sample 20: deidei
+#+end_example
+
+#+begin_src mlpl :exports none :eval never
+exit(0)
+#+end_src
+
+* What the DSL bought, and what it cost
+
+- *Gained:*
+  - The network is one expression. The nine weight names, the
+    selector-matrix heads, the mask and the forward function are gone.
+  - =adam= takes models, not name lists.
+  - The data pipeline is two gathers.
+  - Runs faster: the DSL layers are single native ops.
+- *Lost:*
+  - Exact correspondence with microgpt.py's equations: biases,
+    $\epsilon = 10^{-8}$ and a leading RMSNorm are the DSL's choices.
+  - Parameter count parity (4,299 vs 4,192).
+  - Byte parity with microgpt-rs.
+  - The KV cache, because positions live outside the chain.
+- *Wished for* (see [[https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/sw-mlpl-requests.md][sw-mlpl-requests.md]] #1, #2, #10):
+  - =linear(..., {bias: 0, std: 0.08})= and =rms_norm(d, {eps: 1e-5})= to
+    match the paper and its initialization exactly;
+  - a position layer inside =chain= that =gen_state= can cache;
+  - =gather= / =slice= to replace =u:pick=;
+  - =format= to replace the =str_concat= nest.
+
+# Local Variables:
+# org-babel-mlpl-command: "mlpl-repl --data-dir ../.."
+# End:

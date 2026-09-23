@@ -1,0 +1,4 @@
+command = '"$(scripts/select-mlpl)" --data-dir . --source-dir . -f microgpt-idiomatic.mlpl'
+timeout = 600
+exit_code = 0
+desc = "Output of microgpt-idiomatic.mlpl (Model DSL variant); re-baseline with just rebaseline when it changes intentionally"

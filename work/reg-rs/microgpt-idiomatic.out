@@ -1,0 +1,25 @@
+num docs: 32033
+vocab size: 27
+num params: 4299
+mean loss, steps 901-1000: 2.4684
+--- inference (new, hallucinated names) ---
+sample 1: jiafini
+sample 2: tamesin
+sample 3: jali
+sample 4: kair
+sample 5: tasen
+sample 6: maleri
+sample 7: onia
+sample 8: airka
+sample 9: jamio
+sample 10: zarilon
+sample 11: dlanyn
+sample 12: jaral
+sample 13: meliw
+sample 14: jarel
+sample 15: korli
+sample 16: aryle
+sample 17: tapal
+sample 18: kalia
+sample 19: iiiel
+sample 20: deidei

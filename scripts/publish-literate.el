@@ -18,7 +18,7 @@
   (if (require 'htmlize nil t)
       ;; Batch Emacs has no display, so faces carry no colors: emit
       ;; class names (org-keyword, org-string, ...) and let the
-      ;; stylesheet in docs/microgpt.org color them.
+      ;; stylesheet in each docs/literate/*.org color them.
       (setq org-html-htmlize-output-type 'css
             org-html-htmlize-font-prefix "org-")
     (message "publish-literate: htmlize not found; source blocks will be plain"))

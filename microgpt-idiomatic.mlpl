@@ -1,0 +1,71 @@
+# microgpt-idiomatic.mlpl -- microgpt's capability in idiomatic sw-MLPL.
+#
+# Same task and data regime as microgpt.py (one name per step, 1000 Adam
+# steps, 20 samples at temperature 0.5), built from MLPL's Model DSL
+# instead of hand-written layers. Diverges from the Python on purpose:
+# DSL layers have biases and rms_norm uses eps 1e-8, so parameter count
+# and numbers differ. Walkthrough: docs/literate/microgpt-idiomatic.org.
+
+def u:pick(v, idx) {
+  "Elements of rank-1 v at integer positions idx (any shape).";
+  reshape(gather_rows(reshape(v, [len(v), 1]), idx), shape(idx))
+}
+
+# Tokens: the corpus as one stream, BOS emma BOS olivia ... BOS (a-z -> 0..25, BOS = 26).
+bytes = tokenize_bytes(load("input.txt"));
+stream = concat(concat([26], (bytes - 97) * (bytes != 10) + 26 * (bytes == 10)), [26]);
+V = 27; d = 16; T = 16;
+
+# Names are the spans between consecutive BOS tokens.
+bos_at = compress(stream == 26, range(len(stream)));
+starts = u:pick(bos_at, range(len(bos_at) - 1));
+lens = u:pick(bos_at, range(len(bos_at) - 1) + 1) - starts - 1;
+print("num docs:", to_string(len(starts)));
+print("vocab size:", to_string(V));
+
+# The 1000 training names as rows [BOS, c1..cL, BOS, ...] and n = min(T, L + 1).
+names = u:pick(shuffle(range(len(starts)), 42), range(1000));
+rows = u:pick(stream, reshape(u:pick(starts, names), [1000, 1]) + reshape(range(T + 1), [1, T + 1]));
+ns = u:pick(lens, names) + 1;
+ns = ns - relu(ns - T);
+expunge(["bytes", "stream", "bos_at", "starts", "lens", "names"]);
+
+# Model: token + learned position embeddings into a pre-norm transformer block.
+tok = embed(V, d, 1);
+pos = embed(T, d, 2);
+body = chain(rms_norm(d),
+             residual(chain(rms_norm(d), causal_attention(d, 4, 3))),
+             residual(chain(rms_norm(d), linear(d, 4 * d, 4), relu_layer(), linear(4 * d, d, 5))),
+             linear(d, V, 6));
+print("num params:", to_string(param_count(tok) + param_count(pos) + param_count(body)));
+
+@formula "z = body( E_tok[τ_t] + E_pos[t] ),   t = 0..n−1"
+@ascii "z = body(E_tok[tau_t] + E_pos[t]),   t = 0..n-1"
+def u:logits(toks) {
+  "Next-token logits [n, V] for a token sequence.";
+  apply(body, apply(tok, toks) + apply(pos, range(len(toks))))
+}
+
+# Train: one name per step, adam over all three models, linear lr decay.
+train 1000 {
+  n = at(ns, step);
+  row = take(rows, 0, step);
+  adam(cross_entropy(u:logits(u:pick(row, range(n))), u:pick(row, range(n) + 1)), [tok, pos, body], 0.01 * (1 - step / 1000), 0.85, 0.99, 0.00000001)
+};
+print("mean loss, steps 901-1000:", to_string(round(10000 * reduce_add(last_losses * (range(1000) >= 900)) / 100) / 10000));
+
+# Sample: built-in categorical sampling at temperature 0.5, until BOS.
+print("--- inference (new, hallucinated names) ---");
+i = 0;
+while i < 20 {
+  seq = [26];
+  done = 0;
+  while (len(seq) <= T) * (1 - done) {
+    next = sample(last_row(u:logits(seq)), 0.5, 1000 * i + len(seq));
+    if next == 26 { done = 1 } else { seq = concat(seq, [next]) }
+  };
+  name = if len(seq) > 1 { decode_bytes(97 + u:pick(seq, range(len(seq) - 1) + 1)) } else { "" };
+  print(str_concat("sample ", str_concat(to_string(i + 1), str_concat(": ", name))));
+  i = i + 1
+};
+exit(0)

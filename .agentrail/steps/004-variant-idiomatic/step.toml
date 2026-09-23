@@ -1,6 +1,6 @@
 number = 4
 slug = "variant-idiomatic"
-status = "pending"
+status = "in-progress"
 description = "docs/plan-literate.md step 4. microgpt-idiomatic.mlpl + docs/literate/microgp..."
 role = "production"
 context_files = []
