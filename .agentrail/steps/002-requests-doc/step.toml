@@ -1,9 +1,10 @@
 number = 2
 slug = "requests-doc"
-status = "in-progress"
+status = "completed"
 description = "docs/plan-literate.md step 2. Write docs/sw-mlpl-requests.md: language/librar..."
 role = "production"
 context_files = []
 created_at = "2026-09-23T08:23:26"
+completed_at = "2026-09-23T08:39:45"
 task_type = "docs"
-commits = []
+commits = ["2bee48d84ce339b94b6bda509c7920bb8641259b"]

@@ -1,0 +1,1 @@
+docs/sw-mlpl-requests.md: 13 prioritized requests with evidence counts, before/after from this port, upstream status, fit with sw-mlpl design rules; declined items listed; microgpt loop rewritten with P1 features.
