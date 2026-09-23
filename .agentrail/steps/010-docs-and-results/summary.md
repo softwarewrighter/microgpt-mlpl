@@ -1,0 +1,1 @@
+Docs and results. docs/python-vs-mlpl.md walkthrough incl. KV-cache vs causal-mask equivalence; README results table (M1 Max medians: CPython 61.9s, rs 0.593s, MLPL 0.697s, parity 1.395s byte-identical); upstream issues re-checked at sw-mlpl d9ad501d: c fixed, d future-queued, j queued (step 005, still reproduces), e not found upstream. Saga complete.

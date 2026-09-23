@@ -1,9 +1,10 @@
 number = 10
 slug = "docs-and-results"
-status = "in-progress"
+status = "completed"
 description = "docs/plan.md step 9. Write docs/python-vs-mlpl.md (side-by-side of each micro..."
 role = "production"
 context_files = []
 created_at = "2026-09-22T20:18:45"
+completed_at = "2026-09-22T22:32:45"
 task_type = "docs"
-commits = []
+commits = ["ee960e785b024cd64c7c3d703c4768b30a21c5d8"]
