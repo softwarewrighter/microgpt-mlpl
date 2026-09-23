@@ -1,4 +1,4 @@
-number = 8
+number = 9
 slug = "parity-vs-rust"
 status = "pending"
 description = "docs/plan.md step 8. tools/rs-init-dump: small standalone Rust bin that copie..."

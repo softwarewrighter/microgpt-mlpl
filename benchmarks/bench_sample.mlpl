@@ -1,0 +1,18 @@
+# Inference cost: one sampled name (prefix recompute, up to 16 forwards).
+include "../lib/data.mlpl";
+include "../lib/bench.mlpl";
+d = unwrap(u:dataset(load("input.txt")));
+vocab_size = d.vocab_size;
+uchars = d.uchars;
+BOS = d.bos;
+include "../lib/params.mlpl";
+include "../lib/model.mlpl";
+include "../lib/sample.mlpl";
+expunge(["d"]);  # as microgpt.mlpl does (u: calls copy globals)
+U = random(4242, [20, block_size]);
+print("untrained sample length:", to_string(len(u:generate(take(U, 0, 0), 0.5))), "(worst case is block_size = 16)");
+def u:b_token() { "One next-token draw on a 7-token prefix."; u:sample_token(last_row(u:gpt(range(7), range(7), u:causal_mask(7))), 0.5, 0.3) }
+def u:b_generate() { "One whole sample."; u:generate(take(U, 0, 0), 0.5) }
+u:bench("next token (7-token prefix)", :u:b_token, 5, 50, 5);
+u:bench("one sample (untrained)", :u:b_generate, 2, 10, 5);
+exit(0)

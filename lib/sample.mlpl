@@ -1,0 +1,36 @@
+# Inference for microgpt.mlpl (microgpt.py's "may the model babble back
+# to us"). Needs lib/model.mlpl (u:gpt) and the BOS / block_size globals.
+#
+# Python feeds one token at a time through its KV cache; here each step
+# recomputes u:gpt over the prefix (at most block_size = 16 tokens) and
+# reads the last row -- the same logits (tests/test_model.mlpl checks
+# the prefix equivalence). Draws follow random.choices: inverse CDF of
+# softmax(logits / temperature) at one uniform from a seeded stream.
+
+def u:sample_token(logits, temperature, u) {
+  "Token id whose cumulative softmax(logits / temperature) first exceeds uniform u.";
+  cdf = running_sum(softmax(logits / temperature, 0));
+  # count of cdf entries <= u; clamp in case rounding leaves cdf[-1] < u
+  k = reduce_add(le(cdf, u));
+  k - relu(k - (len(cdf) - 1))
+}
+
+def u:generate(uniforms, temperature) {
+  "Token ids (BOS excluded) of one sample; uniforms[pos] drives position pos.";
+  seq = [BOS];
+  pos = 0;
+  done = 0;
+  while lt(pos, block_size) * (1 - done) {
+    n = pos + 1;
+    logits = last_row(u:gpt(seq, range(n), u:causal_mask(n)));
+    tok = u:sample_token(logits, temperature, at(uniforms, pos));
+    if eq(tok, BOS) { done = 1 } else { seq = concat(seq, [tok]) };
+    pos = pos + 1
+  };
+  u:gather1(seq, range(len(seq) - 1) + 1)
+}
+
+def u:ids_to_text(ids) {
+  "Characters for token ids (empty string for no ids).";
+  if len(ids) { decode_bytes(u:gather1(uchars, ids)) } else { "" }
+}

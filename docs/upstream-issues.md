@@ -11,8 +11,8 @@ upstream, queued), **fixed** (landed; workaround removed), **by design**,
 
 | id | area | summary | status | local workaround |
 |---|---|---|---|---|
-| a | grad | `u:` argument used as `cross_entropy` targets is "undefined" | fixing | globals + no-arg `u:loss()` |
-| b | grad | infix `<` rejected inside `grad`; `lt()` works | fixing | use `gt()`/`lt()` |
+| a | grad | `u:` argument used as `cross_entropy` targets is "undefined" | fixed upstream (67c2ca86) | globals + no-arg `u:loss()`, removal queued (step 8) |
+| b | grad | infix `<` rejected inside `grad`; `lt()` works | fixed upstream (67c2ca86) | use `gt()`/`lt()` |
 | c | docs | "tape-lowered for heads=1" is stale | fixing | none needed |
 | d | kv-cache | `gen_state` works only on Model DSL chains | by design | recompute prefix |
 | e | perf | reading a large array copies it; every `u:` call copies all globals | open | `u:doc_batch` + `expunge` big globals |
@@ -20,6 +20,7 @@ upstream, queued), **fixed** (landed; workaround removed), **by design**,
 | g | mlplbench | sandbox root fixed to the benchmark file's directory | open | `lib/bench.mlpl` |
 | h | perf | eager `u:gpt` slower than tape forward + backward | not a bug (was e) | none needed |
 | i | docs | `adam` returns the pre-update loss (undocumented) | open | relied on (step 6) |
+| j | eval | `repeat`/`train`/`for` bodies reject string-valued statements | open | use `while` |
 
 ## a. `u:` argument as `cross_entropy` targets inside `grad`
 
@@ -131,3 +132,27 @@ calls, each paying the global-copy cost of (e). Nothing to report.
 -- exactly microgpt.py's printed `loss.data`. Useful (saves an eager
 forward per step, see h) but undocumented in `lang-reference.md`; step 6
 relies on it, so it should be documented as a contract.
+
+## j. `repeat` / `train` / `for` bodies reject string-valued statements
+
+Found in step 7 (mlpl-repl 0.22.0, build with 67c2ca86). Any statement
+whose value is a string, anywhere in a `repeat`, `train`, or `for` body,
+fails the whole loop with `expected an array value, got a string`;
+`while` bodies are fine, and numbers are fine:
+
+```
+repeat 1 { q = "abc"; 0 }                       # error
+repeat 1 { print("abc"); 0 }                    # error (print returns its arg)
+train 1 { q = "abc"; 0 }                        # error
+for r in [1, 2] { q = "abc"; 0 }                # error
+def u:f() { repeat 1 { q = "abc"; 0 }; 1 }      # error when called
+i = 0; while lt(i, 1) { q = "abc"; i = i + 1 }  # OK
+repeat 1 { print(7); 0 }                        # OK
+```
+
+The error has no line number and points at no statement, which made it
+slow to find (the failing statement was a name-string assignment in the
+sampling loop). Likely cause: these loops collect or type-check every
+statement value as an array (for `last_losses` / `last_rows`).
+Workaround: the sampling loop in `microgpt.mlpl` is a `while`; the
+training loop's `u:write` returns a byte count, not a string.

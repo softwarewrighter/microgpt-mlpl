@@ -1,0 +1,8 @@
+number = 8
+slug = "remove-loss-workaround"
+status = "pending"
+description = "sw-mlpl 67c2ca86 fixed upstream issues (a) u:-argument targets inside grad an..."
+role = "production"
+context_files = []
+created_at = "2026-09-22T21:30:11"
+commits = []

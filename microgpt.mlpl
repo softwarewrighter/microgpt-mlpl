@@ -62,4 +62,22 @@ train num_steps {
   loss
 }
 
+# Inference: may the model babble back to us. temperature in (0, 1]
+# controls the "creativity" of generated text, low to high. One seeded
+# uniform stream drives every draw (row = sample, column = position).
+include "lib/sample.mlpl";
+temperature = 0.5;
+num_samples = 20;
+sample_uniforms = random(4242, [num_samples, block_size]);
+print("");
+print("--- inference (new, hallucinated names) ---");
+# (A while loop: repeat/train/for bodies reject string-valued statements
+# in mlpl-repl 0.22.0 -- docs/upstream-issues.md (j).)
+sample_idx = 0;
+while lt(sample_idx, num_samples) {
+  name = u:ids_to_text(u:generate(take(sample_uniforms, 0, sample_idx), temperature));
+  print(str_concat(str_concat(str_concat("sample ", u:fmt_int(sample_idx + 1, 2)), ": "), name));
+  sample_idx = sample_idx + 1
+}
+
 exit(0)

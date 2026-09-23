@@ -32,16 +32,22 @@ See [`docs/plan.md`](docs/plan.md) for the design decisions and step plan.
 
 ## Status
 
-Scaffold in place (scripts, mlplunit tests, reg-rs baseline, pre-commit
-gate), dataset, tokenizer and
-parameter init and the forward pass done (`num docs: 32033`, `vocab size: 27`,
-`num params: 4192`; untrained loss ~ ln 27), with
-gradients checked against finite differences, and training
-(1000 steps in ~0.8 s; CPython 78.9 s, microgpt-rs 0.60 s on the same
-machine). sw-MLPL findings:
-[`docs/upstream-issues.md`](docs/upstream-issues.md). Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). Work is tracked as an
-agentrail saga in `.agentrail/`
-(`agentrail status` shows progress):
+The port runs end to end: `scripts/run.sh` prints the same lines as
+`microgpt.py` -- `num docs: 32033`, `vocab size: 27`, `num params: 4192`,
+1000 training steps, then 20 sampled names -- in about 0.73 s
+(microgpt-rs: 0.59 s; CPython: 60.6 s on the same machine).
+
+- Gradients match central finite differences for all 9 matrices.
+- The masked whole-name forward equals microgpt.py's token-by-token
+  KV-cache loop to 1e-12.
+- MLPL's `adam` matches microgpt.py's bias-corrected update (tested).
+- Loss per 100-step window tracks CPython and microgpt-rs (last 100
+  steps: 2.37 / 2.28 / 2.36); the differences come from different RNG
+  streams, and the parity step (9) removes them.
+
+Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). sw-MLPL findings
+(with reproducers): [`docs/upstream-issues.md`](docs/upstream-issues.md).
+Work is tracked as an agentrail saga in `.agentrail/` (`agentrail status`):
 
 | step | slug | status |
 |---|---|---|
@@ -51,9 +57,10 @@ agentrail saga in `.agentrail/`
 | 4 | forward-pass | done |
 | 5 | gradcheck | done |
 | 6 | training-loop | done |
-| 7 | inference | pending |
-| 8 | parity-vs-rust | pending |
-| 9 | docs-and-results | pending |
+| 7 | inference | done |
+| 8 | remove-loss-workaround | pending |
+| 9 | parity-vs-rust | pending |
+| 10 | docs-and-results | pending |
 
 ## Build and run
 
@@ -81,16 +88,21 @@ The interpreter is found via `$MLPL`, then `PATH`, then
 `../../sw-ml-study/sw-mlpl/target/release/mlpl-repl`; mlplunit via
 `$MLPLUNIT`, then `PATH`, then `../mlplunit/bin/mlplunit`.
 
-Expected output (loss and names will differ from Python's; the RNG
-differs):
+Output (names and losses differ from Python's because the RNG differs;
+two MLPL runs are identical):
 
 ```
 num docs: 32033
 vocab size: 27
 num params: 4192
-step 1000 / 1000 | loss ~2.0
+step 1000 / 1000 | loss 2.2948
 --- inference (new, hallucinated names) ---
-sample  1: ...
+sample  1: aline
+sample  2: shiam
+sample  3: arylin
+...
+sample 19: marion
+sample 20: brera
 ```
 
 ## Copyright and license

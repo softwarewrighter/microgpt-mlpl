@@ -84,9 +84,11 @@ sample  1: ...
 6. **Adam.** microgpt uses `lr=0.01, beta1=0.85, beta2=0.99, eps=1e-8`,
    bias-corrected, with linear decay `lr * (1 - step/num_steps)`.
    MLPL's `adam(loss, [params...], lr, b1, b2, eps)` keeps per-param
-   state across calls, so the decayed lr is passed each step. Confirm
-   MLPL's Adam applies bias correction the same way (step 8 parity check
-   will reveal any difference).
+   state across calls, so the decayed lr is passed each step. Verified in
+   step 6: the CPU update (`grad_optim.rs`) is the same bias-corrected
+   rule with a 1-based per-param step counter, and
+   `tests/test_training.mlpl` checks two steps against the formula to
+   1e-12. `adam` returns the pre-update loss (Python's `loss.data`).
 7. **RNG.** Bit-parity with Python's Mersenne Twister is out of scope
    (microgpt-rs does not attempt it either). MLPL init uses
    `randn(seed, shape) * 0.08` with one fixed seed per matrix; the doc
@@ -100,8 +102,11 @@ sample  1: ...
    rather than a per-char search (dataset is ASCII; assert that).
 9. **Inference.** Recompute the forward over the growing prefix
    (max 16 tokens, so O(T^2) is trivial) and take `last_row` of the
-   logits; `sample(logits, temperature, seed)` already divides by the
-   temperature. The KV-cache builtins (`gen_state`/`gen_append`) only
+   logits. As built in step 7: instead of `sample(logits, T, seed)`
+   (which reseeds a generator per draw, so consecutive seeds may give
+   correlated uniforms), one seeded `random(4242, [20, 16])` stream
+   supplies every draw's uniform and `u:sample_token` takes the inverse
+   CDF of `softmax(logits / T)` -- random.choices' bisect. The KV-cache builtins (`gen_state`/`gen_append`) only
    work on Model DSL chains (by design: they cache per attention layer),
    so they are not used; mention as a contrast.
 
@@ -141,7 +146,7 @@ Testing: unit-level checks are mlplunit suites (`u:assert_*`, `@test`,
 intentionally changes the output re-baselines with `just rebaseline` and
 says so in its commit message.
 
-## Steps (one agentrail step each)
+## Steps (one agentrail step each; numbers match `.agentrail/steps/`)
 
 1. **scaffold** -- `.gitignore`, `justfile`, `scripts/` (run, test via
    mlplunit, regress via reg-rs, pre-commit gate, tool selection, dataset
@@ -173,13 +178,16 @@ says so in its commit message.
    the ~2.0-2.2 band, two runs give identical losses, wall time recorded.
 7. **inference** -- 20 samples at temperature 0.5 with the Python output
    format. Done when: output looks like names (not `qqzzx`).
-8. **parity-vs-rust** -- `tools/rs-init-dump` reproduces microgpt-rs's
+8. **remove-loss-workaround** (inserted in step 7) -- sw-mlpl 67c2ca86
+   fixed upstream issues (a) and (b): make the loss `u:loss(...)` with
+   arguments, drop the `cur_*` globals, keep output byte-identical.
+9. **parity-vs-rust** -- `tools/rs-init-dump` reproduces microgpt-rs's
    `Rng` + `StateDict::init` order and doc shuffle, emits JSON; a parity
    script loads it (`parse_json` + assignment into the params) and runs
    1000 steps. Done when: per-step losses match microgpt-rs to ~1e-4
    (both f64; only reduction order differs) and final loss ~= 1.9146.
    If they diverge, bisect with 1 doc / 1 step and compare grads.
-9. **docs-and-results** -- `docs/python-vs-mlpl.md` side-by-side,
+10. **docs-and-results** -- `docs/python-vs-mlpl.md` side-by-side,
    README results table (Python / Rust / MLPL wall time, loss, samples),
    status section updated.
 

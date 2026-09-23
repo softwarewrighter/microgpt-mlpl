@@ -20,7 +20,8 @@ Host: Apple Silicon (Darwin arm64), mlpl-repl 0.22.0 (ab858695).
 | 3 | + param init | 0.057 s | sort-based vocab scan; see below |
 | 4 | + model defs (no training yet) | 0.058 s | per-step hot path below |
 | 5 | unchanged (gradcheck is test-only) | 0.061 s | gradcheck suite: 0.26 s |
-| 6 | + 1000 training steps | 0.79-0.87 s | 2.09 s before expunging big globals |
+| 6 | + 1000 training steps | 0.79-0.87 s | 2.09 s before expunging big globals (load ~50) |
+| 7 | + 20 samples (complete program) | 0.72-0.74 s | load ~3; microgpt-rs 0.58-0.60 s |
 
 Step 3 per-operation timings:
 
@@ -88,6 +89,23 @@ Loss curve (mean per 100-step window), all three implementations:
 
 Differences are within what different RNG streams (init, doc order)
 produce; step 8 removes that variable by loading microgpt-rs's init.
+
+Step 7: inference (`benchmarks/bench_sample.mlpl`) and the complete
+program. Each sample recomputes the prefix (up to 16 forwards):
+
+| operation | mean |
+|---|---|
+| next-token draw on a 7-token prefix | 0.24 ms |
+| one whole sample (untrained model: 16 tokens, worst case) | 4.1 ms |
+
+Complete program, same machine, low load (average ~3), 5 runs each,
+alternating:
+
+| implementation | train 1000 steps + 20 samples, wall |
+|---|---|
+| `microgpt.py`, CPython 3.14.6 | 60.6 s (1 run) |
+| microgpt-rs, release | 0.58-0.60 s |
+| **microgpt.mlpl**, mlpl-repl 0.22.0 | **0.72-0.74 s** (1.24x Rust) |
 
 ## Performance notes for this interpreter
 

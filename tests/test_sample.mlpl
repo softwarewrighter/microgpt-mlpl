@@ -1,0 +1,43 @@
+# Inference (lib/sample.mlpl) against microgpt.py's random.choices sampling.
+include "lib/data.mlpl";
+d = unwrap(u:dataset(load("input.txt")));
+vocab_size = d.vocab_size;
+uchars = d.uchars;
+BOS = d.bos;
+include "lib/params.mlpl";
+include "lib/model.mlpl";
+include "lib/sample.mlpl";
+expunge(["d"]);
+
+@test {name: "sample_token is the inverse CDF of softmax(logits / T)", tags: ["sample"]}
+def u:test_inverse_cdf() {
+  "probs [0.2, 0.3, 0.5] (T = 1): cdf [0.2, 0.5, 1.0]; like random.choices' bisect.";
+  lg = log([0.2, 0.3, 0.5]);
+  u:assert_eq(u:sample_token(lg, 1, 0.1), 0, "u in [0, 0.2)")?;
+  u:assert_eq(u:sample_token(lg, 1, 0.25), 1, "u in [0.2, 0.5)")?;
+  u:assert_eq(u:sample_token(lg, 1, 0.6), 2, "u in [0.5, 1)")?;
+  u:assert_eq(u:sample_token(lg, 1, 0.9999999999), 2, "top of the range stays in range")
+}
+
+@test {name: "temperature sharpens the distribution", tags: ["sample"]}
+def u:test_temperature() {
+  "T = 0.5 squares the probs: [0.04, 0.09, 0.25] / 0.38, cdf [0.105, 0.342, 1].";
+  lg = log([0.2, 0.3, 0.5]);
+  u:assert_eq(u:sample_token(lg, 0.5, 0.1), 0, "below 0.105")?;
+  u:assert_eq(u:sample_token(lg, 0.5, 0.2), 1, "0.2 now falls in token 1")?;
+  u:assert_eq(u:sample_token(lg, 0.5, 0.4), 2, "0.4 now falls in token 2 (was 1 at T = 1)")
+}
+
+@test {name: "generation is well-formed and deterministic", tags: ["sample"]}
+def u:test_generate() {
+  "Ids are letters (no BOS), at most block_size long; same uniforms give the same sample.";
+  U = random(4242, [3, block_size]);
+  a = u:generate(take(U, 0, 0), 0.5);
+  u:assert_lt(len(a), block_size + 1, "length <= block_size")?;
+  u:assert_eq(reduce_add(ge(a, BOS)) + reduce_add(lt(a, 0)), 0, "only letter ids")?;
+  u:assert_eq(u:generate(take(U, 0, 0), 0.5), a, "deterministic")?;
+  u:assert_text_eq(u:ids_to_text([0, 1, 2]), "abc", "ids to text")?;
+  u:assert_text_eq(u:ids_to_text(u:gather1([1], range(0))), "", "empty sample")
+}
+
+u:run_registered_tests()

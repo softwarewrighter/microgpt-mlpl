@@ -1,6 +1,6 @@
 number = 7
 slug = "inference"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 7 (design decision 9). 20 samples at temperature 0.5: start..."
 role = "production"
 context_files = []
