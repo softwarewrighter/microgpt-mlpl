@@ -1,0 +1,1 @@
+Faithful literate doc moved to docs/literate/microgpt-faithful.org; scripts generalized to docs/literate/*.org with per-doc baselines; 11 LaTeX equations + @formula/@ascii annotations (lib + org) + annotations() readback; outputs unchanged. Lesson: :post strip-echo needs a predictable final echo -- end non-tangled demo blocks with 0 (a print of a Unicode string is not echoed).
