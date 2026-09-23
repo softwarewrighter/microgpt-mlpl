@@ -1,6 +1,6 @@
 number = 3
 slug = "literate-faithful"
-status = "pending"
+status = "in-progress"
 description = "docs/plan-literate.md step 3. Move docs/microgpt.org(+html) to docs/literate/..."
 role = "production"
 context_files = []

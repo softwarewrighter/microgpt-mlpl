@@ -19,21 +19,29 @@ head_sel3 = eq(head_cols, reshape(range(head_dim) + 3 * head_dim, [1, head_dim])
 mean_col = zeros([n_embd, 1]) + 1 / n_embd;
 attn_scale = 1 / sqrt(head_dim);
 
+@formula "M[t,s] = 0 if s ≤ t;  M[t,s] = −10⁹ if s > t   (t, s = 0..n−1)"
+@ascii "M[t,s] = 0 if s <= t; M[t,s] = -1e9 if s > t   (t, s = 0..n-1)"
 def u:causal_mask(n) {
   "[n, n] additive mask: 0 where key <= query, -1e9 above the diagonal.";
   0 - (reshape(range(n), [1, n]) > reshape(range(n), [n, 1])) * 1000000000
 }
 
+@formula "linear(X, W) = X Wᵀ,   X ∈ ℝ^(n×n_in), W ∈ ℝ^(n_out×n_in)"
+@ascii "linear(X, W) = X W^T,   X is n x n_in, W is n_out x n_in"
 def u:linear(x, w) {
   "Python linear(x, w) = w @ x for w [nout, nin]; rows of x are positions.";
   matmul(x, transpose(w))
 }
 
+@formula "rmsnorm(x)[t,j] = x[t,j] / √( (1/d) ∑(k=1..d) x[t,k]² + ε ),   d = 16, ε = 10⁻⁵"
+@ascii "rmsnorm(x)[t,j] = x[t,j] / sqrt((1/d) * SUM(k=1..d) x[t,k]^2 + eps),   d = 16, eps = 1e-5"
 def u:rmsnorm(x) {
   "Scale each row to unit root-mean-square (eps 1e-5, no gain).";
   x * pow(matmul(x * x, mean_col) + 0.00001, 0 - 0.5)
 }
 
+@formula "head_h(Q,K,V) = softmax( (Q S_h)(K S_h)ᵀ / √d_h + M ) (V S_h) S_hᵀ,   d_h = 4"
+@ascii "head_h(Q,K,V) = softmax((Q S_h)(K S_h)^T / sqrt(d_h) + M) (V S_h) S_h^T,   d_h = 4"
 def u:head(q, k, v, sel, mask) {
   "One attention head over all positions: softmax(q k^T / sqrt(d) + mask) v.";
   qh = matmul(q, sel);
@@ -79,6 +87,8 @@ def u:doc_tgt(tokens, n) {
   u:gather1(tokens, range(n) + 1)
 }
 
+@formula "L = −(1/n) ∑(t=0..n−1) log softmax(z_t)[y_t],   z = gpt(inp)"
+@ascii "L = -(1/n) * SUM(t=0..n-1) log softmax(z_t)[y_t],   z = gpt(inp)"
 def u:loss(inp, tgt, mask) {
   "Mean cross-entropy of next-token predictions for one doc.";
   cross_entropy(u:gpt(inp, range(len(inp)), mask), tgt)

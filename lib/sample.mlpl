@@ -9,6 +9,8 @@
 # rng.choices) and picks the first token whose cumulative weight reaches
 # u * total -- microgpt-rs's rule, so --rs-parity samples match it.
 
+@formula "i* = min{ i : ∑(j=0..i) p_j ≥ u · ∑(j=0..V−1) p_j },   p = softmax(z / τ)"
+@ascii "i* = min{ i : SUM(j=0..i) p_j >= u * SUM(j=0..V-1) p_j },   p = softmax(z / tau)"
 def u:sample_token(logits, temperature, u) {
   "First token id whose cumulative softmax(logits / temperature) weight reaches u * total.";
   cdf = running_sum(softmax(logits / temperature, 0));

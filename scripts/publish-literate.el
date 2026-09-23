@@ -1,4 +1,4 @@
-;;; publish-literate.el --- Evaluate docs/microgpt.org and export HTML -*- lexical-binding: t; -*-
+;;; publish-literate.el --- Evaluate a docs/literate/*.org file and export HTML -*- lexical-binding: t; -*-
 
 ;; Run by scripts/publish-literate.sh:
 ;;   emacs -Q --batch -l scripts/publish-literate.el ORG-FILE MLPL-ELISP-DIR MLPL-COMMAND

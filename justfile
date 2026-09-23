@@ -29,11 +29,11 @@ bench runs="5":
 parity:
     scripts/parity.sh
 
-# Evaluate docs/microgpt.org (bake results) and export docs/microgpt.html.
-literate:
-    scripts/publish-literate.sh
+# Evaluate docs/literate/*.org (bake results) and export their HTML.
+literate *files:
+    scripts/publish-literate.sh {{files}}
 
-# Tangle docs/microgpt.org and require the same output as microgpt.mlpl.
+# Tangle each docs/literate/*.org; output must equal its program's baseline.
 check-literate:
     scripts/check-literate.sh
 

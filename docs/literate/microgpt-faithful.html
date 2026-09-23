@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-09-23 Wed 08:10 -->
+<!-- 2026-09-23 Wed 08:46 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>microgpt in MLPL</title>
@@ -217,6 +217,38 @@ pre.src, pre.example { background: #1f2227; border-color: #33373e; color: #d8dad
 table, th, td { border-color: #33373e; }
 }
 </style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
 </head>
 <body>
 <div id="content" class="content">
@@ -228,34 +260,35 @@ table, th, td { border-color: #33373e; }
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgea376c0">1. Introduction</a>
+<li><a href="#orga9bfb8f">1. Introduction</a>
 <ul>
-<li><a href="#orgcb30c56">1.1. The map at a glance</a></li>
-<li><a href="#org22b09a9">1.2. Running this document</a></li>
+<li><a href="#org636e9ef">1.1. The map at a glance</a></li>
+<li><a href="#orgae27ce5">1.2. Running this document</a></li>
 </ul>
 </li>
-<li><a href="#orgff8c4d5">2. Small helpers</a></li>
-<li><a href="#org2ba8e27">3. 1. Dataset</a></li>
-<li><a href="#orgc2795c1">4. 2. Tokenizer</a></li>
-<li><a href="#org1fae481">5. 3. Autograd: nothing to write</a></li>
-<li><a href="#orgc55bf38">6. 4. Parameters</a></li>
-<li><a href="#org0f3aea5">7. 5. Model</a>
+<li><a href="#org7b1530c">2. Small helpers</a></li>
+<li><a href="#org4317a8b">3. 1. Dataset</a></li>
+<li><a href="#org0b1b6c9">4. 2. Tokenizer</a></li>
+<li><a href="#orgbc77b0c">5. 3. Autograd: nothing to write</a></li>
+<li><a href="#orge795e21">6. 4. Parameters</a></li>
+<li><a href="#orgf1f4542">7. 5. Model</a>
 <ul>
-<li><a href="#orgbcaea4d">7.1. linear and rmsnorm</a></li>
-<li><a href="#org7bb06ac">7.2. Attention: the KV cache becomes a causal mask</a></li>
-<li><a href="#orgc963a63">7.3. The whole forward pass</a></li>
-<li><a href="#orge29862a">7.4. The loss</a></li>
+<li><a href="#org3b84579">7.1. linear and rmsnorm</a></li>
+<li><a href="#orgf87fe43">7.2. Attention: the KV cache becomes a causal mask</a></li>
+<li><a href="#orgdbb0215">7.3. The whole forward pass</a></li>
+<li><a href="#orgda08dee">7.4. The loss</a></li>
+<li><a href="#org974777e">7.5. The equations as data</a></li>
 </ul>
 </li>
-<li><a href="#orge4aef88">8. 6. Adam: built in</a></li>
-<li><a href="#orgb84471e">9. 7. Training</a></li>
-<li><a href="#orgab2b9ff">10. 8. Inference</a></li>
-<li><a href="#org94db627">11. 9. Three implementations, side by side</a></li>
+<li><a href="#orge27cf77">8. 6. Adam: built in</a></li>
+<li><a href="#orgcf6b52a">9. 7. Training</a></li>
+<li><a href="#org53c0ab1">10. 8. Inference</a></li>
+<li><a href="#orgcca69a8">11. 9. Three implementations, side by side</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgea376c0" class="outline-2">
-<h2 id="orgea376c0"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-orga9bfb8f" class="outline-2">
+<h2 id="orga9bfb8f"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Andrej Karpathy's <a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">microgpt.py</a> trains a GPT and samples from it in ~200 lines of
@@ -273,7 +306,7 @@ Two ports follow that rule in different directions:
 </p>
 
 <ul class="org-ul">
-<li><b>microgpt-rs</b> (<a href="../../microgpt-rs/docs/python-to-rust.html">python-to-rust.org</a>) keeps the algorithm's <i>shape</i>: a scalar
+<li><b>microgpt-rs</b> (<a href="https://github.com/softwarewrighter/microgpt-rs/blob/main/docs/python-to-rust.org">python-to-rust.org</a>) keeps the algorithm's <i>shape</i>: a scalar
 autograd engine, now a flat tape of nodes, and the same per-scalar loops,
 compiled.</li>
 <li><b>microgpt.mlpl</b> (this repo) changes the shape. sw-MLPL is an array
@@ -294,9 +327,23 @@ without <code>:tangle no</code>) also tangle, in order, into one standalone scri
 that really is the implementation. The production program splits the same
 definitions into <code>lib/*.mlpl</code> so the test suites can include them.
 </p>
+
+<p>
+Each section states its math as display equations (rendered with MathJax
+in the HTML). The model's functions also carry their equation as data:
+an <code>@formula</code> annotation (Unicode) plus an <code>@ascii</code> form, following the
+companion repos' convention (see <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/idiomatic-mlpl.md">idiomatic-mlpl.md</a>). Every summation states
+its limits and every symbol is defined.
+</p>
+
+<p>
+This is the <i>faithful</i> variant: it follows microgpt.py's structure line
+for line. The idiomatic and compact variants trade that fidelity for
+shorter code built from MLPL's Model DSL.
+</p>
 </div>
-<div id="outline-container-orgcb30c56" class="outline-3">
-<h3 id="orgcb30c56"><span class="section-number-3">1.1.</span> The map at a glance</h3>
+<div id="outline-container-org636e9ef" class="outline-3">
+<h3 id="org636e9ef"><span class="section-number-3">1.1.</span> The map at a glance</h3>
 <div class="outline-text-3" id="text-1-1">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -389,19 +436,19 @@ definitions into <code>lib/*.mlpl</code> so the test suites can include them.
 </table>
 </div>
 </div>
-<div id="outline-container-org22b09a9" class="outline-3">
-<h3 id="org22b09a9"><span class="section-number-3">1.2.</span> Running this document</h3>
+<div id="outline-container-orgae27ce5" class="outline-3">
+<h3 id="orgae27ce5"><span class="section-number-3">1.2.</span> Running this document</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 The session needs the repo root as MLPL's data directory, so that
 <code>load("input.txt")</code> works. The file-local variable at the end of this file
-sets <code>org-babel-mlpl-command</code> to <code>mlpl-repl --data-dir ..</code>, relative to
-<code>docs/</code>. Evaluate the buffer with <code>C-c C-v b</code>, or publish it in batch:
+sets <code>org-babel-mlpl-command</code> to <code>mlpl-repl --data-dir ../..</code>, relative to
+<code>docs/literate/</code>. Evaluate the buffer with <code>C-c C-v b</code>, or publish it in batch:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-sh">scripts/publish-literate.sh     <span class="org-comment-delimiter"># </span><span class="org-comment">evaluate every block, bake results, export docs/microgpt.html
-</span>scripts/check-literate.sh       <span class="org-comment-delimiter"># </span><span class="org-comment">tangle the program blocks; output must equal microgpt.mlpl's</span>
+<pre class="src src-sh">scripts/publish-literate.sh     <span class="org-comment-delimiter"># </span><span class="org-comment">evaluate every docs/literate/*.org block, bake results, export HTML
+</span>scripts/check-literate.sh       <span class="org-comment-delimiter"># </span><span class="org-comment">tangle each doc; output must equal its program's reg-rs baseline</span>
 </pre>
 </div>
 
@@ -413,8 +460,8 @@ repeated last line.
 </div>
 </div>
 </div>
-<div id="outline-container-orgff8c4d5" class="outline-2">
-<h2 id="orgff8c4d5"><span class="section-number-2">2.</span> Small helpers</h2>
+<div id="outline-container-org7b1530c" class="outline-2">
+<h2 id="org7b1530c"><span class="section-number-2">2.</span> Small helpers</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Two kinds of helper that Python gets for free: indexing a vector by a
@@ -464,8 +511,8 @@ def u<span class="org-mlpl-operator">:</span>write(s) {
 </pre>
 </div>
 </div>
-<div id="outline-container-org2ba8e27" class="outline-2">
-<h2 id="org2ba8e27"><span class="section-number-2">3.</span> 1. Dataset</h2>
+<div id="outline-container-org4317a8b" class="outline-2">
+<h2 id="org4317a8b"><span class="section-number-2">3.</span> 1. Dataset</h2>
 <div class="outline-text-2" id="text-3">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">docs</span> <span class="org-operator">=</span> [line.strip() <span class="org-keyword">for</span> line <span class="org-keyword">in</span> <span class="org-builtin">open</span>(<span class="org-string">'input.txt'</span>) <span class="org-keyword">if</span> line.strip()]
@@ -540,12 +587,12 @@ num docs: 32033
 <p>
 The whole parse, vocabulary included, takes about 19 ms. An earlier
 version found the vocabulary with 256 passes of <code>eq</code> over the corpus and
-took 254 ms; see <a href="benchmarks.md">benchmarks.md</a>.
+took 254 ms; see <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/benchmarks.md">benchmarks.md</a>.
 </p>
 </div>
 </div>
-<div id="outline-container-orgc2795c1" class="outline-2">
-<h2 id="orgc2795c1"><span class="section-number-2">4.</span> 2. Tokenizer</h2>
+<div id="outline-container-org0b1b6c9" class="outline-2">
+<h2 id="org0b1b6c9"><span class="section-number-2">4.</span> 2. Tokenizer</h2>
 <div class="outline-text-2" id="text-4">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">uchars</span> <span class="org-operator">=</span> <span class="org-builtin">sorted</span>(<span class="org-builtin">set</span>(<span class="org-string">''</span>.join(docs)))
@@ -621,6 +668,19 @@ The first name in the file, <code>emma</code>, encodes exactly as in Python (<co
 4, <code>m</code> is 12, BOS is 26):
 </p>
 
+<p>
+In symbols: a name of \(L\) characters \(c_1 \dots c_L\) becomes the token
+sequence below, with \(\mathrm{BOS} = 26\). The model is trained on its first
+\(n\) transitions, where \(T = 16\) is the block size:
+</p>
+
+<p>
+\[
+  \tau = (\mathrm{BOS},\ \mathrm{id}(c_1),\ \dots,\ \mathrm{id}(c_L),\ \mathrm{BOS}),
+  \qquad n = \min(T,\ L + 1)
+\]
+</p>
+
 <div class="org-src-container">
 <pre class="src src-mlpl">print(decode_bytes(d<span class="org-mlpl-operator">.</span>uchars))<span class="org-mlpl-operator">;</span>
 u<span class="org-mlpl-operator">:</span>doc_tokens(d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>)
@@ -633,8 +693,8 @@ abcdefghijklmnopqrstuvwxyz
 </pre>
 </div>
 </div>
-<div id="outline-container-org1fae481" class="outline-2">
-<h2 id="org1fae481"><span class="section-number-2">5.</span> 3. Autograd: nothing to write</h2>
+<div id="outline-container-orgbc77b0c" class="outline-2">
+<h2 id="orgbc77b0c"><span class="section-number-2">5.</span> 3. Autograd: nothing to write</h2>
 <div class="outline-text-2" id="text-5">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">class</span> <span class="org-type">Value</span>:
@@ -685,8 +745,8 @@ central finite differences for all nine matrices; they agree to ~3e-11.
 </p>
 </div>
 </div>
-<div id="outline-container-orgc55bf38" class="outline-2">
-<h2 id="orgc55bf38"><span class="section-number-2">6.</span> 4. Parameters</h2>
+<div id="outline-container-orge795e21" class="outline-2">
+<h2 id="orge795e21"><span class="section-number-2">6.</span> 4. Parameters</h2>
 <div class="outline-text-2" id="text-6">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">matrix</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> <span class="org-variable-name">nout</span>, <span class="org-variable-name">nin</span>, <span class="org-variable-name">std</span><span class="org-operator">=</span>0.08: [[Value(random.gauss(0, std)) <span class="org-keyword">for</span> _ <span class="org-keyword">in</span> <span class="org-builtin">range</span>(nin)] <span class="org-keyword">for</span> _ <span class="org-keyword">in</span> <span class="org-builtin">range</span>(nout)]
@@ -710,6 +770,37 @@ from microgpt-rs's own SplitMix64 stream instead; see section 9.)
 Python and Rust keep a flat <code>params</code> list for Adam. MLPL cannot store a
 list of param leaves in a variable (an array literal of matrices is an
 array), so the nine names are written inline in the <code>adam</code> call.
+</p>
+
+<p>
+With vocabulary \(V = 27\), width \(d = 16\), block size \(T = 16\) and MLP width
+\(4d\), the parameter count is
+</p>
+
+<p>
+\[
+</p>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">&theta;</td>
+<td class="org-left">\;=\; \underbrace{2Vd}<sub>W<sub>te</sub>,\,W<sub>lm</sub></sub> + \underbrace{Td}<sub>W<sub>pe</sub></sub></td>
+</tr>
+</tbody>
+</table>
+<ul class="org-ul">
+<li>\underbrace{4d^2}<sub>W_q,W_k,W_v,W_o</sub> + \underbrace{2 \cdot 4d^2}<sub>W_1,\,W_2</sub></li>
+</ul>
+<p>
+  \;=\; 864 + 256 + 1024 + 2048 \;=\; 4192 .
+\]
 </p>
 
 <div class="org-src-container">
@@ -749,8 +840,8 @@ num params: 4192
 </pre>
 </div>
 </div>
-<div id="outline-container-org0f3aea5" class="outline-2">
-<h2 id="org0f3aea5"><span class="section-number-2">7.</span> 5. Model</h2>
+<div id="outline-container-orgf1f4542" class="outline-2">
+<h2 id="orgf1f4542"><span class="section-number-2">7.</span> 5. Model</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 microgpt.py follows GPT-2 with three simplifications: RMSNorm instead of
@@ -759,8 +850,8 @@ Python's names and structure, but each works on an <code>[n, 16]</code> array, o
 per position of the name, instead of a list of scalars.
 </p>
 </div>
-<div id="outline-container-orgbcaea4d" class="outline-3">
-<h3 id="orgbcaea4d"><span class="section-number-3">7.1.</span> linear and rmsnorm</h3>
+<div id="outline-container-org3b84579" class="outline-3">
+<h3 id="org3b84579"><span class="section-number-3">7.1.</span> linear and rmsnorm</h3>
 <div class="outline-text-3" id="text-7-1">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">linear</span>(x, w): <span class="org-keyword">return</span> [<span class="org-builtin">sum</span>(wi <span class="org-operator">*</span> xi <span class="org-keyword">for</span> wi, xi <span class="org-keyword">in</span> <span class="org-builtin">zip</span>(wo, x)) <span class="org-keyword">for</span> wo <span class="org-keyword">in</span> w]
@@ -778,15 +869,39 @@ transposed. <code>rmsnorm</code>'s per-row mean of squares is <code>x^2 @ (1/16)
 layer uses eps 1e-8; microgpt uses 1e-5.)
 </p>
 
+<p>
+With \(X \in \mathbb{R}^{n \times d}\) (row \(t\) is position \(t\)) and
+\(W \in \mathbb{R}^{d_{out} \times d_{in}}\):
+</p>
+
+<p>
+\[
+  \mathrm{linear}(X, W) = X W^{\top},
+  \qquad
+  \mathrm{rmsnorm}(X)_{t,j} = \frac{X_{t,j}}{\sqrt{\frac{1}{d}\sum_{k=1}^{d} X_{t,k}^{2} + \epsilon}},
+  \quad \epsilon = 10^{-5}.
+\]
+</p>
+
+<p>
+The same equations travel with the code as data: each function below
+carries an <code>@formula</code> (Unicode) and an <code>@ascii</code> annotation, which
+<code>annotations("u:name")</code> reads back (see the end of this section).
+</p>
+
 <div class="org-src-container">
 <pre class="src src-mlpl">mean_col <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">zeros</span>([n_embd<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>]) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">/</span> n_embd<span class="org-mlpl-operator">;</span>
 attn_scale <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">/</span> <span class="org-mlpl-builtin">sqrt</span>(head_dim)<span class="org-mlpl-operator">;</span>
 
+@formula <span class="org-string">"linear(X, W) = X W&#7488;,   X &#8712; &#8477;^(n&#215;n_in), W &#8712; &#8477;^(n_out&#215;n_in)"</span>
+@ascii <span class="org-string">"linear(X, W) = X W^T,   X is n x n_in, W is n_out x n_in"</span>
 def u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> w) {
   <span class="org-string">"Python linear(x, w) = w @ x for w [nout, nin]; rows of x are positions."</span><span class="org-mlpl-operator">;</span>
   <span class="org-mlpl-builtin">matmul</span>(x<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">transpose</span>(w))
 }
 
+@formula <span class="org-string">"rmsnorm(x)[t,j] = x[t,j] / &#8730;( (1/d) &#8721;(k=1..d) x[t,k]&#178; + &#949; ),   d = 16, &#949; = 10&#8315;&#8309;"</span>
+@ascii <span class="org-string">"rmsnorm(x)[t,j] = x[t,j] / sqrt((1/d) * SUM(k=1..d) x[t,k]^2 + eps),   d = 16, eps = 1e-5"</span>
 def u<span class="org-mlpl-operator">:</span>rmsnorm(x) {
   <span class="org-string">"Scale each row to unit root-mean-square (eps 1e-5, no gain)."</span><span class="org-mlpl-operator">;</span>
   x * <span class="org-mlpl-builtin">pow</span>(<span class="org-mlpl-builtin">matmul</span>(x * x<span class="org-mlpl-operator">,</span> mean_col) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">0.00001</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span> <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">0.5</span>)
@@ -795,8 +910,8 @@ def u<span class="org-mlpl-operator">:</span>rmsnorm(x) {
 </div>
 </div>
 </div>
-<div id="outline-container-org7bb06ac" class="outline-3">
-<h3 id="org7bb06ac"><span class="section-number-3">7.2.</span> Attention: the KV cache becomes a causal mask</h3>
+<div id="outline-container-orgf87fe43" class="outline-3">
+<h3 id="orgf87fe43"><span class="section-number-3">7.2.</span> Attention: the KV cache becomes a causal mask</h3>
 <div class="outline-text-3" id="text-7-2">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">gpt</span>(token_id, pos_id, keys, values):        <span class="org-comment-delimiter"># </span><span class="org-comment">ONE position per call
@@ -824,8 +939,31 @@ the same computation. For training the masked form is simply better: one
 pass of matrix products instead of <code>n</code> passes of scalar loops.
 </p>
 
+<p>
+For head \(h\) with selector \(S_h \in \{0,1\}^{d \times d_h}\) (\(d_h = 4\)),
+queries \(Q = \mathrm{linear}(X, W_q)\) and likewise \(K\) and \(V\):
+</p>
+
+<p>
+\[
+  M_{t,s} = \begin{cases} 0 & s \le t \\ -10^{9} & s > t \end{cases}
+  \qquad (t, s = 0, \dots, n-1)
+\]
+\[
+  \mathrm{head}_h = \mathrm{softmax}\!\left(\frac{(Q S_h)(K S_h)^{\top}}{\sqrt{d_h}} + M\right) (V S_h)\, S_h^{\top},
+  \qquad
+  \mathrm{attn}(X) = \mathrm{linear}\!\Big(\sum_{h=1}^{4} \mathrm{head}_h,\ W_o\Big)
+\]
+</p>
+
+<p>
+The softmax runs along each row \(t\), over the keys \(s = 0 \dots n-1\).
+</p>
+
 <div class="org-src-container">
-<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>causal_mask(n) {
+<pre class="src src-mlpl">@formula <span class="org-string">"M[t,s] = 0 if s &#8804; t;  M[t,s] = &#8722;10&#8313; if s &gt; t   (t, s = 0..n&#8722;1)"</span>
+@ascii <span class="org-string">"M[t,s] = 0 if s &lt;= t; M[t,s] = -1e9 if s &gt; t   (t, s = 0..n-1)"</span>
+def u<span class="org-mlpl-operator">:</span>causal_mask(n) {
   <span class="org-string">"[n, n] additive mask: 0 where key &lt;= query, -1e9 above the diagonal."</span><span class="org-mlpl-operator">;</span>
   <span class="org-mlpl-number">0</span> <span class="org-mlpl-operator">-</span> (<span class="org-mlpl-builtin">reshape</span>(range(n)<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> n]) &gt; <span class="org-mlpl-builtin">reshape</span>(range(n)<span class="org-mlpl-operator">,</span> [n<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>])) * <span class="org-mlpl-number">1000000000</span>
 }
@@ -859,6 +997,8 @@ head_sel<span class="org-mlpl-operator">1</span> <span class="org-mlpl-operator"
 head_sel<span class="org-mlpl-operator">2</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">eq</span>(head_cols<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(range(head_dim) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">2</span> * head_dim<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> head_dim]))<span class="org-mlpl-operator">;</span>
 head_sel<span class="org-mlpl-operator">3</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">eq</span>(head_cols<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(range(head_dim) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">3</span> * head_dim<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> head_dim]))<span class="org-mlpl-operator">;</span>
 
+@formula <span class="org-string">"head_h(Q,K,V) = softmax( (Q S_h)(K S_h)&#7488; / &#8730;d_h + M ) (V S_h) S_h&#7488;,   d_h = 4"</span>
+@ascii <span class="org-string">"head_h(Q,K,V) = softmax((Q S_h)(K S_h)^T / sqrt(d_h) + M) (V S_h) S_h^T,   d_h = 4"</span>
 def u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operator">,</span> k<span class="org-mlpl-operator">,</span> v<span class="org-mlpl-operator">,</span> sel<span class="org-mlpl-operator">,</span> mask) {
   <span class="org-string">"One attention head over all positions: softmax(q k^T / sqrt(d) + mask) v."</span><span class="org-mlpl-operator">;</span>
   qh <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">matmul</span>(q<span class="org-mlpl-operator">,</span> sel)<span class="org-mlpl-operator">;</span>
@@ -871,13 +1011,26 @@ def u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operato
 </div>
 </div>
 </div>
-<div id="outline-container-orgc963a63" class="outline-3">
-<h3 id="orgc963a63"><span class="section-number-3">7.3.</span> The whole forward pass</h3>
+<div id="outline-container-orgdbb0215" class="outline-3">
+<h3 id="orgdbb0215"><span class="section-number-3">7.3.</span> The whole forward pass</h3>
 <div class="outline-text-3" id="text-7-3">
 <p>
 Line for line the same structure as Python's <code>gpt()</code>: embeddings, a first
 RMSNorm, then the attention and MLP blocks with residuals, then <code>lm_head</code>.
 <code>gather_rows(wte, toks)</code> is the embedding lookup for all positions at once.
+</p>
+
+<p>
+\[
+  x^{(0)}_t = \mathrm{rmsnorm}\big(W_{te}[\tau_t] + W_{pe}[t]\big),
+  \qquad
+  x^{(1)} = x^{(0)} + \mathrm{attn}\big(\mathrm{rmsnorm}(x^{(0)})\big),
+\]
+\[
+  x^{(2)} = x^{(1)} + \mathrm{linear}\Big(\mathrm{ReLU}\big(\mathrm{linear}(\mathrm{rmsnorm}(x^{(1)}), W_1)\big), W_2\Big),
+  \qquad
+  z = \mathrm{linear}(x^{(2)}, W_{lm}) \in \mathbb{R}^{n \times V}.
+\]
 </p>
 
 <div class="org-src-container">
@@ -904,8 +1057,8 @@ RMSNorm, then the attention and MLP blocks with residuals, then <code>lm_head</c
 </div>
 </div>
 </div>
-<div id="outline-container-orge29862a" class="outline-3">
-<h3 id="orge29862a"><span class="section-number-3">7.4.</span> The loss</h3>
+<div id="outline-container-orgda08dee" class="outline-3">
+<h3 id="orgda08dee"><span class="section-number-3">7.4.</span> The loss</h3>
 <div class="outline-text-3" id="text-7-4">
 <div class="org-src-container">
 <pre class="src src-python">losses.append(<span class="org-operator">-</span>probs[target_id].log())
@@ -920,6 +1073,16 @@ builds the mask and passes it in; building it inside the traced loss would
 put it on the autograd tape every step (~70 us/step).
 </p>
 
+<p>
+With logits \(z_t\) and target \(y_t = \tau_{t+1}\):
+</p>
+
+<p>
+\[
+  \mathcal{L} = -\frac{1}{n} \sum_{t=0}^{n-1} \log \mathrm{softmax}(z_t)[y_t]
+\]
+</p>
+
 <div class="org-src-container">
 <pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>doc_in(tokens<span class="org-mlpl-operator">,</span> n) {
   <span class="org-string">"Input ids of a doc row: tokens[0..n)."</span><span class="org-mlpl-operator">;</span>
@@ -931,6 +1094,8 @@ def u<span class="org-mlpl-operator">:</span>doc_tgt(tokens<span class="org-mlpl
   u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(tokens<span class="org-mlpl-operator">,</span> range(n) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)
 }
 
+@formula <span class="org-string">"L = &#8722;(1/n) &#8721;(t=0..n&#8722;1) log softmax(z_t)[y_t],   z = gpt(inp)"</span>
+@ascii <span class="org-string">"L = -(1/n) * SUM(t=0..n-1) log softmax(z_t)[y_t],   z = gpt(inp)"</span>
 def u<span class="org-mlpl-operator">:</span>loss(inp<span class="org-mlpl-operator">,</span> tgt<span class="org-mlpl-operator">,</span> mask) {
   <span class="org-string">"Mean cross-entropy of next-token predictions for one doc."</span><span class="org-mlpl-operator">;</span>
   cross_entropy(u<span class="org-mlpl-operator">:</span>gpt(inp<span class="org-mlpl-operator">,</span> range(len(inp))<span class="org-mlpl-operator">,</span> mask)<span class="org-mlpl-operator">,</span> tgt)
@@ -968,9 +1133,32 @@ sum |prefix-by-prefix - masked| over all positions: 0
 </pre>
 </div>
 </div>
+<div id="outline-container-org974777e" class="outline-3">
+<h3 id="org974777e"><span class="section-number-3">7.5.</span> The equations as data</h3>
+<div class="outline-text-3" id="text-7-5">
+<p>
+The <code>@formula</code> annotations are ordinary data on each function, so the
+program can print its own equations:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">print(annotations(<span class="org-string">"u:rmsnorm"</span>)<span class="org-mlpl-operator">.</span>formula)<span class="org-mlpl-operator">;</span>
+print(annotations(<span class="org-string">"u:head"</span>)<span class="org-mlpl-operator">.</span>formula)<span class="org-mlpl-operator">;</span>
+print(annotations(<span class="org-string">"u:loss"</span>)<span class="org-mlpl-operator">.</span>formula)<span class="org-mlpl-operator">;</span>
+<span class="org-mlpl-number">0</span>
+</pre>
 </div>
-<div id="outline-container-orge4aef88" class="outline-2">
-<h2 id="orge4aef88"><span class="section-number-2">8.</span> 6. Adam: built in</h2>
+
+<pre class="example">
+rmsnorm(x)[t,j] = x[t,j] / √( (1/d) ∑(k=1..d) x[t,k]² + ε ),   d = 16, ε = 10⁻⁵
+head_h(Q,K,V) = softmax( (Q S_h)(K S_h)ᵀ / √d_h + M ) (V S_h) S_hᵀ,   d_h = 4
+L = −(1/n) ∑(t=0..n−1) log softmax(z_t)[y_t],   z = gpt(inp)
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orge27cf77" class="outline-2">
+<h2 id="orge27cf77"><span class="section-number-2">8.</span> 6. Adam: built in</h2>
 <div class="outline-text-2" id="text-8">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">m</span>[i] <span class="org-operator">=</span> beta1 <span class="org-operator">*</span> m[i] <span class="org-operator">+</span> (1 <span class="org-operator">-</span> beta1) <span class="org-operator">*</span> p.grad
@@ -991,6 +1179,22 @@ separate <code>grad</code> calls), and it returns the loss <i>before</i> the upd
 is Python's <code>loss.data</code>.
 </p>
 
+<p>
+For each parameter, with gradient \(g_k\) at step \(k = 1 \dots K\) (\(K = 1000\)),
+\(\beta_1 = 0.85\), \(\beta_2 = 0.99\), \(\epsilon = 10^{-8}\), \(\eta = 0.01\):
+</p>
+
+<p>
+\[
+  m_k = \beta_1 m_{k-1} + (1-\beta_1)\, g_k, \qquad
+  v_k = \beta_2 v_{k-1} + (1-\beta_2)\, g_k^{2},
+\]
+\[
+  \theta_k = \theta_{k-1} - \eta\Big(1 - \frac{k-1}{K}\Big)\,
+             \frac{m_k / (1-\beta_1^{k})}{\sqrt{v_k / (1-\beta_2^{k})} + \epsilon}.
+\]
+</p>
+
 <div class="org-src-container">
 <pre class="src src-mlpl">learning_rate <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.01</span><span class="org-mlpl-operator">;</span>
 beta<span class="org-mlpl-operator">1</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.85</span><span class="org-mlpl-operator">;</span>
@@ -1000,8 +1204,8 @@ eps_adam <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">
 </div>
 </div>
 </div>
-<div id="outline-container-orgb84471e" class="outline-2">
-<h2 id="orgb84471e"><span class="section-number-2">9.</span> 7. Training</h2>
+<div id="outline-container-orgcf6b52a" class="outline-2">
+<h2 id="orgcf6b52a"><span class="section-number-2">9.</span> 7. Training</h2>
 <div class="outline-text-2" id="text-9">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-keyword">for</span> step <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_steps):
@@ -1079,7 +1283,7 @@ print(str_concat(<span class="org-string">"step 1000 loss "</span><span class="o
 </pre>
 </div>
 
-<pre class="example" id="org155cbcf">
+<pre class="example" id="orgf2625c5">
 steps    1- 100  mean loss 2.7501
 steps  101- 200  mean loss 2.5411
 steps  201- 300  mean loss 2.5331
@@ -1101,8 +1305,8 @@ streams.
 </p>
 </div>
 </div>
-<div id="outline-container-orgab2b9ff" class="outline-2">
-<h2 id="orgab2b9ff"><span class="section-number-2">10.</span> 8. Inference</h2>
+<div id="outline-container-org53c0ab1" class="outline-2">
+<h2 id="org53c0ab1"><span class="section-number-2">10.</span> 8. Inference</h2>
 <div class="outline-text-2" id="text-10">
 <div class="org-src-container">
 <pre class="src src-python"><span class="org-variable-name">token_id</span> <span class="org-operator">=</span> BOS
@@ -1123,8 +1327,22 @@ picks the first token whose cumulative weight reaches <code>u * total</code>, wh
 is what <code>random.choices</code> and microgpt-rs's <code>choices</code> do.
 </p>
 
+<p>
+With temperature \(\tau_s = 0.5\), last-position logits \(z\) and uniform
+\(u \in [0, 1)\):
+</p>
+
+<p>
+\[
+  p = \mathrm{softmax}(z / \tau_s), \qquad
+  i^{*} = \min\Big\{\, i \;:\; \sum_{j=0}^{i} p_j \;\ge\; u \sum_{j=0}^{V-1} p_j \Big\}.
+\]
+</p>
+
 <div class="org-src-container">
-<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>sample_token(logits<span class="org-mlpl-operator">,</span> temperature<span class="org-mlpl-operator">,</span> u) {
+<pre class="src src-mlpl">@formula <span class="org-string">"i* = min{ i : &#8721;(j=0..i) p_j &#8805; u &#183; &#8721;(j=0..V&#8722;1) p_j },   p = softmax(z / &#964;)"</span>
+@ascii <span class="org-string">"i* = min{ i : SUM(j=0..i) p_j &gt;= u * SUM(j=0..V-1) p_j },   p = softmax(z / tau)"</span>
+def u<span class="org-mlpl-operator">:</span>sample_token(logits<span class="org-mlpl-operator">,</span> temperature<span class="org-mlpl-operator">,</span> u) {
   <span class="org-string">"First token id whose cumulative softmax(logits / temperature) weight reaches u * total."</span><span class="org-mlpl-operator">;</span>
   cdf <span class="org-mlpl-operator">=</span> running_sum(<span class="org-mlpl-builtin">softmax</span>(logits <span class="org-mlpl-operator">/</span> temperature<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>))<span class="org-mlpl-operator">;</span>
   k <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reduce_add</span>(<span class="org-mlpl-builtin">lt</span>(cdf<span class="org-mlpl-operator">,</span> u * at(cdf<span class="org-mlpl-operator">,</span> len(cdf) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>)))<span class="org-mlpl-operator">;</span>
@@ -1183,7 +1401,7 @@ sample_idx
 </pre>
 </div>
 
-<pre class="example" id="org03cfe9f">
+<pre class="example" id="org7f6fc3f">
 --- inference (new, hallucinated names) ---
 sample  1: aline
 sample  2: erish
@@ -1208,8 +1426,8 @@ sample 20: rikia
 </pre>
 </div>
 </div>
-<div id="outline-container-org94db627" class="outline-2">
-<h2 id="org94db627"><span class="section-number-2">11.</span> 9. Three implementations, side by side</h2>
+<div id="outline-container-orgcca69a8" class="outline-2">
+<h2 id="orgcca69a8"><span class="section-number-2">11.</span> 9. Three implementations, side by side</h2>
 <div class="outline-text-2" id="text-11">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -1299,12 +1517,12 @@ this live.</li>
 <li><b>What MLPL made harder.</b> String handling and number formatting;
 interpreter costs (global copies, array-read copies) that shaped the
 data layout; no vector indexing; a loop-body string bug. See
-<a href="upstream-issues.md">upstream-issues.md</a> for all of them, with reproducers.</li>
+<a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/upstream-issues.md">upstream-issues.md</a> for all of them, with reproducers.</li>
 </ul>
 
 <p>
-Further reading: <a href="python-vs-mlpl.md">python-vs-mlpl.md</a> (the same comparison as a plain
-walkthrough), <a href="benchmarks.md">benchmarks.md</a> (speed log), <a href="plan.md">plan.md</a> (design decisions).
+Further reading: <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/python-vs-mlpl.md">python-vs-mlpl.md</a> (the same comparison as a plain
+walkthrough), <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/benchmarks.md">benchmarks.md</a> (speed log), <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/plan.md">plan.md</a> (design decisions).
 </p>
 </div>
 </div>
@@ -1312,7 +1530,7 @@ walkthrough), <a href="benchmarks.md">benchmarks.md</a> (speed log), <a href="pl
 <div id="postamble" class="status">
 <p class="date">Date: 2026-09-22</p>
 <p class="author">Author: Mike Wright</p>
-<p class="date">Created: 2026-09-23 Wed 08:10</p>
+<p class="date">Created: 2026-09-23 Wed 08:46</p>
 </div>
 </body>
 </html>

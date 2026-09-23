@@ -4,5 +4,6 @@
 /parity/out/
 # Rust helper build output (step 8)
 /tools/*/target/
-# tangled from docs/microgpt.org by scripts/check-literate.sh (check-time artifact)
+# tangled from docs/literate/*.org by scripts/check-literate.sh (check-time artifacts)
+/docs/literate/*.mlpl
 /docs/microgpt-literate.mlpl
