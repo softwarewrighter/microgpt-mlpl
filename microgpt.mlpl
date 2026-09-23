@@ -3,10 +3,19 @@
 # "The most atomic way to train and run inference for a GPT."
 # Sections follow microgpt.py one-to-one; see docs/plan.md.
 # Run with scripts/run.sh (it supplies --data-dir . and input.txt).
-#
-# Scaffold stub (saga step 1): proves the interpreter, sandbox, and
-# dataset wiring. The real sections land in steps 2-7.
+# Reusable definitions live in lib/ so the mlplunit suites can test them.
 
-txt = load("input.txt")
-print("input chars:", to_string(str_len(txt)))
+include "lib/data.mlpl";
+
+# Let there be a Dataset `docs`: one name per line of input.txt.
+# Python shuffles the list in place; here the docs stay in file order and
+# `order` is the shuffled visiting order (a permutation of doc indices).
+d = unwrap(u:dataset(load("input.txt")));
+order = shuffle(range(d.n_docs), 42);
+print("num docs:", to_string(d.n_docs));
+
+# Let there be a Tokenizer: the unique characters become token ids
+# 0..n-1, and one extra id, BOS, marks the beginning (and end) of a doc.
+print("vocab size:", to_string(d.vocab_size));
+
 exit(0)

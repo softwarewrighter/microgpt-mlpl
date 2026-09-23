@@ -1,0 +1,60 @@
+# Dataset + tokenizer (lib/data.mlpl) against microgpt.py's behavior.
+include "lib/data.mlpl";
+
+d = unwrap(u:dataset(load("input.txt")));
+
+@test {name: "corpus has microgpt.py's doc count and vocabulary", tags: ["data"]}
+def u:test_counts() {
+  "num docs 32033, 26 letters + BOS; BOS is the last id.";
+  u:assert_eq(d.n_docs, 32033, "num docs")?;
+  u:assert_eq(d.vocab_size, 27, "vocab size")?;
+  u:assert_eq(d.bos, 26, "BOS = len(uchars)")?;
+  u:assert_text_eq(decode_bytes(d.uchars), "abcdefghijklmnopqrstuvwxyz", "sorted unique chars")
+}
+
+@test {name: "doc spans cover the corpus exactly", tags: ["data"]}
+def u:test_spans() {
+  "Every byte is a doc byte or one of the n - 1 separating newlines (no trailing newline, no blank lines).";
+  u:assert_eq(reduce_add(d.lens) + d.n_docs - 1, len(d.bytes), "bytes accounted for")?;
+  u:assert_text_eq(decode_bytes(u:doc_bytes(d, 0)), "emma", "first doc")?;
+  u:assert_text_eq(decode_bytes(u:doc_bytes(d, d.n_docs - 1)), "zzyzx", "last doc")
+}
+
+@test {name: "doc tokens are BOS-wrapped ids", tags: ["tokenizer"]}
+def u:test_doc_tokens() {
+  "Python: [BOS] + [uchars.index(ch) for ch in 'emma'] + [BOS].";
+  u:assert_eq(u:doc_tokens(d, 0), [26, 4, 12, 12, 0, 26], "emma")
+}
+
+@test {name: "encode and decode round-trip names", tags: ["tokenizer"]}
+def u:test_round_trip() {
+  "Strings and corpus docs survive encode -> decode.";
+  u:assert_text_eq(u:decode(d, u:encode(d, "zoe")), "zoe", "zoe")?;
+  u:assert_text_eq(u:decode(d, u:encode(d, "abcdefghijklmnopqrstuvwxyz")), "abcdefghijklmnopqrstuvwxyz", "alphabet")?;
+  u:assert_text_eq(u:decode(d, u:encode_bytes(d, u:doc_bytes(d, 12345))), decode_bytes(u:doc_bytes(d, 12345)), "doc 12345")
+}
+
+@test {name: "the shuffled doc order is a permutation", tags: ["data"]}
+def u:test_order() {
+  "shuffle(range(N), 42) visits every doc exactly once, deterministically.";
+  order = shuffle(range(d.n_docs), 42);
+  u:assert_eq(u:gather1(order, grade_up(order)), range(d.n_docs), "permutation")?;
+  u:assert_eq(order, shuffle(range(d.n_docs), 42), "deterministic")?;
+  u:assert_ne(order, range(d.n_docs), "actually shuffled")
+}
+
+@test {name: "empty lines are dropped like microgpt.py's strip filter", tags: ["data"]}
+def u:test_empty_lines() {
+  "Blank lines and a missing trailing newline are handled.";
+  t = unwrap(u:dataset("ab\n\ncd"));
+  u:assert_eq(t.n_docs, 2, "two docs")?;
+  u:assert_eq(u:doc_tokens(t, 1), [4, 2, 3, 4], "cd, BOS = 4")
+}
+
+@test {name: "non-name bytes are rejected instead of silently mis-split", tags: ["data"]}
+def u:test_rejects_whitespace() {
+  "A space would need strip() semantics this parser does not implement.";
+  u:assert_err(u:dataset("ab\ncd e\n"), "space in a name")
+}
+
+u:run_registered_tests()

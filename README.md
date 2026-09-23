@@ -33,14 +33,14 @@ See [`docs/plan.md`](docs/plan.md) for the design decisions and step plan.
 ## Status
 
 Scaffold in place (scripts, mlplunit tests, reg-rs baseline, pre-commit
-gate); the port itself starts at step 2. Work is tracked as an
+gate), dataset and tokenizer done (`num docs: 32033`, `vocab size: 27`). Work is tracked as an
 agentrail saga in `.agentrail/`
 (`agentrail status` shows progress):
 
 | step | slug | status |
 |---|---|---|
 | 1 | scaffold | done |
-| 2 | dataset-tokenizer | pending |
+| 2 | dataset-tokenizer | done |
 | 3 | params-init | pending |
 | 4 | forward-pass | pending |
 | 5 | gradcheck | pending |

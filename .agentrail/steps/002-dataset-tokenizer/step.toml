@@ -1,6 +1,6 @@
 number = 2
 slug = "dataset-tokenizer"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 2 (design decision 8). In microgpt.mlpl: load input.txt, st..."
 role = "production"
 context_files = []

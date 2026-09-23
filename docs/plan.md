@@ -26,7 +26,8 @@ with whole-array ops. The teaching point of this port is the contrast:
 the same model in ~100 lines of array code, with the autograd engine moved
 into the language.
 
-Deliverable: `microgpt.mlpl`, a single readable script whose sections
+Deliverable: `microgpt.mlpl`, a readable script (plus the `lib/`
+definitions it includes) whose sections
 line up one-to-one with `microgpt.py` (dataset, tokenizer, params, model,
 Adam, training loop, inference), printing the same lines:
 
@@ -104,7 +105,9 @@ sample  1: ...
 ## Layout
 
 ```
-microgpt.mlpl           the port (single file, sectioned like microgpt.py)
+microgpt.mlpl           the port, sectioned like microgpt.py (top-level flow)
+lib/*.mlpl              its u: definitions (data.mlpl, later model.mlpl),
+                        split out so mlplunit suites can include them
 justfile                run / test / regress / rebaseline / check
 mlplunit.conf           mlplunit suite config (tests/, data_dir .)
 scripts/run.sh          fetch input.txt if missing, run with mlpl-repl

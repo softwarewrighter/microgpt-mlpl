@@ -1,0 +1,75 @@
+# Dataset and tokenizer for microgpt.mlpl (microgpt.py's "Let there be a
+# Dataset" and "Let there be a Tokenizer" sections).
+#
+# Python keeps docs as a list[str] and maps chars with uchars.index(ch).
+# Here the corpus stays one byte array: each doc is a (start, length)
+# span of it, and a 256-entry lookup table maps a byte straight to its
+# token id, so encoding a doc is two gathers instead of a per-char search.
+
+def u:gather1(v, idx) {
+  "Elements of rank-1 v at the (rank-1) integer positions idx.";
+  reshape(gather_rows(reshape(v, [len(v), 1]), idx), [len(idx)])
+}
+
+def u:dataset(txt) {
+  "Parse input.txt: one doc per non-empty line, plus the char vocabulary.";
+  bytes = tokenize_bytes(txt);
+  n = len(bytes);
+  # microgpt.py strips each line; the names corpus has nothing to strip,
+  # so require bytes to be newline or visible ASCII and splitting is exact.
+  bad = reduce_add(lt(bytes, 33) * ne(bytes, 10)) + reduce_add(gt(bytes, 126));
+  if bad { err(str_concat("corpus has non-name bytes: ", to_string(bad))) } else {
+    # Doc spans: the text between consecutive newlines (virtual ones at
+    # -1 and n), keeping only non-empty spans.
+    nl = compress(eq(bytes, 10), range(n));
+    bounds = concat(concat([0 - 1], nl), [n]);
+    m = len(bounds) - 1;
+    starts_all = u:gather1(bounds, range(m)) + 1;
+    lens_all = u:gather1(bounds, range(m) + 1) - starts_all;
+    keep = gt(lens_all, 0);
+    # Vocabulary: sorted unique chars of the joined docs (newline excluded).
+    present = range(256) * 0;
+    b = 0;
+    repeat 256 {
+      present = scatter(present, b, gt(reduce_add(eq(bytes, b)), 0) * ne(b, 10));
+      b = b + 1
+    };
+    ids = running_sum(present) - 1;
+    vocab = reduce_add(present);
+    ok({
+      bytes: bytes,
+      starts: compress(keep, starts_all),
+      lens: compress(keep, lens_all),
+      n_docs: reduce_add(keep),
+      uchars: compress(present, range(256)),
+      lut: present * ids + (1 - present) * (0 - 1),
+      bos: vocab,
+      vocab_size: vocab + 1
+    })
+  }
+}
+
+def u:encode_bytes(d, bs) {
+  "Token ids for a rank-1 byte array (every byte must be in the vocab).";
+  u:gather1(d.lut, bs)
+}
+
+def u:encode(d, s) {
+  "Token ids for a string (no BOS).";
+  u:encode_bytes(d, tokenize_bytes(s))
+}
+
+def u:decode(d, ids) {
+  "The string for a rank-1 array of non-BOS token ids.";
+  decode_bytes(u:gather1(d.uchars, ids))
+}
+
+def u:doc_bytes(d, i) {
+  "Raw bytes of doc i (file order).";
+  u:gather1(d.bytes, at(d.starts, i) + range(at(d.lens, i)))
+}
+
+def u:doc_tokens(d, i) {
+  "microgpt.py's tokens for doc i: [BOS] + ids + [BOS].";
+  concat(concat([d.bos], u:encode_bytes(d, u:doc_bytes(d, i))), [d.bos])
+}
