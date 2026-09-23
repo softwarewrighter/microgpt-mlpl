@@ -40,6 +40,9 @@ scripts/regress.sh
 step "literate doc tangles to the same program (skipped without emacs)"
 scripts/check-literate.sh
 
+step "pages/ site is current"
+scripts/check-pages.sh
+
 for manifest in tools/*/Cargo.toml; do
     [ -f "$manifest" ] || continue
     crate=$(dirname "$manifest")

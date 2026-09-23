@@ -1,0 +1,574 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-09-23 Wed 09:12 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>microgpt in compact MLPL</title>
+<meta name="author" content="Mike Wright" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<style>
+pre.src, pre.example { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; }
+.org-mlpl-builtin, .org-builtin { color: #6f42c1; }
+.org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #d73a49; font-weight: bold; }
+.org-mlpl-number, .org-constant { color: #005cc5; }
+.org-string, .org-doc { color: #22863a; }
+.org-comment, .org-comment-delimiter { color: #6a737d; font-style: italic; }
+.org-mlpl-operator, .org-operator { color: #8a8f98; }
+.org-function-name { color: #e36209; }
+.org-variable-name, .org-type { color: #b08800; }
+@media (prefers-color-scheme: dark) {
+body { background: #16181c; color: #d8dade; } a { color: #79b8ff; }
+pre.src, pre.example { background: #1f2227; border-color: #33373e; color: #d8dade; }
+.org-mlpl-builtin, .org-builtin { color: #b392f0; }
+.org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #f97583; }
+.org-mlpl-number, .org-constant { color: #79b8ff; }
+.org-string, .org-doc { color: #85e89d; }
+.org-comment, .org-comment-delimiter { color: #8b949e; }
+.org-mlpl-operator, .org-operator { color: #7d8590; }
+.org-function-name { color: #ffab70; }
+.org-variable-name, .org-type { color: #ffdf5d; }
+table, th, td { border-color: #33373e; }
+}
+</style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">microgpt in compact MLPL
+<br />
+<span class="subtitle">A name-generating transformer in about 30 lines of sw-MLPL</span>
+</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org708e47e">1. Introduction</a></li>
+<li><a href="#orgdd3d354">2. 1. Data: a stream and its windows</a></li>
+<li><a href="#orgb846523">3. 2. The model</a></li>
+<li><a href="#org1fc04f9">4. 3. Training: one line</a></li>
+<li><a href="#org2229b5b">5. 4. Sampling with the KV cache</a></li>
+<li><a href="#orgb9f402c">6. Trade-offs</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-org708e47e" class="outline-2">
+<h2 id="org708e47e"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+How short can microgpt get in MLPL and still do the same job: train a
+1-layer, 4-head, 16-wide causal transformer on 32,033 names, then invent
+new ones? The answer is 32 lines of code, about a seventh of the
+<a href="microgpt-faithful.html">faithful port</a> (230) and two thirds of the <a href="microgpt-idiomatic.html">idiomatic one</a> (48), running in
+0.54 s (idiomatic: 0.47 s; faithful: 0.72 s).
+</p>
+
+<p>
+Three simplifications get it there, each an MLPL idiom:
+</p>
+
+<ol class="org-ol">
+<li><b>The data is one token stream.</b> Instead of treating each name
+separately, the corpus becomes <code>BOS emma BOS olivia BOS ...</code>, and
+<code>shift_pairs_x</code> / <code>shift_pairs_y</code> cut it into 16-token input windows and
+their next-token targets. This is makemore's classic setup: BOS still
+marks where a name starts and ends, so the model learns the same thing,
+but a window can span two names.</li>
+<li><b>The model is one DSL chain</b>, including the token embedding.</li>
+<li><b>Sampling uses the KV cache</b> (<code>gen_state</code>, <code>gen_logits</code>, <code>gen_append</code>).
+That requires the whole model to be one chain, so this variant has no
+position embeddings: the DSL has no position layer that can live in a
+chain. Causal attention still conveys some order.</li>
+</ol>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left">faithful</th>
+<th scope="col" class="org-left">idiomatic</th>
+<th scope="col" class="org-left">compact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">data</td>
+<td class="org-left">one name per step</td>
+<td class="org-left">one name per step</td>
+<td class="org-left">one 16-token window per step</td>
+</tr>
+
+<tr>
+<td class="org-left">positions</td>
+<td class="org-left">learned</td>
+<td class="org-left">learned (outside the chain)</td>
+<td class="org-left">none</td>
+</tr>
+
+<tr>
+<td class="org-left">sampling</td>
+<td class="org-left">recompute prefix</td>
+<td class="org-left">recompute prefix</td>
+<td class="org-left">KV cache</td>
+</tr>
+
+<tr>
+<td class="org-left">code lines</td>
+<td class="org-left">230</td>
+<td class="org-left">48</td>
+<td class="org-left">32</td>
+</tr>
+
+<tr>
+<td class="org-left">loss, last 100 steps</td>
+<td class="org-left">2.37</td>
+<td class="org-left">2.47</td>
+<td class="org-left">2.56</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+The loss is not strictly comparable: windows are always 16 tokens and
+include name boundaries, whereas names average about 7 positions. The
+missing positions cost something too.
+</p>
+</div>
+</div>
+<div id="outline-container-orgdd3d354" class="outline-2">
+<h2 id="orgdd3d354"><span class="section-number-2">2.</span> 1. Data: a stream and its windows</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+\[
+  s = (\mathrm{BOS},\ e,m,m,a,\ \mathrm{BOS},\ o,l,i,v,i,a,\ \mathrm{BOS}, \dots),
+  \qquad
+  X_w = s_{17w\,..\,17w+15},\quad Y_w = s_{17w+1\,..\,17w+16}
+\]
+</p>
+
+<p>
+Each window \(w\) pairs 16 inputs with the 16 tokens that follow them. The
+1000 windows used in training are drawn once, up front, and the full
+window matrix is dropped: reading a large array copies it in this
+interpreter, which doubled the run time when each step read from all
+13,420 windows (upstream issue e).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">bytes <span class="org-mlpl-operator">=</span> tokenize_bytes(load(<span class="org-string">"input.txt"</span>))<span class="org-mlpl-operator">;</span>
+stream <span class="org-mlpl-operator">=</span> concat(concat([<span class="org-mlpl-number">26</span>]<span class="org-mlpl-operator">,</span> (bytes <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">97</span>) * (bytes !<span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">10</span>) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">26</span> * (bytes <span class="org-mlpl-operator">==</span> <span class="org-mlpl-number">10</span>))<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">26</span>])<span class="org-mlpl-operator">;</span>
+windows <span class="org-mlpl-operator">=</span> shift_pairs_x(stream<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">16</span>)<span class="org-mlpl-operator">;</span>                 <span class="org-comment-delimiter"># </span><span class="org-comment">[13420, 16] token windows
+</span>picks <span class="org-mlpl-operator">=</span> floor(<span class="org-mlpl-builtin">random</span>(<span class="org-mlpl-number">42</span><span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1000</span>]) * len(windows))<span class="org-mlpl-operator">;</span>    <span class="org-comment-delimiter"># </span><span class="org-comment">one random window per step
+</span>X <span class="org-mlpl-operator">=</span> gather_rows(windows<span class="org-mlpl-operator">,</span> picks)<span class="org-mlpl-operator">;</span>                     <span class="org-comment-delimiter"># </span><span class="org-comment">inputs  [1000, 16]
+</span>Y <span class="org-mlpl-operator">=</span> gather_rows(shift_pairs_y(stream<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">16</span>)<span class="org-mlpl-operator">,</span> picks)<span class="org-mlpl-operator">;</span>   <span class="org-comment-delimiter"># </span><span class="org-comment">targets [1000, 16]: next tokens
+</span>expunge([<span class="org-string">"bytes"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"stream"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"windows"</span>])<span class="org-mlpl-operator">;</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">print(<span class="org-string">"first window, inputs :"</span><span class="org-mlpl-operator">,</span> decode_bytes(<span class="org-mlpl-number">97</span> <span class="org-mlpl-operator">+</span> take(X<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>) * (take(X<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>) !<span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">26</span>) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">51</span> * (take(X<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>) <span class="org-mlpl-operator">==</span> <span class="org-mlpl-number">26</span>)))<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"first window, targets:"</span><span class="org-mlpl-operator">,</span> decode_bytes(<span class="org-mlpl-number">97</span> <span class="org-mlpl-operator">+</span> take(Y<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>) * (take(Y<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>) !<span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">26</span>) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">51</span> * (take(Y<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>) <span class="org-mlpl-operator">==</span> <span class="org-mlpl-number">26</span>)))<span class="org-mlpl-operator">;</span>
+<span class="org-mlpl-number">0</span>
+</pre>
+</div>
+
+<pre class="example">
+first window, inputs : .emma.olivia.ava
+first window, targets: emma.olivia.ava.
+</pre>
+
+
+<p>
+(For display, letters map back to <code>a..z</code> and BOS to <code>.</code>: the expression
+is \(97 - 51 = 46\), ASCII <code>.</code>, when the token is BOS. Each target is its
+input shifted by one position.)
+</p>
+</div>
+</div>
+<div id="outline-container-orgb846523" class="outline-2">
+<h2 id="orgb846523"><span class="section-number-2">3.</span> 2. The model</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+One expression, from token ids to logits:
+</p>
+
+<p>
+\[
+  z = \mathrm{Linear}_V\Big(\mathrm{RMS}\big(B_2(B_1(E[\tau_t]))\big)\Big),
+  \quad
+  B_1(x) = x + \mathrm{CausalAttn}_4(\mathrm{RMS}(x)),
+  \quad
+  B_2(x) = x + \mathrm{MLP}(\mathrm{RMS}(x))
+\]
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">model <span class="org-mlpl-operator">=</span> chain(embed(<span class="org-mlpl-number">27</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">16</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span>
+              residual(chain(rms_norm(<span class="org-mlpl-number">16</span>)<span class="org-mlpl-operator">,</span> causal_attention(<span class="org-mlpl-number">16</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">2</span>)))<span class="org-mlpl-operator">,</span>
+              residual(chain(rms_norm(<span class="org-mlpl-number">16</span>)<span class="org-mlpl-operator">,</span> linear(<span class="org-mlpl-number">16</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">64</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">3</span>)<span class="org-mlpl-operator">,</span> relu_layer()<span class="org-mlpl-operator">,</span> linear(<span class="org-mlpl-number">64</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">16</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>)))<span class="org-mlpl-operator">,</span>
+              rms_norm(<span class="org-mlpl-number">16</span>)<span class="org-mlpl-operator">,</span> linear(<span class="org-mlpl-number">16</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">27</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">5</span>))<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"params:"</span><span class="org-mlpl-operator">,</span> to_string(param_count(model)))<span class="org-mlpl-operator">;</span>
+</pre>
+</div>
+
+<pre class="example">
+params: 4043
+</pre>
+
+
+<p>
+4,043 parameters: 4,192 in microgpt, minus the 256 of the position table,
+plus the DSL's 107 biases.
+</p>
+</div>
+</div>
+<div id="outline-container-org1fc04f9" class="outline-2">
+<h2 id="org1fc04f9"><span class="section-number-2">4.</span> 3. Training: one line</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+\[
+  \mathcal{L}_w = -\frac{1}{16}\sum_{t=0}^{15} \log \mathrm{softmax}(z_t)[Y_{w,t}],
+  \qquad
+  \eta_k = 0.01\,(1 - k/1000)
+\]
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl"><span class="org-mlpl-keyword">train</span> <span class="org-mlpl-number">1000</span> {
+  adam(cross_entropy(apply(model<span class="org-mlpl-operator">,</span> take(X<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> step))<span class="org-mlpl-operator">,</span> take(Y<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> step))<span class="org-mlpl-operator">,</span> model<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.01</span> * (<span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> step <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">1000</span>)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.85</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.99</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.00000001</span>)
+}<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"mean loss, steps 901-1000:"</span><span class="org-mlpl-operator">,</span> to_string(round(<span class="org-mlpl-number">10000</span> * <span class="org-mlpl-builtin">reduce_add</span>(last_losses * (range(<span class="org-mlpl-number">1000</span>) &gt;<span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">900</span>)) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">100</span>) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">10000</span>))<span class="org-mlpl-operator">;</span>
+</pre>
+</div>
+
+<pre class="example">
+mean loss, steps 901-1000: 2.558
+</pre>
+</div>
+</div>
+<div id="outline-container-org2229b5b" class="outline-2">
+<h2 id="org2229b5b"><span class="section-number-2">5.</span> 4. Sampling with the KV cache</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+<code>gen_state(model, [BOS])</code> runs the prompt once and caches every
+attention layer's keys and values. <code>gen_logits</code> reads the next-token
+logits without recomputation, and <code>gen_append</code> feeds the chosen token
+into the cache. Each new token costs one position of work, not the whole
+prefix:
+</p>
+
+<p>
+\[
+  p = \mathrm{softmax}(z_{\mathrm{last}} / 0.5), \qquad
+  \mathrm{next} \sim p \quad (\texttt{sample}), \qquad
+  \text{stop at BOS or 16 characters}
+\]
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">print(<span class="org-string">"--- inference (new, hallucinated names) ---"</span>)<span class="org-mlpl-operator">;</span>
+bos <span class="org-mlpl-operator">=</span> [<span class="org-mlpl-number">26</span>]<span class="org-mlpl-operator">;</span>
+i <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+while i <span class="org-mlpl-operator">&lt;</span> <span class="org-mlpl-number">20</span> {
+  gs <span class="org-mlpl-operator">=</span> gen_state(model<span class="org-mlpl-operator">,</span> bos)<span class="org-mlpl-operator">;</span>
+  name <span class="org-mlpl-operator">=</span> <span class="org-string">""</span><span class="org-mlpl-operator">;</span>
+  next <span class="org-mlpl-operator">=</span> sample(gen_logits(gs)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.5</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1000</span> * i)<span class="org-mlpl-operator">;</span>
+  while (next !<span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">26</span>) * (str_len(name) <span class="org-mlpl-operator">&lt;</span> <span class="org-mlpl-number">16</span>) {
+    name <span class="org-mlpl-operator">=</span> str_concat(name<span class="org-mlpl-operator">,</span> decode_bytes([<span class="org-mlpl-number">97</span> <span class="org-mlpl-operator">+</span> next]))<span class="org-mlpl-operator">;</span>
+    gen_append(gs<span class="org-mlpl-operator">,</span> next)<span class="org-mlpl-operator">;</span>
+    next <span class="org-mlpl-operator">=</span> sample(gen_logits(gs)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.5</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1000</span> * i <span class="org-mlpl-operator">+</span> str_len(name))
+  }<span class="org-mlpl-operator">;</span>
+  print(str_concat(<span class="org-string">"sample "</span><span class="org-mlpl-operator">,</span> str_concat(to_string(i <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> str_concat(<span class="org-string">": "</span><span class="org-mlpl-operator">,</span> name))))<span class="org-mlpl-operator">;</span>
+  i <span class="org-mlpl-operator">=</span> i <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
+}<span class="org-mlpl-operator">;</span>
+i
+</pre>
+</div>
+
+<pre class="example" id="org21c3429">
+--- inference (new, hallucinated names) ---
+sample 1: an
+sample 2: cren
+sample 3: an
+sample 4: yn
+sample 5: a
+sample 6: arialilin
+sample 7: ken
+sample 8: ahasoia
+sample 9: kaleririnarli
+sample 10: mon
+sample 11: amian
+sample 12: ana
+sample 13: deyn
+sample 14: ana
+sample 15: an
+sample 16: ah
+sample 17: a
+sample 18: anen
+sample 19: amen
+sample 20: kataliay
+</pre>
+</div>
+</div>
+<div id="outline-container-orgb9f402c" class="outline-2">
+<h2 id="orgb9f402c"><span class="section-number-2">6.</span> Trade-offs</h2>
+<div class="outline-text-2" id="text-6">
+<ul class="org-ul">
+<li><b>Gained:</b>
+<ul class="org-ul">
+<li>32 lines: no helper functions, no per-name bookkeeping, no
+formatting code.</li>
+<li>The data pipeline is three builtins (<code>tokenize_bytes</code>,
+<code>shift_pairs_x/y</code>, <code>gather_rows</code>), and the model and training are
+two statements.</li>
+<li>Generation uses the KV cache.</li>
+</ul></li>
+<li><b>Lost:</b>
+<ul class="org-ul">
+<li>Position information. The DSL has no cacheable position layer
+(request #10 in <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/sw-mlpl-requests.md">sw-mlpl-requests.md</a>), and it costs some loss.</li>
+<li>One-name-per-step fidelity to microgpt.py.</li>
+<li>Parameter parity (4,043 vs 4,192).</li>
+</ul></li>
+<li><b>Best use:</b> a first look at what an MLPL language model looks like. Read
+the idiomatic variant next, then the faithful one for every equation
+spelled out.</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Date: 2026-09-23</p>
+<p class="author">Author: Mike Wright</p>
+<p class="date">Created: 2026-09-23 Wed 09:12</p>
+</div>
+</body>
+</html>

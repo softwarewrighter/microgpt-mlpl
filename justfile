@@ -37,6 +37,14 @@ literate *files:
 check-literate:
     scripts/check-literate.sh
 
+# Build the static site in pages/ locally (the workflow deploys it as committed).
+pages:
+    scripts/build-pages.sh
+
+# Fail if pages/ is stale or has broken local links.
+check-pages:
+    scripts/check-pages.sh
+
 # The full pre-commit gate: ASCII docs, scripts, tests, baselines, Rust tools.
 check:
     scripts/pre-commit.sh

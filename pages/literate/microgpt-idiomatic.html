@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2026-09-23 Wed 09:03 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>microgpt in idiomatic MLPL</title>
+<meta name="author" content="Mike Wright" />
+<meta name="generator" content="Org Mode" />
+<style type="text/css">
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<style>
+pre.src, pre.example { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; }
+.org-mlpl-builtin, .org-builtin { color: #6f42c1; }
+.org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #d73a49; font-weight: bold; }
+.org-mlpl-number, .org-constant { color: #005cc5; }
+.org-string, .org-doc { color: #22863a; }
+.org-comment, .org-comment-delimiter { color: #6a737d; font-style: italic; }
+.org-mlpl-operator, .org-operator { color: #8a8f98; }
+.org-function-name { color: #e36209; }
+.org-variable-name, .org-type { color: #b08800; }
+@media (prefers-color-scheme: dark) {
+body { background: #16181c; color: #d8dade; } a { color: #79b8ff; }
+pre.src, pre.example { background: #1f2227; border-color: #33373e; color: #d8dade; }
+.org-mlpl-builtin, .org-builtin { color: #b392f0; }
+.org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #f97583; }
+.org-mlpl-number, .org-constant { color: #79b8ff; }
+.org-string, .org-doc { color: #85e89d; }
+.org-comment, .org-comment-delimiter { color: #8b949e; }
+.org-mlpl-operator, .org-operator { color: #7d8590; }
+.org-function-name { color: #ffab70; }
+.org-variable-name, .org-type { color: #ffdf5d; }
+table, th, td { border-color: #33373e; }
+}
+</style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">microgpt in idiomatic MLPL
+<br />
+<span class="subtitle">The same capability as <code>microgpt.py</code>, written with sw-MLPL's Model DSL</span>
+</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgddcd7f0">1. Introduction</a></li>
+<li><a href="#orgb50e193">2. 1. One helper</a></li>
+<li><a href="#orga988dc3">3. 2. Tokens: the corpus as one stream</a></li>
+<li><a href="#org24d72ba">4. 3. The model is a sentence</a></li>
+<li><a href="#org68f4c53">5. 4. Training: one line of work per step</a></li>
+<li><a href="#orgc8c205f">6. 5. Sampling with the built-in sampler</a></li>
+<li><a href="#org579450c">7. What the DSL bought, and what it cost</a></li>
+</ul>
+</div>
+</div>
+<div id="outline-container-orgddcd7f0" class="outline-2">
+<h2 id="orgddcd7f0"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+The <a href="microgpt-faithful.html">faithful port</a> follows <a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">microgpt.py</a> line by line: nine hand-declared
+weight matrices, a hand-written forward pass, attention heads split with
+selector matrices, and a hand-written sampler. It is exact: with
+<code>--rs-parity</code> its output is byte-identical to <a href="https://github.com/softwarewrighter/microgpt-rs">microgpt-rs</a>. But it reads
+like a transcription.
+</p>
+
+<p>
+This variant keeps the <i>capability</i> and the data regime:
+</p>
+<ul class="org-ul">
+<li>the same 32,033 names;</li>
+<li>one name per training step, 1000 Adam steps with the same
+hyperparameters and linear learning-rate decay;</li>
+<li>a 1-layer, 4-head, 16-wide causal transformer;</li>
+<li>20 samples at temperature 0.5.</li>
+</ul>
+
+<p>
+It lets MLPL's built-ins do the work: the Model DSL for the network,
+<code>adam</code> over whole models, and <code>sample</code> for generation. The result is 48
+lines of code instead of 230 (comments, blank lines and docstrings not
+counted), and it runs about 1.5x faster (see
+<a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/literate.md">literate.md</a>).
+</p>
+
+<p>
+What changes on purpose, and why the numbers differ from the faithful run:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">&#xa0;</th>
+<th scope="col" class="org-left">faithful</th>
+<th scope="col" class="org-left">idiomatic</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">layers</td>
+<td class="org-left">hand-written <code>matmul</code></td>
+<td class="org-left"><code>embed</code>, <code>causal_attention</code>, <code>rms_norm</code>, <code>linear</code>, <code>residual</code>, <code>chain</code></td>
+</tr>
+
+<tr>
+<td class="org-left">biases</td>
+<td class="org-left">none (as microgpt.py)</td>
+<td class="org-left">DSL <code>linear</code> has biases</td>
+</tr>
+
+<tr>
+<td class="org-left">RMSNorm</td>
+<td class="org-left">\(\epsilon = 10^{-5}\), no gain</td>
+<td class="org-left">DSL <code>rms_norm</code> (\(\epsilon = 10^{-8}\))</td>
+</tr>
+
+<tr>
+<td class="org-left">parameters</td>
+<td class="org-left">4,192</td>
+<td class="org-left">4,299</td>
+</tr>
+
+<tr>
+<td class="org-left">sampling</td>
+<td class="org-left">inverse CDF over a uniform stream</td>
+<td class="org-left">built-in <code>sample(logits, T, seed)</code></td>
+</tr>
+
+<tr>
+<td class="org-left">tokenizer</td>
+<td class="org-left">vocabulary discovered from the corpus</td>
+<td class="org-left">ASCII shortcut: <code>a..z -&gt; 0..25</code>, newline -&gt; BOS</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+As in the faithful doc, every program block below runs in one <code>:session</code>
+and tangles into a script. <code>scripts/check-literate.sh</code> requires that
+script's output to equal <code>microgpt-idiomatic.mlpl</code>'s reg-rs baseline.
+</p>
+</div>
+</div>
+<div id="outline-container-orgb50e193" class="outline-2">
+<h2 id="orgb50e193"><span class="section-number-2">2.</span> 1. One helper</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+MLPL's <code>at</code> / <code>take</code> accept a single index. Selecting many elements is a
+row gather on a one-column view; <code>u:pick</code> names it once, for any index
+shape. (A built-in <code>gather(x, idx)</code> is request #2 in <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/sw-mlpl-requests.md">sw-mlpl-requests.md</a>.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>pick(v<span class="org-mlpl-operator">,</span> idx) {
+  <span class="org-string">"Elements of rank-1 v at integer positions idx (any shape)."</span><span class="org-mlpl-operator">;</span>
+  <span class="org-mlpl-builtin">reshape</span>(gather_rows(<span class="org-mlpl-builtin">reshape</span>(v<span class="org-mlpl-operator">,</span> [len(v)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>])<span class="org-mlpl-operator">,</span> idx)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">shape</span>(idx))
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga988dc3" class="outline-2">
+<h2 id="orga988dc3"><span class="section-number-2">3.</span> 2. Tokens: the corpus as one stream</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+The names file is lowercase ASCII, one name per line. Subtracting 97 maps
+<code>a..z</code> to <code>0..25</code>, and every newline becomes BOS (26), so the whole corpus
+is one token stream. A mask and an arithmetic blend do the mapping, with
+no lookup table:
+</p>
+
+<p>
+\[
+  s_i = \begin{cases} b_i - 97 & b_i \ne \text{newline} \\ 26 & b_i = \text{newline} \end{cases}
+  \qquad\Longrightarrow\qquad
+  s = (\mathrm{BOS},\ e,m,m,a,\ \mathrm{BOS},\ o,l,i,v,i,a,\ \mathrm{BOS}, \dots)
+\]
+</p>
+
+<p>
+(The faithful variant discovers the vocabulary from the data instead;
+this shortcut assumes the ASCII names file, like microgpt-rs's <code>a..z</code>
+tests do.)
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">bytes <span class="org-mlpl-operator">=</span> tokenize_bytes(load(<span class="org-string">"input.txt"</span>))<span class="org-mlpl-operator">;</span>
+stream <span class="org-mlpl-operator">=</span> concat(concat([<span class="org-mlpl-number">26</span>]<span class="org-mlpl-operator">,</span> (bytes <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">97</span>) * (bytes !<span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">10</span>) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">26</span> * (bytes <span class="org-mlpl-operator">==</span> <span class="org-mlpl-number">10</span>))<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">26</span>])<span class="org-mlpl-operator">;</span>
+V <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">27</span><span class="org-mlpl-operator">;</span> d <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">16</span><span class="org-mlpl-operator">;</span> T <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">16</span><span class="org-mlpl-operator">;</span>
+
+bos_at <span class="org-mlpl-operator">=</span> compress(stream <span class="org-mlpl-operator">==</span> <span class="org-mlpl-number">26</span><span class="org-mlpl-operator">,</span> range(len(stream)))<span class="org-mlpl-operator">;</span>
+starts <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>pick(bos_at<span class="org-mlpl-operator">,</span> range(len(bos_at) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>))<span class="org-mlpl-operator">;</span>
+lens <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>pick(bos_at<span class="org-mlpl-operator">,</span> range(len(bos_at) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>) <span class="org-mlpl-operator">-</span> starts <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"num docs:"</span><span class="org-mlpl-operator">,</span> to_string(len(starts)))<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"vocab size:"</span><span class="org-mlpl-operator">,</span> to_string(V))<span class="org-mlpl-operator">;</span>
+</pre>
+</div>
+
+<pre class="example">
+num docs: 32033
+vocab size: 27
+</pre>
+
+
+<p>
+Names are the spans between consecutive BOS positions. The 1000 names
+training visits become the rows of one matrix in a single gather: row \(i\)
+holds \(\tau^{(i)}_{0..T}\) (BOS, the name, BOS, then whatever follows,
+which is never read), and \(n_i = \min(T, L_i + 1)\) positions are trained.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">names <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>pick(shuffle(range(len(starts))<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">42</span>)<span class="org-mlpl-operator">,</span> range(<span class="org-mlpl-number">1000</span>))<span class="org-mlpl-operator">;</span>
+rows <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>pick(stream<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(u<span class="org-mlpl-operator">:</span>pick(starts<span class="org-mlpl-operator">,</span> names)<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1000</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>]) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-builtin">reshape</span>(range(T <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> T <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>]))<span class="org-mlpl-operator">;</span>
+ns <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>pick(lens<span class="org-mlpl-operator">,</span> names) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>
+ns <span class="org-mlpl-operator">=</span> ns <span class="org-mlpl-operator">-</span> relu(ns <span class="org-mlpl-operator">-</span> T)<span class="org-mlpl-operator">;</span>
+expunge([<span class="org-string">"bytes"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"stream"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"bos_at"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"starts"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"lens"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"names"</span>])<span class="org-mlpl-operator">;</span>
+</pre>
+</div>
+
+<p>
+The <code>expunge</code> drops the 228k-token stream before training: every <code>u:</code>
+call copies the globals in this interpreter (upstream issue e).
+</p>
+</div>
+</div>
+<div id="outline-container-org24d72ba" class="outline-2">
+<h2 id="org24d72ba"><span class="section-number-2">4.</span> 3. The model is a sentence</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+The faithful port spends ~60 lines on 9 weight matrices, RMSNorm,
+linear, 4 selector-based heads and the residual forward pass. The Model
+DSL says it in one expression:
+</p>
+
+<p>
+\[
+  z = \mathrm{Linear}_{V}\Big(B_2\big(B_1(\mathrm{RMS}(E_{tok}[\tau_t] + E_{pos}[t]))\big)\Big),
+  \qquad t = 0 \dots n-1
+\]
+\[
+  B_1(x) = x + \mathrm{CausalAttn}_{4\ \mathrm{heads}}(\mathrm{RMS}(x)),
+  \qquad
+  B_2(x) = x + \mathrm{Linear}_{d}\big(\mathrm{ReLU}(\mathrm{Linear}_{4d}(\mathrm{RMS}(x)))\big)
+\]
+</p>
+
+<p>
+<code>residual(b)</code> is \(x \mapsto x + b(x)\). <code>causal_attention(d, 4, seed)</code> is
+multi-head attention with the causal mask built in (the faithful doc
+derives the mask and heads by hand). Positions are a second <code>embed</code>
+applied to <code>range(n)</code>: a DSL <code>chain</code> has no position layer, so the two
+embeddings are added <i>outside</i> the chain. That is the moe-microscope
+idiom, and it is why this variant cannot use the KV cache (see the
+compact variant).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">tok <span class="org-mlpl-operator">=</span> embed(V<span class="org-mlpl-operator">,</span> d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">;</span>
+pos <span class="org-mlpl-operator">=</span> embed(T<span class="org-mlpl-operator">,</span> d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">2</span>)<span class="org-mlpl-operator">;</span>
+body <span class="org-mlpl-operator">=</span> chain(rms_norm(d)<span class="org-mlpl-operator">,</span>
+             residual(chain(rms_norm(d)<span class="org-mlpl-operator">,</span> causal_attention(d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">3</span>)))<span class="org-mlpl-operator">,</span>
+             residual(chain(rms_norm(d)<span class="org-mlpl-operator">,</span> linear(d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span> * d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>)<span class="org-mlpl-operator">,</span> relu_layer()<span class="org-mlpl-operator">,</span> linear(<span class="org-mlpl-number">4</span> * d<span class="org-mlpl-operator">,</span> d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">5</span>)))<span class="org-mlpl-operator">,</span>
+             linear(d<span class="org-mlpl-operator">,</span> V<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">6</span>))<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"num params:"</span><span class="org-mlpl-operator">,</span> to_string(param_count(tok) <span class="org-mlpl-operator">+</span> param_count(pos) <span class="org-mlpl-operator">+</span> param_count(body)))<span class="org-mlpl-operator">;</span>
+</pre>
+</div>
+
+<pre class="example">
+num params: 4299
+</pre>
+
+
+<p>
+The whole forward pass is one function, annotated with its equation:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">@formula <span class="org-string">"z = body( E_tok[&#964;_t] + E_pos[t] ),   t = 0..n&#8722;1"</span>
+@ascii <span class="org-string">"z = body(E_tok[tau_t] + E_pos[t]),   t = 0..n-1"</span>
+def u<span class="org-mlpl-operator">:</span>logits(toks) {
+  <span class="org-string">"Next-token logits [n, V] for a token sequence."</span><span class="org-mlpl-operator">;</span>
+  apply(body<span class="org-mlpl-operator">,</span> apply(tok<span class="org-mlpl-operator">,</span> toks) <span class="org-mlpl-operator">+</span> apply(pos<span class="org-mlpl-operator">,</span> range(len(toks))))
+}
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">print(annotations(<span class="org-string">"u:logits"</span>)<span class="org-mlpl-operator">.</span>formula)<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"untrained loss on the first training name:"</span><span class="org-mlpl-operator">,</span> to_string(round(<span class="org-mlpl-number">10000</span> * cross_entropy(u<span class="org-mlpl-operator">:</span>logits(u<span class="org-mlpl-operator">:</span>pick(take(rows<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>)<span class="org-mlpl-operator">,</span> range(at(ns<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>))))<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>pick(take(rows<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>)<span class="org-mlpl-operator">,</span> range(at(ns<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>)) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>))) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">10000</span>)<span class="org-mlpl-operator">,</span> <span class="org-string">" ln 27 ="</span><span class="org-mlpl-operator">,</span> to_string(round(<span class="org-mlpl-number">10000</span> * <span class="org-mlpl-builtin">log</span>(<span class="org-mlpl-number">27</span>)) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">10000</span>))<span class="org-mlpl-operator">;</span>
+<span class="org-mlpl-number">0</span>
+</pre>
+</div>
+
+<pre class="example">
+z = body( E_tok[τ_t] + E_pos[t] ),   t = 0..n−1
+untrained loss on the first training name: 20.5445  ln 27 = 3.2958
+</pre>
+
+
+<p>
+The untrained loss is far above the uniform-guess value ln 27 = 3.30. The
+DSL's <code>linear</code> initializes much larger than microgpt's <code>gauss(0, 0.08)</code>:
+it gives output std ~2.4 on unit input, which means weights around 0.6,
+while <code>embed</code> uses ~0.1. The first logits are therefore large and
+confidently wrong, and the early steps spend their updates shrinking
+them. Training recovers (below), but an init-scale option is on the
+request list.
+</p>
+</div>
+</div>
+<div id="outline-container-org68f4c53" class="outline-2">
+<h2 id="org68f4c53"><span class="section-number-2">5.</span> 4. Training: one line of work per step</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+\[
+  \mathcal{L} = -\frac{1}{n} \sum_{t=0}^{n-1} \log \mathrm{softmax}(z_t)[\tau_{t+1}],
+  \qquad
+  \theta \leftarrow \mathrm{Adam}_{\eta_k}(\theta, \nabla_\theta \mathcal{L}),
+  \quad \eta_k = 0.01\,(1 - k/1000)
+\]
+</p>
+
+<p>
+<code>adam</code> takes the three models as a list and updates every parameter
+inside them: there are no names to spell out, unlike the faithful
+variant's nine. <code>train</code> records each step's loss in <code>last_losses</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl"><span class="org-mlpl-keyword">train</span> <span class="org-mlpl-number">1000</span> {
+  n <span class="org-mlpl-operator">=</span> at(ns<span class="org-mlpl-operator">,</span> step)<span class="org-mlpl-operator">;</span>
+  row <span class="org-mlpl-operator">=</span> take(rows<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> step)<span class="org-mlpl-operator">;</span>
+  adam(cross_entropy(u<span class="org-mlpl-operator">:</span>logits(u<span class="org-mlpl-operator">:</span>pick(row<span class="org-mlpl-operator">,</span> range(n)))<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>pick(row<span class="org-mlpl-operator">,</span> range(n) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>))<span class="org-mlpl-operator">,</span> [tok<span class="org-mlpl-operator">,</span> pos<span class="org-mlpl-operator">,</span> body]<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.01</span> * (<span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> step <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">1000</span>)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.85</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.99</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.00000001</span>)
+}<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"mean loss, steps 901-1000:"</span><span class="org-mlpl-operator">,</span> to_string(round(<span class="org-mlpl-number">10000</span> * <span class="org-mlpl-builtin">reduce_add</span>(last_losses * (range(<span class="org-mlpl-number">1000</span>) &gt;<span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">900</span>)) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">100</span>) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">10000</span>))<span class="org-mlpl-operator">;</span>
+</pre>
+</div>
+
+<pre class="example">
+mean loss, steps 901-1000: 2.4684
+</pre>
+
+
+<p>
+The faithful variant's last-100-step mean is 2.37. The difference comes
+from the architecture choices in the table above (biases, eps, the extra
+leading RMSNorm) and, most likely, the DSL's larger <code>linear</code>
+initialization.
+</p>
+</div>
+</div>
+<div id="outline-container-orgc8c205f" class="outline-2">
+<h2 id="orgc8c205f"><span class="section-number-2">6.</span> 5. Sampling with the built-in sampler</h2>
+<div class="outline-text-2" id="text-6">
+<p>
+<code>sample(logits, temperature, seed)</code> draws from
+\(\mathrm{softmax}(z/\tau_s)\) by inverse CDF on one seeded uniform:
+</p>
+
+<p>
+\[
+  p = \mathrm{softmax}(z_{n-1} / 0.5), \qquad
+  i^{*} = \min\Big\{ i : \sum_{j=0}^{i} p_j \ge u \Big\}
+\]
+</p>
+
+<p>
+Each step recomputes the logits for the whole prefix, at most 16
+tokens. The loop is a <code>while</code> because string statements break <code>repeat</code>
+bodies (upstream issue j).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-mlpl">print(<span class="org-string">"--- inference (new, hallucinated names) ---"</span>)<span class="org-mlpl-operator">;</span>
+i <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+while i <span class="org-mlpl-operator">&lt;</span> <span class="org-mlpl-number">20</span> {
+  seq <span class="org-mlpl-operator">=</span> [<span class="org-mlpl-number">26</span>]<span class="org-mlpl-operator">;</span>
+  done <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+  while (len(seq) <span class="org-mlpl-operator">&lt;=</span> T) * (<span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> done) {
+    next <span class="org-mlpl-operator">=</span> sample(last_row(u<span class="org-mlpl-operator">:</span>logits(seq))<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0.5</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1000</span> * i <span class="org-mlpl-operator">+</span> len(seq))<span class="org-mlpl-operator">;</span>
+    if next <span class="org-mlpl-operator">==</span> <span class="org-mlpl-number">26</span> { done <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">1</span> } else { seq <span class="org-mlpl-operator">=</span> concat(seq<span class="org-mlpl-operator">,</span> [next]) }
+  }<span class="org-mlpl-operator">;</span>
+  name <span class="org-mlpl-operator">=</span> if len(seq) &gt; <span class="org-mlpl-number">1</span> { decode_bytes(<span class="org-mlpl-number">97</span> <span class="org-mlpl-operator">+</span> u<span class="org-mlpl-operator">:</span>pick(seq<span class="org-mlpl-operator">,</span> range(len(seq) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)) } else { <span class="org-string">""</span> }<span class="org-mlpl-operator">;</span>
+  print(str_concat(<span class="org-string">"sample "</span><span class="org-mlpl-operator">,</span> str_concat(to_string(i <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> str_concat(<span class="org-string">": "</span><span class="org-mlpl-operator">,</span> name))))<span class="org-mlpl-operator">;</span>
+  i <span class="org-mlpl-operator">=</span> i <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
+}<span class="org-mlpl-operator">;</span>
+i
+</pre>
+</div>
+
+<pre class="example" id="org31841d1">
+--- inference (new, hallucinated names) ---
+sample 1: jiafini
+sample 2: tamesin
+sample 3: jali
+sample 4: kair
+sample 5: tasen
+sample 6: maleri
+sample 7: onia
+sample 8: airka
+sample 9: jamio
+sample 10: zarilon
+sample 11: dlanyn
+sample 12: jaral
+sample 13: meliw
+sample 14: jarel
+sample 15: korli
+sample 16: aryle
+sample 17: tapal
+sample 18: kalia
+sample 19: iiiel
+sample 20: deidei
+</pre>
+</div>
+</div>
+<div id="outline-container-org579450c" class="outline-2">
+<h2 id="org579450c"><span class="section-number-2">7.</span> What the DSL bought, and what it cost</h2>
+<div class="outline-text-2" id="text-7">
+<ul class="org-ul">
+<li><b>Gained:</b>
+<ul class="org-ul">
+<li>The network is one expression. The nine weight names, the
+selector-matrix heads, the mask and the forward function are gone.</li>
+<li><code>adam</code> takes models, not name lists.</li>
+<li>The data pipeline is two gathers.</li>
+<li>Runs faster: the DSL layers are single native ops.</li>
+</ul></li>
+<li><b>Lost:</b>
+<ul class="org-ul">
+<li>Exact correspondence with microgpt.py's equations: biases,
+\(\epsilon = 10^{-8}\) and a leading RMSNorm are the DSL's choices.</li>
+<li>Parameter count parity (4,299 vs 4,192).</li>
+<li>Byte parity with microgpt-rs.</li>
+<li>The KV cache, because positions live outside the chain.</li>
+</ul></li>
+<li><b>Wished for</b> (see <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/sw-mlpl-requests.md">sw-mlpl-requests.md</a> #1, #2, #10):
+<ul class="org-ul">
+<li><code>linear(..., {bias: 0, std: 0.08})</code> and <code>rms_norm(d, {eps: 1e-5})</code> to
+match the paper and its initialization exactly;</li>
+<li>a position layer inside <code>chain</code> that <code>gen_state</code> can cache;</li>
+<li><code>gather</code> / <code>slice</code> to replace <code>u:pick</code>;</li>
+<li><code>format</code> to replace the <code>str_concat</code> nest.</li>
+</ul></li>
+</ul>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Date: 2026-09-23</p>
+<p class="author">Author: Mike Wright</p>
+<p class="date">Created: 2026-09-23 Wed 09:03</p>
+</div>
+</body>
+</html>

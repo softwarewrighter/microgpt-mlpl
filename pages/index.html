@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>microgpt in MLPL</title>
+<meta name="description" content="Karpathy's microgpt.py ported to sw-MLPL three ways -- faithful, idiomatic, compact -- compared with the Python original and the Rust port, with literate programs, equations and results.">
+<style>
+:root {
+  --bg: #fbfbfa; --fg: #1d1f23; --muted: #5d636e; --card: #ffffff; --line: #e3e5e8;
+  --accent: #6f42c1; --accent-2: #0b7a55; --code-bg: #f3f4f6; --hl: #f5efff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171b; --fg: #e3e5e8; --muted: #9aa1ab; --card: #1d2025; --line: #30343b;
+    --accent: #b392f0; --accent-2: #56d4a4; --code-bg: #23262c; --hl: #2a2338;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171b; --fg: #e3e5e8; --muted: #9aa1ab; --card: #1d2025; --line: #30343b;
+  --accent: #b392f0; --accent-2: #56d4a4; --code-bg: #23262c; --hl: #2a2338;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+main { max-width: 960px; margin: 0 auto; padding: 0 16px 48px; }
+header { padding: 40px 0 16px; }
+h1 { font-size: 2.1rem; line-height: 1.2; margin: 0 0 8px; }
+h2 { font-size: 1.35rem; margin: 40px 0 12px; }
+h3 { font-size: 1.05rem; margin: 0 0 6px; }
+p { margin: 8px 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.lede { font-size: 1.1rem; color: var(--muted); max-width: 46rem; }
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+.btn { display: inline-block; padding: 7px 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); color: var(--fg); font-size: 0.93rem; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+:root[data-theme="dark"] .btn.primary { color: #15171b; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.primary { color: #15171b; } }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+.card.mlpl { border-color: var(--accent); }
+.tag { display: inline-block; font-size: 0.75rem; padding: 1px 8px; border-radius: 99px;
+  background: var(--hl); color: var(--accent); margin-bottom: 6px; }
+.stats { font-size: 0.9rem; color: var(--muted); margin: 6px 0; }
+.stats b { color: var(--fg); }
+.card .names { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; color: var(--accent-2); }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.93rem; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; }
+tr:last-child td { border-bottom: none; }
+td.num { font-variant-numeric: tabular-nums; }
+tr.best td { background: var(--hl); }
+pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+  overflow-x: auto; font: 0.85rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; margin: 8px 0; }
+ul { padding-left: 20px; margin: 8px 0; }
+li { margin: 4px 0; }
+.note { color: var(--muted); font-size: 0.88rem; }
+footer { border-top: 1px solid var(--line); margin-top: 48px; padding: 16px 0; color: var(--muted); font-size: 0.85rem; }
+.theme { position: fixed; top: 12px; right: 12px; }
+</style>
+</head>
+<body>
+<button class="btn theme" id="theme" type="button" aria-label="Toggle light or dark theme">Theme</button>
+<main>
+<header>
+  <h1>microgpt in MLPL</h1>
+  <p class="lede">Andrej Karpathy's <a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">microgpt.py</a>
+  trains a GPT on 32,033 names and invents new ones, in ~200 lines of dependency-free Python:
+  "the complete algorithm; everything else is just efficiency." This site compares it with a Rust port
+  and three ports to <a href="https://github.com/sw-ml-study/sw-mlpl">sw-MLPL</a>, an array language
+  with autograd built in. Each port has a literate program you can read with its output and equations.</p>
+  <div class="links">
+    <a class="btn primary" href="literate/microgpt-faithful.html">Read the literate program</a>
+    <a class="btn" href="https://github.com/softwarewrighter/microgpt-mlpl">microgpt-mlpl on GitHub</a>
+    <a class="btn" href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/literate.md">Full comparison</a>
+    <a class="btn" href="https://mlpl.softwarewrighter.com/">Try MLPL in the browser</a>
+  </div>
+</header>
+
+<h2>One algorithm, five programs</h2>
+<div class="grid">
+  <div class="card">
+    <span class="tag">original</span>
+    <h3>Python: microgpt.py</h3>
+    <p>A scalar autograd class, a 1-layer, 4-head GPT, Adam and a sampler, over lists of floats.</p>
+    <p class="stats"><b>149</b> code lines &middot; <b>64.4 s</b> &middot; loss 2.28</p>
+    <p><a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">gist</a></p>
+  </div>
+  <div class="card">
+    <span class="tag">port</span>
+    <h3>Rust: microgpt-rs</h3>
+    <p>The same algorithm and shape: a tape-based scalar autograd, no crates, compiled.</p>
+    <p class="stats"><b>390</b> code lines &middot; <b>0.589 s</b> &middot; loss 2.36</p>
+    <p><a href="https://github.com/softwarewrighter/microgpt-rs">repo</a> &middot;
+       <a href="https://github.com/softwarewrighter/microgpt-rs/blob/main/docs/python-to-rust.org">Python to Rust walkthrough</a></p>
+  </div>
+  <div class="card mlpl">
+    <span class="tag">MLPL &middot; faithful</span>
+    <h3>microgpt.mlpl</h3>
+    <p>microgpt.py line by line with hand-written layers. With <code>--rs-parity</code> it replays
+       microgpt-rs's random stream and its output is <b>byte-identical</b> to the Rust.</p>
+    <p class="stats"><b>230</b> code lines &middot; <b>0.718 s</b> &middot; loss 2.37</p>
+    <p class="names">aline, garien, anisn, alilia, thayn</p>
+    <p><a href="literate/microgpt-faithful.html">literate program</a> &middot;
+       <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/microgpt.mlpl">source</a></p>
+  </div>
+  <div class="card mlpl">
+    <span class="tag">MLPL &middot; idiomatic</span>
+    <h3>microgpt-idiomatic.mlpl</h3>
+    <p>The same data regime, built from the Model DSL: <code>embed</code>, <code>causal_attention</code>,
+       <code>residual</code>, <code>chain</code>, <code>adam</code> over models, <code>sample</code>.
+       Faster than compiled Rust.</p>
+    <p class="stats"><b>48</b> code lines &middot; <b>0.468 s</b> &middot; loss 2.47</p>
+    <p class="names">jiafini, tamesin, jali, kair, tasen</p>
+    <p><a href="literate/microgpt-idiomatic.html">literate program</a> &middot;
+       <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/microgpt-idiomatic.mlpl">source</a></p>
+  </div>
+  <div class="card mlpl">
+    <span class="tag">MLPL &middot; compact</span>
+    <h3>microgpt-compact.mlpl</h3>
+    <p>The smallest honest version: the corpus as one token stream in 16-token windows, one DSL chain,
+       KV-cached sampling.</p>
+    <p class="stats"><b>32</b> code lines &middot; <b>0.539 s</b> &middot; loss 2.56*</p>
+    <p class="names">an, cren, yn, arialilin</p>
+    <p><a href="literate/microgpt-compact.html">literate program</a> &middot;
+       <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/microgpt-compact.mlpl">source</a></p>
+  </div>
+</div>
+<p class="note">Wall time for the whole program (load, train 1000 steps, sample 20 names) on an Apple M1 Max,
+median of 7 runs (CPython: one run). Loss: mean over the last 100 training steps. *The compact variant trains on
+16-token windows, so its loss is not strictly comparable. Code lines exclude comments, blank lines and docstrings.</p>
+
+<h2>Results</h2>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>implementation</th><th>code lines</th><th>wall time</th><th>vs Rust</th><th>params</th><th>loss</th></tr></thead>
+  <tbody>
+    <tr><td>microgpt.py (CPython 3.14)</td><td class="num">149</td><td class="num">64.4 s</td><td class="num">109x</td><td class="num">4,192</td><td class="num">2.28</td></tr>
+    <tr><td>microgpt-rs (release)</td><td class="num">390</td><td class="num">0.589 s</td><td class="num">1.00x</td><td class="num">4,192</td><td class="num">2.36</td></tr>
+    <tr><td>MLPL faithful</td><td class="num">230</td><td class="num">0.718 s</td><td class="num">1.22x</td><td class="num">4,192</td><td class="num">2.37</td></tr>
+    <tr><td>MLPL faithful <code>--rs-parity</code></td><td class="num">344</td><td class="num">1.406 s</td><td class="num">2.39x</td><td class="num">4,192</td><td class="num">= Rust, byte for byte</td></tr>
+    <tr class="best"><td>MLPL idiomatic</td><td class="num">48</td><td class="num">0.468 s</td><td class="num">0.79x</td><td class="num">4,299</td><td class="num">2.47</td></tr>
+    <tr><td>MLPL compact</td><td class="num">32</td><td class="num">0.539 s</td><td class="num">0.92x</td><td class="num">4,043</td><td class="num">2.56*</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>The idea in one expression</h2>
+<p>Where microgpt.py spends a class on autograd and loops over scalars, the idiomatic MLPL model is one
+expression, and training is one call per step:</p>
+<pre>body = chain(rms_norm(d),
+             residual(chain(rms_norm(d), causal_attention(d, 4, 3))),
+             residual(chain(rms_norm(d), linear(d, 4 * d, 4), relu_layer(), linear(4 * d, d, 5))),
+             linear(d, V, 6));
+
+train 1000 {
+  adam(cross_entropy(u:logits(inp), tgt), [tok, pos, body], 0.01 * (1 - step / 1000), 0.85, 0.99, 1e-8)
+};</pre>
+
+<h2>Literate programs</h2>
+<p>Each is an Org document run through <code>ob-mlpl</code>: every block's output is real, each section
+states its math, and the model's functions carry their equations as <code>@formula</code> annotations. The
+program blocks tangle to a script whose output is checked against that variant's baseline, so the prose
+cannot drift from the code.</p>
+<div class="grid">
+  <div class="card"><h3><a href="literate/microgpt-compact.html">1. Compact</a></h3>
+    <p>Start here: the shape of an MLPL language model in 32 lines.</p></div>
+  <div class="card"><h3><a href="literate/microgpt-idiomatic.html">2. Idiomatic</a></h3>
+    <p>How the Model DSL composes, and what its defaults change.</p></div>
+  <div class="card"><h3><a href="literate/microgpt-faithful.html">3. Faithful</a></h3>
+    <p>Every equation spelled out and checked: masked attention equals the KV-cache loop; gradients equal
+       finite differences; parity with Rust.</p></div>
+</div>
+
+<h2>What we learned</h2>
+<ul>
+  <li><b>Array primitives are the efficiency.</b> The idiomatic MLPL interpreter run beats compiled Rust because a
+      DSL layer is one native array op, while the Rust port keeps microgpt's per-scalar tape.</li>
+  <li><b>Exact cross-language parity is possible.</b> microgpt-rs's SplitMix64 RNG, reimplemented in pure MLPL
+      with 16-bit limbs, makes the faithful port's output byte-identical to the Rust.</li>
+  <li><b>Readability and speed trade off case by case.</b> Hand-written equations vs DSL layers, a mask built
+      inside the loss vs passed in, per-step reads vs pre-encoding: each choice is measured, so it can be made on
+      the numbers (<a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/literate.md">comparison, section 5</a>).</li>
+  <li><b>The interpreter shapes the code.</b> Every <code>u:</code> call copies the globals and large reads copy
+      arrays, so the data is pre-encoded and the corpus expunged before training.</li>
+  <li><b>What would make MLPL shorter still:</b> <code>format</code>, <code>gather</code>/<code>slice</code>,
+      destructuring, param records, copy-on-write values, a cacheable position layer, and compiled inference.
+      See the <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/sw-mlpl-requests.md">requests</a>
+      and the <a href="https://github.com/softwarewrighter/microgpt-mlpl/blob/main/docs/idiomatic-mlpl.md">idioms guide</a>.</li>
+</ul>
+
+<footer>
+  <p>Copyright (c) 2026 Michael A Wright &middot; MIT License &middot;
+     <a href="https://github.com/softwarewrighter/microgpt-mlpl">source</a> &middot;
+     built locally, deployed as-is <span id="build"></span></p>
+</footer>
+</main>
+<script>
+(function () {
+  var root = document.documentElement, key = "microgpt-theme";
+  try { var t = localStorage.getItem(key); if (t) root.setAttribute("data-theme", t); } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    var next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem(key, next); } catch (e) {}
+  });
+  fetch("build-info.json").then(function (r) { return r.json(); }).then(function (b) {
+    document.getElementById("build").textContent = "(" + b.commit + ", " + b.built_at + ")";
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>

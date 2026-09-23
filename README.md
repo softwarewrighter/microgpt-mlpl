@@ -7,6 +7,12 @@ array-oriented machine-learning language. A sibling of
 [microgpt-rs](https://github.com/softwarewrighter/microgpt-rs), the Rust
 port.
 
+**Live demo:** <https://softwarewrighter.github.io/microgpt-mlpl/> -- the
+Python, Rust and MLPL versions compared, with links to the gist, the
+repos, and the literate programs. The site is built locally
+(`just pages`) and deployed as committed by `.github/workflows/pages.yml`;
+nothing is built on GitHub.
+
 ## Summary
 
 `microgpt.py` is ~200 lines of dependency-free Python: a character
@@ -131,6 +137,7 @@ just check        # scripts/pre-commit.sh: the full pre-commit gate
 just bench        # scripts/bench.sh: speed (per-op + end-to-end)
 just parity       # scripts/parity.sh: byte-compare --rs-parity with microgpt-rs
 just literate     # scripts/publish-literate.sh: evaluate docs/literate/*.org, export HTML
+just pages        # scripts/build-pages.sh: copy the HTML into pages/, stamp build-info.json
 ```
 
 The interpreter is found via `$MLPL`, then `PATH`, then

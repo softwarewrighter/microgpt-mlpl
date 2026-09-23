@@ -130,7 +130,38 @@ that fails to compile. Details and a suggested order, with a compiled
 native array ops already put training within 1.2x of compiled Rust, or
 ahead of it.
 
-## 5. Pros and cons
+## 5. Readability vs speed: choose per case
+
+Several choices in these programs trade clarity for speed. None is
+universally right: a teaching document may prefer the clear form, and a
+tool that runs often may prefer the fast one. The costs below were all
+measured in this repo (`docs/benchmarks.md`), so each can be decided on
+the numbers.
+
+| choice | more readable | faster | measured cost of the readable form | picked here |
+|---|---|---|---|---|
+| model layers | hand-written equations (faithful) | Model DSL layers (idiomatic) | 0.718 s vs 0.468 s for the whole run | both: two variants |
+| causal mask | built inside `u:loss` from `len(inp)` | built by the caller, passed in | ~70 us/step on the tape (~7%) | passed in |
+| name encoding | `u:doc_tokens(d, i)` per step | `u:doc_batch` once, read a row per step | 1.8 ms/step vs 1.8 ms for all 1000 (~1.8 s per run) | pre-encode |
+| corpus lifetime | keep `d` in scope | `expunge` it before training | 2.09 s vs 0.8 s (every `u:` call copies globals) | expunge |
+| window access (compact) | index the full window matrix each step | pre-gather the 1000 windows | 0.95 s vs 0.53 s | pre-gather |
+| vocabulary | 256 `eq` passes, one per byte value | sort + run-start mask | 254 ms vs 19 ms | sort (arguably as readable) |
+| sampling | recompute the prefix, keep positions | KV cache, drop positions | ~4 ms/sample vs ~0.2 ms, at a loss cost of ~0.1 | one variant each |
+| parity shuffle | 32,032 sequential swaps | trace the wanted positions backward | 8.1 s vs 0.73 s | trace |
+
+Rules of thumb from these numbers:
+- Keep the readable form when the cost is per run and small; switch
+  when it multiplies by the step count.
+- Interpreter costs dominate: copies of big values and `u:` call
+  overhead. Most of these trade-offs would disappear with copy-on-write
+  values (request #5 in [sw-mlpl-requests.md](sw-mlpl-requests.md)),
+  leaving only the genuinely algorithmic ones: DSL vs hand-written, and
+  cache vs positions.
+- When a fast form is chosen, the code says why in a comment and the
+  measured number is in `docs/benchmarks.md`, so a reader can revert it
+  knowingly.
+
+## 6. Pros and cons
 
 **Faithful**
 - Pros:

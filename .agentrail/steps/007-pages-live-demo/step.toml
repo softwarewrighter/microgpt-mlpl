@@ -1,6 +1,6 @@
 number = 7
 slug = "pages-live-demo"
-status = "pending"
+status = "in-progress"
 description = "User request: ./pages static site ('live demo'): landing page discussing the ..."
 role = "production"
 context_files = []
