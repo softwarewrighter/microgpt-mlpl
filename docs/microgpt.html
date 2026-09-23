@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-09-22 Tue 23:16 -->
+<!-- 2026-09-23 Wed 08:10 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>microgpt in MLPL</title>
@@ -193,6 +193,30 @@
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   .org-svg { }
 </style>
+<style>
+pre.src, pre.example { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; }
+.org-mlpl-builtin, .org-builtin { color: #6f42c1; }
+.org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #d73a49; font-weight: bold; }
+.org-mlpl-number, .org-constant { color: #005cc5; }
+.org-string, .org-doc { color: #22863a; }
+.org-comment, .org-comment-delimiter { color: #6a737d; font-style: italic; }
+.org-mlpl-operator, .org-operator { color: #8a8f98; }
+.org-function-name { color: #e36209; }
+.org-variable-name, .org-type { color: #b08800; }
+@media (prefers-color-scheme: dark) {
+body { background: #16181c; color: #d8dade; } a { color: #79b8ff; }
+pre.src, pre.example { background: #1f2227; border-color: #33373e; color: #d8dade; }
+.org-mlpl-builtin, .org-builtin { color: #b392f0; }
+.org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #f97583; }
+.org-mlpl-number, .org-constant { color: #79b8ff; }
+.org-string, .org-doc { color: #85e89d; }
+.org-comment, .org-comment-delimiter { color: #8b949e; }
+.org-mlpl-operator, .org-operator { color: #7d8590; }
+.org-function-name { color: #ffab70; }
+.org-variable-name, .org-type { color: #ffdf5d; }
+table, th, td { border-color: #33373e; }
+}
+</style>
 </head>
 <body>
 <div id="content" class="content">
@@ -204,34 +228,34 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#org94b758f">1. Introduction</a>
+<li><a href="#orgea376c0">1. Introduction</a>
 <ul>
-<li><a href="#org7121636">1.1. The map at a glance</a></li>
-<li><a href="#org81ecdd9">1.2. Running this document</a></li>
+<li><a href="#orgcb30c56">1.1. The map at a glance</a></li>
+<li><a href="#org22b09a9">1.2. Running this document</a></li>
 </ul>
 </li>
-<li><a href="#org5324155">2. Small helpers</a></li>
-<li><a href="#org83e3901">3. 1. Dataset</a></li>
-<li><a href="#org89a5cea">4. 2. Tokenizer</a></li>
-<li><a href="#orgd58c773">5. 3. Autograd: nothing to write</a></li>
-<li><a href="#org68cf6fb">6. 4. Parameters</a></li>
-<li><a href="#org30005f5">7. 5. Model</a>
+<li><a href="#orgff8c4d5">2. Small helpers</a></li>
+<li><a href="#org2ba8e27">3. 1. Dataset</a></li>
+<li><a href="#orgc2795c1">4. 2. Tokenizer</a></li>
+<li><a href="#org1fae481">5. 3. Autograd: nothing to write</a></li>
+<li><a href="#orgc55bf38">6. 4. Parameters</a></li>
+<li><a href="#org0f3aea5">7. 5. Model</a>
 <ul>
-<li><a href="#org5d02832">7.1. linear and rmsnorm</a></li>
-<li><a href="#orgd718b2a">7.2. Attention: the KV cache becomes a causal mask</a></li>
-<li><a href="#orgf3e7c9b">7.3. The whole forward pass</a></li>
-<li><a href="#org2ccfd35">7.4. The loss</a></li>
+<li><a href="#orgbcaea4d">7.1. linear and rmsnorm</a></li>
+<li><a href="#org7bb06ac">7.2. Attention: the KV cache becomes a causal mask</a></li>
+<li><a href="#orgc963a63">7.3. The whole forward pass</a></li>
+<li><a href="#orge29862a">7.4. The loss</a></li>
 </ul>
 </li>
-<li><a href="#org5ef7116">8. 6. Adam: built in</a></li>
-<li><a href="#org527a129">9. 7. Training</a></li>
-<li><a href="#orgaa0278d">10. 8. Inference</a></li>
-<li><a href="#org7e1933b">11. 9. Three implementations, side by side</a></li>
+<li><a href="#orge4aef88">8. 6. Adam: built in</a></li>
+<li><a href="#orgb84471e">9. 7. Training</a></li>
+<li><a href="#orgab2b9ff">10. 8. Inference</a></li>
+<li><a href="#org94db627">11. 9. Three implementations, side by side</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-org94b758f" class="outline-2">
-<h2 id="org94b758f"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-orgea376c0" class="outline-2">
+<h2 id="orgea376c0"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 Andrej Karpathy's <a href="https://gist.github.com/karpathy/8627fe009c40f57531cb18360106ce95">microgpt.py</a> trains a GPT and samples from it in ~200 lines of
@@ -271,8 +295,8 @@ that really is the implementation. The production program splits the same
 definitions into <code>lib/*.mlpl</code> so the test suites can include them.
 </p>
 </div>
-<div id="outline-container-org7121636" class="outline-3">
-<h3 id="org7121636"><span class="section-number-3">1.1.</span> The map at a glance</h3>
+<div id="outline-container-orgcb30c56" class="outline-3">
+<h3 id="orgcb30c56"><span class="section-number-3">1.1.</span> The map at a glance</h3>
 <div class="outline-text-3" id="text-1-1">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -365,8 +389,8 @@ definitions into <code>lib/*.mlpl</code> so the test suites can include them.
 </table>
 </div>
 </div>
-<div id="outline-container-org81ecdd9" class="outline-3">
-<h3 id="org81ecdd9"><span class="section-number-3">1.2.</span> Running this document</h3>
+<div id="outline-container-org22b09a9" class="outline-3">
+<h3 id="org22b09a9"><span class="section-number-3">1.2.</span> Running this document</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 The session needs the repo root as MLPL's data directory, so that
@@ -376,8 +400,8 @@ sets <code>org-babel-mlpl-command</code> to <code>mlpl-repl --data-dir ..</code>
 </p>
 
 <div class="org-src-container">
-<pre class="src src-sh">scripts/publish-literate.sh     # evaluate every block, bake results, export docs/microgpt.html
-scripts/check-literate.sh       # tangle the program blocks; output must equal microgpt.mlpl's
+<pre class="src src-sh">scripts/publish-literate.sh     <span class="org-comment-delimiter"># </span><span class="org-comment">evaluate every block, bake results, export docs/microgpt.html
+</span>scripts/check-literate.sh       <span class="org-comment-delimiter"># </span><span class="org-comment">tangle the program blocks; output must equal microgpt.mlpl's</span>
 </pre>
 </div>
 
@@ -389,8 +413,8 @@ repeated last line.
 </div>
 </div>
 </div>
-<div id="outline-container-org5324155" class="outline-2">
-<h2 id="org5324155"><span class="section-number-2">2.</span> Small helpers</h2>
+<div id="outline-container-orgff8c4d5" class="outline-2">
+<h2 id="orgff8c4d5"><span class="section-number-2">2.</span> Small helpers</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 Two kinds of helper that Python gets for free: indexing a vector by a
@@ -400,38 +424,38 @@ one-column table and uses the row gather <code>gather_rows</code>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">def u:gather1(v, idx) {
-  "Elements of rank-1 v at the (rank-1) integer positions idx.";
-  reshape(gather_rows(reshape(v, [len(v), 1]), idx), [len(idx)])
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(v<span class="org-mlpl-operator">,</span> idx) {
+  <span class="org-string">"Elements of rank-1 v at the (rank-1) integer positions idx."</span><span class="org-mlpl-operator">;</span>
+  <span class="org-mlpl-builtin">reshape</span>(gather_rows(<span class="org-mlpl-builtin">reshape</span>(v<span class="org-mlpl-operator">,</span> [len(v)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>])<span class="org-mlpl-operator">,</span> idx)<span class="org-mlpl-operator">,</span> [len(idx)])
 }
 
-def u:pad_left(s, width) {
-  "Right-align string s in width columns, width &lt;= 16 (like Python's {:&gt;width}).";
-  str_concat(str_slice("                ", 0, relu(width - str_len(s))), s)
+def u<span class="org-mlpl-operator">:</span>pad_left(s<span class="org-mlpl-operator">,</span> width) {
+  <span class="org-string">"Right-align string s in width columns, width &lt;= 16 (like Python's {:&gt;width})."</span><span class="org-mlpl-operator">;</span>
+  str_concat(str_slice(<span class="org-string">"                "</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> relu(width <span class="org-mlpl-operator">-</span> str_len(s)))<span class="org-mlpl-operator">,</span> s)
 }
 
-def u:fmt_int(x, width) {
-  "f'{x:widthd}' for a non-negative integer x.";
-  u:pad_left(to_string(round(x)), width)
+def u<span class="org-mlpl-operator">:</span>fmt_int(x<span class="org-mlpl-operator">,</span> width) {
+  <span class="org-string">"f'{x:widthd}' for a non-negative integer x."</span><span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>pad_left(to_string(round(x))<span class="org-mlpl-operator">,</span> width)
 }
 
-def u:fmt_fixed4(x) {
-  "f'{x:.4f}' for x &gt;= 0 (round half up at the 4th decimal).";
-  scaled = floor(x * 10000 + 0.5);
-  whole = floor(scaled / 10000);
-  frac = to_string(scaled - whole * 10000);
-  str_concat(str_concat(to_string(whole), "."), str_concat(str_slice("0000", 0, 4 - str_len(frac)), frac))
+def u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(x) {
+  <span class="org-string">"f'{x:.4f}' for x &gt;= 0 (round half up at the 4th decimal)."</span><span class="org-mlpl-operator">;</span>
+  scaled <span class="org-mlpl-operator">=</span> floor(x * <span class="org-mlpl-number">10000</span> <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">0.5</span>)<span class="org-mlpl-operator">;</span>
+  whole <span class="org-mlpl-operator">=</span> floor(scaled <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">10000</span>)<span class="org-mlpl-operator">;</span>
+  frac <span class="org-mlpl-operator">=</span> to_string(scaled <span class="org-mlpl-operator">-</span> whole * <span class="org-mlpl-number">10000</span>)<span class="org-mlpl-operator">;</span>
+  str_concat(str_concat(to_string(whole)<span class="org-mlpl-operator">,</span> <span class="org-string">"."</span>)<span class="org-mlpl-operator">,</span> str_concat(str_slice(<span class="org-string">"0000"</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span> <span class="org-mlpl-operator">-</span> str_len(frac))<span class="org-mlpl-operator">,</span> frac))
 }
 
-def u:write(s) {
-  "Write s to stdout with no trailing newline (for Python's end='\\r').";
+def u<span class="org-mlpl-operator">:</span>write(s) {
+  <span class="org-string">"Write s to stdout with no trailing newline (for Python's end='\\r')."</span><span class="org-mlpl-operator">;</span>
   unwrap(write_stdout(tokenize_bytes(s)))
 }
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">[u:fmt_int(7, 4), u:fmt_fixed4(1.91456)]
+<pre class="src src-mlpl">[u<span class="org-mlpl-operator">:</span>fmt_int(<span class="org-mlpl-number">7</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(<span class="org-mlpl-number">1.91456</span>)]
 </pre>
 </div>
 
@@ -440,11 +464,11 @@ def u:write(s) {
 </pre>
 </div>
 </div>
-<div id="outline-container-org83e3901" class="outline-2">
-<h2 id="org83e3901"><span class="section-number-2">3.</span> 1. Dataset</h2>
+<div id="outline-container-org2ba8e27" class="outline-2">
+<h2 id="org2ba8e27"><span class="section-number-2">3.</span> 1. Dataset</h2>
 <div class="outline-text-2" id="text-3">
 <div class="org-src-container">
-<pre class="src src-python">docs = [line.strip() for line in open('input.txt') if line.strip()]
+<pre class="src src-python"><span class="org-variable-name">docs</span> <span class="org-operator">=</span> [line.strip() <span class="org-keyword">for</span> line <span class="org-keyword">in</span> <span class="org-builtin">open</span>(<span class="org-string">'input.txt'</span>) <span class="org-keyword">if</span> line.strip()]
 random.shuffle(docs)
 </pre>
 </div>
@@ -467,35 +491,35 @@ byte to token id. The shuffle waits until training (section 7).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">def u:dataset(txt) {
-  "Parse input.txt: one doc per non-empty line, plus the char vocabulary.";
-  bytes = tokenize_bytes(txt);
-  n = len(bytes);
-  bad = reduce_add(lt(bytes, 33) * ne(bytes, 10)) + reduce_add(gt(bytes, 126));
-  if bad { err(str_concat("corpus has non-name bytes: ", to_string(bad))) } else {
-    nl = compress(eq(bytes, 10), range(n));
-    bounds = concat(concat([0 - 1], nl), [n]);
-    m = len(bounds) - 1;
-    starts_all = u:gather1(bounds, range(m)) + 1;
-    lens_all = u:gather1(bounds, range(m) + 1) - starts_all;
-    keep = gt(lens_all, 0);
-    sorted = u:gather1(bytes, grade_up(bytes));
-    first = concat([1], ne(u:gather1(sorted, range(n - 1) + 1), u:gather1(sorted, range(n - 1))));
-    uniq = compress(first, sorted);
-    uchars = compress(ne(uniq, 10), uniq);
-    vocab = len(uchars);
-    lut = zeros(256) - 1;
-    i = 0;
-    repeat vocab { lut = scatter(lut, at(uchars, i), i); i = i + 1 };
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>dataset(txt) {
+  <span class="org-string">"Parse input.txt: one doc per non-empty line, plus the char vocabulary."</span><span class="org-mlpl-operator">;</span>
+  bytes <span class="org-mlpl-operator">=</span> tokenize_bytes(txt)<span class="org-mlpl-operator">;</span>
+  n <span class="org-mlpl-operator">=</span> len(bytes)<span class="org-mlpl-operator">;</span>
+  bad <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reduce_add</span>(<span class="org-mlpl-builtin">lt</span>(bytes<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">33</span>) * ne(bytes<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">10</span>)) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-builtin">reduce_add</span>(<span class="org-mlpl-builtin">gt</span>(bytes<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">126</span>))<span class="org-mlpl-operator">;</span>
+  if bad { err(str_concat(<span class="org-string">"corpus has non-name bytes: "</span><span class="org-mlpl-operator">,</span> to_string(bad))) } else {
+    nl <span class="org-mlpl-operator">=</span> compress(<span class="org-mlpl-builtin">eq</span>(bytes<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">10</span>)<span class="org-mlpl-operator">,</span> range(n))<span class="org-mlpl-operator">;</span>
+    bounds <span class="org-mlpl-operator">=</span> concat(concat([<span class="org-mlpl-number">0</span> <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>]<span class="org-mlpl-operator">,</span> nl)<span class="org-mlpl-operator">,</span> [n])<span class="org-mlpl-operator">;</span>
+    m <span class="org-mlpl-operator">=</span> len(bounds) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>
+    starts_all <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(bounds<span class="org-mlpl-operator">,</span> range(m)) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>
+    lens_all <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(bounds<span class="org-mlpl-operator">,</span> range(m) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>) <span class="org-mlpl-operator">-</span> starts_all<span class="org-mlpl-operator">;</span>
+    keep <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">gt</span>(lens_all<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>)<span class="org-mlpl-operator">;</span>
+    sorted <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(bytes<span class="org-mlpl-operator">,</span> grade_up(bytes))<span class="org-mlpl-operator">;</span>
+    first <span class="org-mlpl-operator">=</span> concat([<span class="org-mlpl-number">1</span>]<span class="org-mlpl-operator">,</span> ne(u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(sorted<span class="org-mlpl-operator">,</span> range(n <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(sorted<span class="org-mlpl-operator">,</span> range(n <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>))))<span class="org-mlpl-operator">;</span>
+    uniq <span class="org-mlpl-operator">=</span> compress(first<span class="org-mlpl-operator">,</span> sorted)<span class="org-mlpl-operator">;</span>
+    uchars <span class="org-mlpl-operator">=</span> compress(ne(uniq<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">10</span>)<span class="org-mlpl-operator">,</span> uniq)<span class="org-mlpl-operator">;</span>
+    vocab <span class="org-mlpl-operator">=</span> len(uchars)<span class="org-mlpl-operator">;</span>
+    lut <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">zeros</span>(<span class="org-mlpl-number">256</span>) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>
+    i <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+    <span class="org-mlpl-keyword">repeat</span> vocab { lut <span class="org-mlpl-operator">=</span> scatter(lut<span class="org-mlpl-operator">,</span> at(uchars<span class="org-mlpl-operator">,</span> i)<span class="org-mlpl-operator">,</span> i)<span class="org-mlpl-operator">;</span> i <span class="org-mlpl-operator">=</span> i <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span> }<span class="org-mlpl-operator">;</span>
     ok({
-      bytes: bytes,
-      starts: compress(keep, starts_all),
-      lens: compress(keep, lens_all),
-      n_docs: reduce_add(keep),
-      uchars: uchars,
-      lut: lut,
-      bos: vocab,
-      vocab_size: vocab + 1
+      bytes<span class="org-mlpl-operator">:</span> bytes<span class="org-mlpl-operator">,</span>
+      starts<span class="org-mlpl-operator">:</span> compress(keep<span class="org-mlpl-operator">,</span> starts_all)<span class="org-mlpl-operator">,</span>
+      lens<span class="org-mlpl-operator">:</span> compress(keep<span class="org-mlpl-operator">,</span> lens_all)<span class="org-mlpl-operator">,</span>
+      n_docs<span class="org-mlpl-operator">:</span> <span class="org-mlpl-builtin">reduce_add</span>(keep)<span class="org-mlpl-operator">,</span>
+      uchars<span class="org-mlpl-operator">:</span> uchars<span class="org-mlpl-operator">,</span>
+      lut<span class="org-mlpl-operator">:</span> lut<span class="org-mlpl-operator">,</span>
+      bos<span class="org-mlpl-operator">:</span> vocab<span class="org-mlpl-operator">,</span>
+      vocab_size<span class="org-mlpl-operator">:</span> vocab <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
     })
   }
 }
@@ -503,8 +527,8 @@ byte to token id. The shuffle waits until training (section 7).
 </div>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">d = unwrap(u:dataset(load("input.txt")));
-print("num docs:", to_string(d.n_docs));
+<pre class="src src-mlpl">d <span class="org-mlpl-operator">=</span> unwrap(u<span class="org-mlpl-operator">:</span>dataset(load(<span class="org-string">"input.txt"</span>)))<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"num docs:"</span><span class="org-mlpl-operator">,</span> to_string(d<span class="org-mlpl-operator">.</span>n_docs))<span class="org-mlpl-operator">;</span>
 </pre>
 </div>
 
@@ -520,13 +544,13 @@ took 254 ms; see <a href="benchmarks.md">benchmarks.md</a>.
 </p>
 </div>
 </div>
-<div id="outline-container-org89a5cea" class="outline-2">
-<h2 id="org89a5cea"><span class="section-number-2">4.</span> 2. Tokenizer</h2>
+<div id="outline-container-orgc2795c1" class="outline-2">
+<h2 id="orgc2795c1"><span class="section-number-2">4.</span> 2. Tokenizer</h2>
 <div class="outline-text-2" id="text-4">
 <div class="org-src-container">
-<pre class="src src-python">uchars = sorted(set(''.join(docs)))
-BOS = len(uchars)
-tokens = [BOS] + [uchars.index(ch) for ch in doc] + [BOS]
+<pre class="src src-python"><span class="org-variable-name">uchars</span> <span class="org-operator">=</span> <span class="org-builtin">sorted</span>(<span class="org-builtin">set</span>(<span class="org-string">''</span>.join(docs)))
+<span class="org-variable-name">BOS</span> <span class="org-operator">=</span> <span class="org-builtin">len</span>(uchars)
+<span class="org-variable-name">tokens</span> <span class="org-operator">=</span> [BOS] <span class="org-operator">+</span> [uchars.index(ch) <span class="org-keyword">for</span> ch <span class="org-keyword">in</span> doc] <span class="org-operator">+</span> [BOS]
 </pre>
 </div>
 
@@ -540,50 +564,50 @@ costs ~1.8 ms, against 1.8 ms for 1000 names at once.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">def u:encode_bytes(d, bs) {
-  "Token ids for a rank-1 byte array (every byte must be in the vocab).";
-  u:gather1(d.lut, bs)
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>encode_bytes(d<span class="org-mlpl-operator">,</span> bs) {
+  <span class="org-string">"Token ids for a rank-1 byte array (every byte must be in the vocab)."</span><span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(d<span class="org-mlpl-operator">.</span>lut<span class="org-mlpl-operator">,</span> bs)
 }
 
-def u:encode(d, s) {
-  "Token ids for a string (no BOS).";
-  u:encode_bytes(d, tokenize_bytes(s))
+def u<span class="org-mlpl-operator">:</span>encode(d<span class="org-mlpl-operator">,</span> s) {
+  <span class="org-string">"Token ids for a string (no BOS)."</span><span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>encode_bytes(d<span class="org-mlpl-operator">,</span> tokenize_bytes(s))
 }
 
-def u:decode(d, ids) {
-  "The string for a rank-1 array of non-BOS token ids.";
-  decode_bytes(u:gather1(d.uchars, ids))
+def u<span class="org-mlpl-operator">:</span>decode(d<span class="org-mlpl-operator">,</span> ids) {
+  <span class="org-string">"The string for a rank-1 array of non-BOS token ids."</span><span class="org-mlpl-operator">;</span>
+  decode_bytes(u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(d<span class="org-mlpl-operator">.</span>uchars<span class="org-mlpl-operator">,</span> ids))
 }
 
-def u:doc_bytes(d, i) {
-  "Raw bytes of doc i (file order).";
-  u:gather1(d.bytes, at(d.starts, i) + range(at(d.lens, i)))
+def u<span class="org-mlpl-operator">:</span>doc_bytes(d<span class="org-mlpl-operator">,</span> i) {
+  <span class="org-string">"Raw bytes of doc i (file order)."</span><span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(d<span class="org-mlpl-operator">.</span>bytes<span class="org-mlpl-operator">,</span> at(d<span class="org-mlpl-operator">.</span>starts<span class="org-mlpl-operator">,</span> i) <span class="org-mlpl-operator">+</span> range(at(d<span class="org-mlpl-operator">.</span>lens<span class="org-mlpl-operator">,</span> i)))
 }
 
-def u:doc_tokens(d, i) {
-  "microgpt.py's tokens for doc i: [BOS] + ids + [BOS].";
-  concat(concat([d.bos], u:encode_bytes(d, u:doc_bytes(d, i))), [d.bos])
+def u<span class="org-mlpl-operator">:</span>doc_tokens(d<span class="org-mlpl-operator">,</span> i) {
+  <span class="org-string">"microgpt.py's tokens for doc i: [BOS] + ids + [BOS]."</span><span class="org-mlpl-operator">;</span>
+  concat(concat([d<span class="org-mlpl-operator">.</span>bos]<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>encode_bytes(d<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>doc_bytes(d<span class="org-mlpl-operator">,</span> i)))<span class="org-mlpl-operator">,</span> [d<span class="org-mlpl-operator">.</span>bos])
 }
 
-def u:doc_batch(d, doc_ids, block_size) {
-  "Token rows for many docs at once: {tokens: [m, block_size + 2] = [BOS] + ids + [BOS] padded with BOS, n: [m] positions to train}.";
-  m = len(doc_ids);
-  lens = u:gather1(d.lens, doc_ids);
-  pos = reshape(range(block_size), [1, block_size]);
-  valid = lt(pos, reshape(lens, [m, 1]));
-  idx = (reshape(u:gather1(d.starts, doc_ids), [m, 1]) + pos) * valid;
-  bytes = reshape(gather_rows(reshape(d.bytes, [len(d.bytes), 1]), idx), [m, block_size]);
-  ids = reshape(gather_rows(reshape(d.lut, [256, 1]), bytes), [m, block_size]);
-  body = valid * ids + (1 - valid) * d.bos;
-  bos = zeros([m, 1]) + d.bos;
-  {tokens: concat(bos, concat(body, bos, 1), 1), n: lens + 1 - relu(lens + 1 - block_size)}
+def u<span class="org-mlpl-operator">:</span>doc_batch(d<span class="org-mlpl-operator">,</span> doc_ids<span class="org-mlpl-operator">,</span> block_size) {
+  <span class="org-string">"Token rows for many docs at once: {tokens: [m, block_size + 2] = [BOS] + ids + [BOS] padded with BOS, n: [m] positions to train}."</span><span class="org-mlpl-operator">;</span>
+  m <span class="org-mlpl-operator">=</span> len(doc_ids)<span class="org-mlpl-operator">;</span>
+  lens <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(d<span class="org-mlpl-operator">.</span>lens<span class="org-mlpl-operator">,</span> doc_ids)<span class="org-mlpl-operator">;</span>
+  pos <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reshape</span>(range(block_size)<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> block_size])<span class="org-mlpl-operator">;</span>
+  valid <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">lt</span>(pos<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(lens<span class="org-mlpl-operator">,</span> [m<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>]))<span class="org-mlpl-operator">;</span>
+  idx <span class="org-mlpl-operator">=</span> (<span class="org-mlpl-builtin">reshape</span>(u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(d<span class="org-mlpl-operator">.</span>starts<span class="org-mlpl-operator">,</span> doc_ids)<span class="org-mlpl-operator">,</span> [m<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>]) <span class="org-mlpl-operator">+</span> pos) * valid<span class="org-mlpl-operator">;</span>
+  bytes <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reshape</span>(gather_rows(<span class="org-mlpl-builtin">reshape</span>(d<span class="org-mlpl-operator">.</span>bytes<span class="org-mlpl-operator">,</span> [len(d<span class="org-mlpl-operator">.</span>bytes)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>])<span class="org-mlpl-operator">,</span> idx)<span class="org-mlpl-operator">,</span> [m<span class="org-mlpl-operator">,</span> block_size])<span class="org-mlpl-operator">;</span>
+  ids <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reshape</span>(gather_rows(<span class="org-mlpl-builtin">reshape</span>(d<span class="org-mlpl-operator">.</span>lut<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">256</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>])<span class="org-mlpl-operator">,</span> bytes)<span class="org-mlpl-operator">,</span> [m<span class="org-mlpl-operator">,</span> block_size])<span class="org-mlpl-operator">;</span>
+  body <span class="org-mlpl-operator">=</span> valid * ids <span class="org-mlpl-operator">+</span> (<span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> valid) * d<span class="org-mlpl-operator">.</span>bos<span class="org-mlpl-operator">;</span>
+  bos <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">zeros</span>([m<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>]) <span class="org-mlpl-operator">+</span> d<span class="org-mlpl-operator">.</span>bos<span class="org-mlpl-operator">;</span>
+  {tokens<span class="org-mlpl-operator">:</span> concat(bos<span class="org-mlpl-operator">,</span> concat(body<span class="org-mlpl-operator">,</span> bos<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> n<span class="org-mlpl-operator">:</span> lens <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> relu(lens <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> block_size)}
 }
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">print("vocab size:", to_string(d.vocab_size));
-vocab_size = d.vocab_size;
+<pre class="src src-mlpl">print(<span class="org-string">"vocab size:"</span><span class="org-mlpl-operator">,</span> to_string(d<span class="org-mlpl-operator">.</span>vocab_size))<span class="org-mlpl-operator">;</span>
+vocab_size <span class="org-mlpl-operator">=</span> d<span class="org-mlpl-operator">.</span>vocab_size<span class="org-mlpl-operator">;</span>
 </pre>
 </div>
 
@@ -598,8 +622,8 @@ The first name in the file, <code>emma</code>, encodes exactly as in Python (<co
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">print(decode_bytes(d.uchars));
-u:doc_tokens(d, 0)
+<pre class="src src-mlpl">print(decode_bytes(d<span class="org-mlpl-operator">.</span>uchars))<span class="org-mlpl-operator">;</span>
+u<span class="org-mlpl-operator">:</span>doc_tokens(d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>)
 </pre>
 </div>
 
@@ -609,14 +633,14 @@ abcdefghijklmnopqrstuvwxyz
 </pre>
 </div>
 </div>
-<div id="outline-container-orgd58c773" class="outline-2">
-<h2 id="orgd58c773"><span class="section-number-2">5.</span> 3. Autograd: nothing to write</h2>
+<div id="outline-container-org1fae481" class="outline-2">
+<h2 id="org1fae481"><span class="section-number-2">5.</span> 3. Autograd: nothing to write</h2>
 <div class="outline-text-2" id="text-5">
 <div class="org-src-container">
-<pre class="src src-python">class Value:
-    def __init__(self, data, children=(), local_grads=()): ...
-    def __add__(self, other): ...      # +, *, **, log, exp, relu, ...
-    def backward(self): ...            # topological sort, then the chain rule
+<pre class="src src-python"><span class="org-keyword">class</span> <span class="org-type">Value</span>:
+    <span class="org-keyword">def</span> <span class="org-function-name">__init__</span>(<span class="org-keyword">self</span>, data, children<span class="org-operator">=</span>(), local_grads<span class="org-operator">=</span>()): ...
+    <span class="org-keyword">def</span> <span class="org-function-name">__add__</span>(<span class="org-keyword">self</span>, other): ...      <span class="org-comment-delimiter"># </span><span class="org-comment">+, *, **, log, exp, relu, ...
+</span>    <span class="org-keyword">def</span> <span class="org-function-name">backward</span>(<span class="org-keyword">self</span>): ...            <span class="org-comment-delimiter"># </span><span class="org-comment">topological sort, then the chain rule</span>
 </pre>
 </div>
 
@@ -643,9 +667,9 @@ A tiny example, d/dW of sum(W^2) = 2W:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">W_demo = param[2, 2];
-W_demo = [[1, 2], [3, 4]];
-grad(reduce_add(W_demo * W_demo), W_demo)
+<pre class="src src-mlpl">W_demo <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[<span class="org-mlpl-number">2</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">2</span>]<span class="org-mlpl-operator">;</span>
+W_demo <span class="org-mlpl-operator">=</span> [[<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">2</span>]<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">3</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>]]<span class="org-mlpl-operator">;</span>
+<span class="org-mlpl-builtin">grad</span>(<span class="org-mlpl-builtin">reduce_add</span>(W_demo * W_demo)<span class="org-mlpl-operator">,</span> W_demo)
 </pre>
 </div>
 
@@ -661,16 +685,16 @@ central finite differences for all nine matrices; they agree to ~3e-11.
 </p>
 </div>
 </div>
-<div id="outline-container-org68cf6fb" class="outline-2">
-<h2 id="org68cf6fb"><span class="section-number-2">6.</span> 4. Parameters</h2>
+<div id="outline-container-orgc55bf38" class="outline-2">
+<h2 id="orgc55bf38"><span class="section-number-2">6.</span> 4. Parameters</h2>
 <div class="outline-text-2" id="text-6">
 <div class="org-src-container">
-<pre class="src src-python">matrix = lambda nout, nin, std=0.08: [[Value(random.gauss(0, std)) for _ in range(nin)] for _ in range(nout)]
-state_dict = {'wte': matrix(vocab_size, n_embd), 'wpe': matrix(block_size, n_embd), 'lm_head': matrix(vocab_size, n_embd)}
-for i in range(n_layer):
-    state_dict[f'layer{i}.attn_wq'] = matrix(n_embd, n_embd)    # ... wk, wv, wo
-    state_dict[f'layer{i}.mlp_fc1'] = matrix(4 * n_embd, n_embd)
-    state_dict[f'layer{i}.mlp_fc2'] = matrix(n_embd, 4 * n_embd)
+<pre class="src src-python"><span class="org-variable-name">matrix</span> <span class="org-operator">=</span> <span class="org-keyword">lambda</span> <span class="org-variable-name">nout</span>, <span class="org-variable-name">nin</span>, <span class="org-variable-name">std</span><span class="org-operator">=</span>0.08: [[Value(random.gauss(0, std)) <span class="org-keyword">for</span> _ <span class="org-keyword">in</span> <span class="org-builtin">range</span>(nin)] <span class="org-keyword">for</span> _ <span class="org-keyword">in</span> <span class="org-builtin">range</span>(nout)]
+<span class="org-variable-name">state_dict</span> <span class="org-operator">=</span> {<span class="org-string">'wte'</span>: matrix(vocab_size, n_embd), <span class="org-string">'wpe'</span>: matrix(block_size, n_embd), <span class="org-string">'lm_head'</span>: matrix(vocab_size, n_embd)}
+<span class="org-keyword">for</span> i <span class="org-keyword">in</span> <span class="org-builtin">range</span>(n_layer):
+    <span class="org-variable-name">state_dict</span>[f<span class="org-string">'layer</span>{i}<span class="org-string">.attn_wq'</span>] <span class="org-operator">=</span> matrix(n_embd, n_embd)    <span class="org-comment-delimiter"># </span><span class="org-comment">... wk, wv, wo
+</span>    <span class="org-variable-name">state_dict</span>[f<span class="org-string">'layer</span>{i}<span class="org-string">.mlp_fc1'</span>] <span class="org-operator">=</span> matrix(4 <span class="org-operator">*</span> n_embd, n_embd)
+    <span class="org-variable-name">state_dict</span>[f<span class="org-string">'layer</span>{i}<span class="org-string">.mlp_fc2'</span>] <span class="org-operator">=</span> matrix(n_embd, 4 <span class="org-operator">*</span> n_embd)
 </pre>
 </div>
 
@@ -689,34 +713,34 @@ array), so the nine names are written inline in the <code>adam</code> call.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">n_layer = 1;      # depth of the transformer (number of layers)
-n_embd = 16;      # width of the network (embedding dimension)
-block_size = 16;  # maximum context length (the longest name is 15 chars)
-n_head = 4;       # number of attention heads
-head_dim = n_embd / n_head;
-init_std = 0.08;
+<pre class="src src-mlpl">n_layer <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>      <span class="org-comment-delimiter"># </span><span class="org-comment">depth of the transformer (number of layers)
+</span>n_embd <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">16</span><span class="org-mlpl-operator">;</span>      <span class="org-comment-delimiter"># </span><span class="org-comment">width of the network (embedding dimension)
+</span>block_size <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">16</span><span class="org-mlpl-operator">;</span>  <span class="org-comment-delimiter"># </span><span class="org-comment">maximum context length (the longest name is 15 chars)
+</span>n_head <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">4</span><span class="org-mlpl-operator">;</span>       <span class="org-comment-delimiter"># </span><span class="org-comment">number of attention heads
+</span>head_dim <span class="org-mlpl-operator">=</span> n_embd <span class="org-mlpl-operator">/</span> n_head<span class="org-mlpl-operator">;</span>
+init_std <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.08</span><span class="org-mlpl-operator">;</span>
 
-wte = param[vocab_size, n_embd];
-wte = randn(101, [vocab_size, n_embd]) * init_std;
-wpe = param[block_size, n_embd];
-wpe = randn(102, [block_size, n_embd]) * init_std;
-lm_head = param[vocab_size, n_embd];
-lm_head = randn(103, [vocab_size, n_embd]) * init_std;
-layer0_attn_wq = param[n_embd, n_embd];
-layer0_attn_wq = randn(104, [n_embd, n_embd]) * init_std;
-layer0_attn_wk = param[n_embd, n_embd];
-layer0_attn_wk = randn(105, [n_embd, n_embd]) * init_std;
-layer0_attn_wv = param[n_embd, n_embd];
-layer0_attn_wv = randn(106, [n_embd, n_embd]) * init_std;
-layer0_attn_wo = param[n_embd, n_embd];
-layer0_attn_wo = randn(107, [n_embd, n_embd]) * init_std;
-layer0_mlp_fc1 = param[4 * n_embd, n_embd];
-layer0_mlp_fc1 = randn(108, [4 * n_embd, n_embd]) * init_std;
-layer0_mlp_fc2 = param[n_embd, 4 * n_embd];
-layer0_mlp_fc2 = randn(109, [n_embd, 4 * n_embd]) * init_std;
+wte <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[vocab_size<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+wte <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">101</span><span class="org-mlpl-operator">,</span> [vocab_size<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+wpe <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[block_size<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+wpe <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">102</span><span class="org-mlpl-operator">,</span> [block_size<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+lm_head <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[vocab_size<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+lm_head <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">103</span><span class="org-mlpl-operator">,</span> [vocab_size<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wq <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[n_embd<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wq <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">104</span><span class="org-mlpl-operator">,</span> [n_embd<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wk <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[n_embd<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wk <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">105</span><span class="org-mlpl-operator">,</span> [n_embd<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wv <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[n_embd<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wv <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">106</span><span class="org-mlpl-operator">,</span> [n_embd<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wo <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[n_embd<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_attn_wo <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">107</span><span class="org-mlpl-operator">,</span> [n_embd<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">1</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[<span class="org-mlpl-number">4</span> * n_embd<span class="org-mlpl-operator">,</span> n_embd]<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">1</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">108</span><span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">4</span> * n_embd<span class="org-mlpl-operator">,</span> n_embd]) * init_std<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">2</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-context-keyword">param</span>[n_embd<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span> * n_embd]<span class="org-mlpl-operator">;</span>
+layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">2</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">randn</span>(<span class="org-mlpl-number">109</span><span class="org-mlpl-operator">,</span> [n_embd<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span> * n_embd]) * init_std<span class="org-mlpl-operator">;</span>
 
-num_params = size(wte) + size(wpe) + size(lm_head) + size(layer0_attn_wq) + size(layer0_attn_wk) + size(layer0_attn_wv) + size(layer0_attn_wo) + size(layer0_mlp_fc1) + size(layer0_mlp_fc2);
-print("num params:", to_string(num_params));
+num_params <span class="org-mlpl-operator">=</span> size(wte) <span class="org-mlpl-operator">+</span> size(wpe) <span class="org-mlpl-operator">+</span> size(lm_head) <span class="org-mlpl-operator">+</span> size(layer<span class="org-mlpl-operator">0</span>_attn_wq) <span class="org-mlpl-operator">+</span> size(layer<span class="org-mlpl-operator">0</span>_attn_wk) <span class="org-mlpl-operator">+</span> size(layer<span class="org-mlpl-operator">0</span>_attn_wv) <span class="org-mlpl-operator">+</span> size(layer<span class="org-mlpl-operator">0</span>_attn_wo) <span class="org-mlpl-operator">+</span> size(layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">1</span>) <span class="org-mlpl-operator">+</span> size(layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">2</span>)<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"num params:"</span><span class="org-mlpl-operator">,</span> to_string(num_params))<span class="org-mlpl-operator">;</span>
 </pre>
 </div>
 
@@ -725,8 +749,8 @@ num params: 4192
 </pre>
 </div>
 </div>
-<div id="outline-container-org30005f5" class="outline-2">
-<h2 id="org30005f5"><span class="section-number-2">7.</span> 5. Model</h2>
+<div id="outline-container-org0f3aea5" class="outline-2">
+<h2 id="org0f3aea5"><span class="section-number-2">7.</span> 5. Model</h2>
 <div class="outline-text-2" id="text-7">
 <p>
 microgpt.py follows GPT-2 with three simplifications: RMSNorm instead of
@@ -735,15 +759,15 @@ Python's names and structure, but each works on an <code>[n, 16]</code> array, o
 per position of the name, instead of a list of scalars.
 </p>
 </div>
-<div id="outline-container-org5d02832" class="outline-3">
-<h3 id="org5d02832"><span class="section-number-3">7.1.</span> linear and rmsnorm</h3>
+<div id="outline-container-orgbcaea4d" class="outline-3">
+<h3 id="orgbcaea4d"><span class="section-number-3">7.1.</span> linear and rmsnorm</h3>
 <div class="outline-text-3" id="text-7-1">
 <div class="org-src-container">
-<pre class="src src-python">def linear(x, w): return [sum(wi * xi for wi, xi in zip(wo, x)) for wo in w]
-def rmsnorm(x):
-    ms = sum(xi * xi for xi in x) / len(x)
-    scale = (ms + 1e-5) ** -0.5
-    return [xi * scale for xi in x]
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">linear</span>(x, w): <span class="org-keyword">return</span> [<span class="org-builtin">sum</span>(wi <span class="org-operator">*</span> xi <span class="org-keyword">for</span> wi, xi <span class="org-keyword">in</span> <span class="org-builtin">zip</span>(wo, x)) <span class="org-keyword">for</span> wo <span class="org-keyword">in</span> w]
+<span class="org-keyword">def</span> <span class="org-function-name">rmsnorm</span>(x):
+    <span class="org-variable-name">ms</span> <span class="org-operator">=</span> <span class="org-builtin">sum</span>(xi <span class="org-operator">*</span> xi <span class="org-keyword">for</span> xi <span class="org-keyword">in</span> x) <span class="org-operator">/</span> <span class="org-builtin">len</span>(x)
+    <span class="org-variable-name">scale</span> <span class="org-operator">=</span> (ms <span class="org-operator">+</span> 1e<span class="org-operator">-</span>5) <span class="org-operator">**</span> <span class="org-operator">-</span>0.5
+    <span class="org-keyword">return</span> [xi <span class="org-operator">*</span> scale <span class="org-keyword">for</span> xi <span class="org-keyword">in</span> x]
 </pre>
 </div>
 
@@ -755,34 +779,34 @@ layer uses eps 1e-8; microgpt uses 1e-5.)
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">mean_col = zeros([n_embd, 1]) + 1 / n_embd;
-attn_scale = 1 / sqrt(head_dim);
+<pre class="src src-mlpl">mean_col <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">zeros</span>([n_embd<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>]) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">/</span> n_embd<span class="org-mlpl-operator">;</span>
+attn_scale <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">/</span> <span class="org-mlpl-builtin">sqrt</span>(head_dim)<span class="org-mlpl-operator">;</span>
 
-def u:linear(x, w) {
-  "Python linear(x, w) = w @ x for w [nout, nin]; rows of x are positions.";
-  matmul(x, transpose(w))
+def u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> w) {
+  <span class="org-string">"Python linear(x, w) = w @ x for w [nout, nin]; rows of x are positions."</span><span class="org-mlpl-operator">;</span>
+  <span class="org-mlpl-builtin">matmul</span>(x<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">transpose</span>(w))
 }
 
-def u:rmsnorm(x) {
-  "Scale each row to unit root-mean-square (eps 1e-5, no gain).";
-  x * pow(matmul(x * x, mean_col) + 0.00001, 0 - 0.5)
+def u<span class="org-mlpl-operator">:</span>rmsnorm(x) {
+  <span class="org-string">"Scale each row to unit root-mean-square (eps 1e-5, no gain)."</span><span class="org-mlpl-operator">;</span>
+  x * <span class="org-mlpl-builtin">pow</span>(<span class="org-mlpl-builtin">matmul</span>(x * x<span class="org-mlpl-operator">,</span> mean_col) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">0.00001</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span> <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">0.5</span>)
 }
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-orgd718b2a" class="outline-3">
-<h3 id="orgd718b2a"><span class="section-number-3">7.2.</span> Attention: the KV cache becomes a causal mask</h3>
+<div id="outline-container-org7bb06ac" class="outline-3">
+<h3 id="org7bb06ac"><span class="section-number-3">7.2.</span> Attention: the KV cache becomes a causal mask</h3>
 <div class="outline-text-3" id="text-7-2">
 <div class="org-src-container">
-<pre class="src src-python">def gpt(token_id, pos_id, keys, values):        # ONE position per call
-    ...
-    keys[li].append(k); values[li].append(v)    # grow the KV cache
-    for h in range(n_head):
-        q_h = q[hs:hs+head_dim]
-        k_h = [ki[hs:hs+head_dim] for ki in keys[li]]    # positions 0..pos_id
-        attn_logits = [sum(q_h[j] * k_h[t][j] for j in range(head_dim)) / head_dim**0.5 for t in range(len(k_h))]
-        attn_weights = softmax(attn_logits)
+<pre class="src src-python"><span class="org-keyword">def</span> <span class="org-function-name">gpt</span>(token_id, pos_id, keys, values):        <span class="org-comment-delimiter"># </span><span class="org-comment">ONE position per call
+</span>    ...
+    keys[li].append(k); values[li].append(v)    <span class="org-comment-delimiter"># </span><span class="org-comment">grow the KV cache
+</span>    <span class="org-keyword">for</span> h <span class="org-keyword">in</span> <span class="org-builtin">range</span>(n_head):
+        <span class="org-variable-name">q_h</span> <span class="org-operator">=</span> q[hs:hs<span class="org-operator">+</span>head_dim]
+        <span class="org-variable-name">k_h</span> <span class="org-operator">=</span> [ki[hs:hs<span class="org-operator">+</span>head_dim] <span class="org-keyword">for</span> ki <span class="org-keyword">in</span> keys[li]]    <span class="org-comment-delimiter"># </span><span class="org-comment">positions 0..pos_id
+</span>        <span class="org-variable-name">attn_logits</span> <span class="org-operator">=</span> [<span class="org-builtin">sum</span>(q_h[j] <span class="org-operator">*</span> k_h[t][j] <span class="org-keyword">for</span> j <span class="org-keyword">in</span> <span class="org-builtin">range</span>(head_dim)) <span class="org-operator">/</span> head_dim<span class="org-operator">**</span>0.5 <span class="org-keyword">for</span> t <span class="org-keyword">in</span> <span class="org-builtin">range</span>(<span class="org-builtin">len</span>(k_h))]
+        <span class="org-variable-name">attn_weights</span> <span class="org-operator">=</span> softmax(attn_logits)
         ...
 </pre>
 </div>
@@ -801,15 +825,15 @@ pass of matrix products instead of <code>n</code> passes of scalar loops.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">def u:causal_mask(n) {
-  "[n, n] additive mask: 0 where key &lt;= query, -1e9 above the diagonal.";
-  0 - (reshape(range(n), [1, n]) &gt; reshape(range(n), [n, 1])) * 1000000000
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>causal_mask(n) {
+  <span class="org-string">"[n, n] additive mask: 0 where key &lt;= query, -1e9 above the diagonal."</span><span class="org-mlpl-operator">;</span>
+  <span class="org-mlpl-number">0</span> <span class="org-mlpl-operator">-</span> (<span class="org-mlpl-builtin">reshape</span>(range(n)<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> n]) &gt; <span class="org-mlpl-builtin">reshape</span>(range(n)<span class="org-mlpl-operator">,</span> [n<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>])) * <span class="org-mlpl-number">1000000000</span>
 }
 </pre>
 </div>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">u:causal_mask(4)
+<pre class="src src-mlpl">u<span class="org-mlpl-operator">:</span>causal_mask(<span class="org-mlpl-number">4</span>)
 </pre>
 </div>
 
@@ -829,26 +853,26 @@ transpose puts the head's output back in its columns, which is Python's
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">head_cols = reshape(range(n_embd), [n_embd, 1]);
-head_sel0 = eq(head_cols, reshape(range(head_dim) + 0 * head_dim, [1, head_dim]));
-head_sel1 = eq(head_cols, reshape(range(head_dim) + 1 * head_dim, [1, head_dim]));
-head_sel2 = eq(head_cols, reshape(range(head_dim) + 2 * head_dim, [1, head_dim]));
-head_sel3 = eq(head_cols, reshape(range(head_dim) + 3 * head_dim, [1, head_dim]));
+<pre class="src src-mlpl">head_cols <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reshape</span>(range(n_embd)<span class="org-mlpl-operator">,</span> [n_embd<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>])<span class="org-mlpl-operator">;</span>
+head_sel<span class="org-mlpl-operator">0</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">eq</span>(head_cols<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(range(head_dim) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">0</span> * head_dim<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> head_dim]))<span class="org-mlpl-operator">;</span>
+head_sel<span class="org-mlpl-operator">1</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">eq</span>(head_cols<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(range(head_dim) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span> * head_dim<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> head_dim]))<span class="org-mlpl-operator">;</span>
+head_sel<span class="org-mlpl-operator">2</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">eq</span>(head_cols<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(range(head_dim) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">2</span> * head_dim<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> head_dim]))<span class="org-mlpl-operator">;</span>
+head_sel<span class="org-mlpl-operator">3</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">eq</span>(head_cols<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">reshape</span>(range(head_dim) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">3</span> * head_dim<span class="org-mlpl-operator">,</span> [<span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> head_dim]))<span class="org-mlpl-operator">;</span>
 
-def u:head(q, k, v, sel, mask) {
-  "One attention head over all positions: softmax(q k^T / sqrt(d) + mask) v.";
-  qh = matmul(q, sel);
-  kh = matmul(k, sel);
-  vh = matmul(v, sel);
-  w = softmax(matmul(qh, transpose(kh)) * attn_scale + mask, 1);
-  matmul(matmul(w, vh), transpose(sel))
+def u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operator">,</span> k<span class="org-mlpl-operator">,</span> v<span class="org-mlpl-operator">,</span> sel<span class="org-mlpl-operator">,</span> mask) {
+  <span class="org-string">"One attention head over all positions: softmax(q k^T / sqrt(d) + mask) v."</span><span class="org-mlpl-operator">;</span>
+  qh <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">matmul</span>(q<span class="org-mlpl-operator">,</span> sel)<span class="org-mlpl-operator">;</span>
+  kh <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">matmul</span>(k<span class="org-mlpl-operator">,</span> sel)<span class="org-mlpl-operator">;</span>
+  vh <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">matmul</span>(v<span class="org-mlpl-operator">,</span> sel)<span class="org-mlpl-operator">;</span>
+  w <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">softmax</span>(<span class="org-mlpl-builtin">matmul</span>(qh<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">transpose</span>(kh)) * attn_scale <span class="org-mlpl-operator">+</span> mask<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">;</span>
+  <span class="org-mlpl-builtin">matmul</span>(<span class="org-mlpl-builtin">matmul</span>(w<span class="org-mlpl-operator">,</span> vh)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-builtin">transpose</span>(sel))
 }
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-orgf3e7c9b" class="outline-3">
-<h3 id="orgf3e7c9b"><span class="section-number-3">7.3.</span> The whole forward pass</h3>
+<div id="outline-container-orgc963a63" class="outline-3">
+<h3 id="orgc963a63"><span class="section-number-3">7.3.</span> The whole forward pass</h3>
 <div class="outline-text-3" id="text-7-3">
 <p>
 Line for line the same structure as Python's <code>gpt()</code>: embeddings, a first
@@ -857,35 +881,35 @@ RMSNorm, then the attention and MLP blocks with residuals, then <code>lm_head</c
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">def u:gpt(toks, pos, mask) {
-  "Logits [n, vocab] for token ids toks [n] at positions pos [n] (= range(n)).";
-  x = gather_rows(wte, toks) + gather_rows(wpe, pos);
-  x = u:rmsnorm(x);
-  # 1) Multi-head attention block (n_layer = 1)
-  x_residual = x;
-  x = u:rmsnorm(x);
-  q = u:linear(x, layer0_attn_wq);
-  k = u:linear(x, layer0_attn_wk);
-  v = u:linear(x, layer0_attn_wv);
-  x_attn = u:head(q, k, v, head_sel0, mask) + u:head(q, k, v, head_sel1, mask) + u:head(q, k, v, head_sel2, mask) + u:head(q, k, v, head_sel3, mask);
-  x = u:linear(x_attn, layer0_attn_wo) + x_residual;
-  # 2) MLP block
-  x_residual = x;
-  x = u:rmsnorm(x);
-  x = relu(u:linear(x, layer0_mlp_fc1));
-  x = u:linear(x, layer0_mlp_fc2) + x_residual;
-  u:linear(x, lm_head)
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>gpt(toks<span class="org-mlpl-operator">,</span> pos<span class="org-mlpl-operator">,</span> mask) {
+  <span class="org-string">"Logits [n, vocab] for token ids toks [n] at positions pos [n] (= range(n))."</span><span class="org-mlpl-operator">;</span>
+  x <span class="org-mlpl-operator">=</span> gather_rows(wte<span class="org-mlpl-operator">,</span> toks) <span class="org-mlpl-operator">+</span> gather_rows(wpe<span class="org-mlpl-operator">,</span> pos)<span class="org-mlpl-operator">;</span>
+  x <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>rmsnorm(x)<span class="org-mlpl-operator">;</span>
+  <span class="org-comment-delimiter"># </span><span class="org-comment">1) Multi-head attention block (n_layer = 1)
+</span>  x_residual <span class="org-mlpl-operator">=</span> x<span class="org-mlpl-operator">;</span>
+  x <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>rmsnorm(x)<span class="org-mlpl-operator">;</span>
+  q <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wq)<span class="org-mlpl-operator">;</span>
+  k <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wk)<span class="org-mlpl-operator">;</span>
+  v <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wv)<span class="org-mlpl-operator">;</span>
+  x_attn <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operator">,</span> k<span class="org-mlpl-operator">,</span> v<span class="org-mlpl-operator">,</span> head_sel<span class="org-mlpl-operator">0,</span> mask) <span class="org-mlpl-operator">+</span> u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operator">,</span> k<span class="org-mlpl-operator">,</span> v<span class="org-mlpl-operator">,</span> head_sel<span class="org-mlpl-operator">1,</span> mask) <span class="org-mlpl-operator">+</span> u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operator">,</span> k<span class="org-mlpl-operator">,</span> v<span class="org-mlpl-operator">,</span> head_sel<span class="org-mlpl-operator">2,</span> mask) <span class="org-mlpl-operator">+</span> u<span class="org-mlpl-operator">:</span>head(q<span class="org-mlpl-operator">,</span> k<span class="org-mlpl-operator">,</span> v<span class="org-mlpl-operator">,</span> head_sel<span class="org-mlpl-operator">3,</span> mask)<span class="org-mlpl-operator">;</span>
+  x <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>linear(x_attn<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wo) <span class="org-mlpl-operator">+</span> x_residual<span class="org-mlpl-operator">;</span>
+  <span class="org-comment-delimiter"># </span><span class="org-comment">2) MLP block
+</span>  x_residual <span class="org-mlpl-operator">=</span> x<span class="org-mlpl-operator">;</span>
+  x <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>rmsnorm(x)<span class="org-mlpl-operator">;</span>
+  x <span class="org-mlpl-operator">=</span> relu(u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">1</span>))<span class="org-mlpl-operator">;</span>
+  x <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">2</span>) <span class="org-mlpl-operator">+</span> x_residual<span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>linear(x<span class="org-mlpl-operator">,</span> lm_head)
 }
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org2ccfd35" class="outline-3">
-<h3 id="org2ccfd35"><span class="section-number-3">7.4.</span> The loss</h3>
+<div id="outline-container-orge29862a" class="outline-3">
+<h3 id="orge29862a"><span class="section-number-3">7.4.</span> The loss</h3>
 <div class="outline-text-3" id="text-7-4">
 <div class="org-src-container">
-<pre class="src src-python">losses.append(-probs[target_id].log())
-loss = (1 / n) * sum(losses)
+<pre class="src src-python">losses.append(<span class="org-operator">-</span>probs[target_id].log())
+<span class="org-variable-name">loss</span> <span class="org-operator">=</span> (1 <span class="org-operator">/</span> n) <span class="org-operator">*</span> <span class="org-builtin">sum</span>(losses)
 </pre>
 </div>
 
@@ -897,19 +921,19 @@ put it on the autograd tape every step (~70 us/step).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">def u:doc_in(tokens, n) {
-  "Input ids of a doc row: tokens[0..n).";
-  u:gather1(tokens, range(n))
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>doc_in(tokens<span class="org-mlpl-operator">,</span> n) {
+  <span class="org-string">"Input ids of a doc row: tokens[0..n)."</span><span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(tokens<span class="org-mlpl-operator">,</span> range(n))
 }
 
-def u:doc_tgt(tokens, n) {
-  "Target ids of a doc row: tokens[1..n] (the next token at each position).";
-  u:gather1(tokens, range(n) + 1)
+def u<span class="org-mlpl-operator">:</span>doc_tgt(tokens<span class="org-mlpl-operator">,</span> n) {
+  <span class="org-string">"Target ids of a doc row: tokens[1..n] (the next token at each position)."</span><span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(tokens<span class="org-mlpl-operator">,</span> range(n) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)
 }
 
-def u:loss(inp, tgt, mask) {
-  "Mean cross-entropy of next-token predictions for one doc.";
-  cross_entropy(u:gpt(inp, range(len(inp)), mask), tgt)
+def u<span class="org-mlpl-operator">:</span>loss(inp<span class="org-mlpl-operator">,</span> tgt<span class="org-mlpl-operator">,</span> mask) {
+  <span class="org-string">"Mean cross-entropy of next-token predictions for one doc."</span><span class="org-mlpl-operator">;</span>
+  cross_entropy(u<span class="org-mlpl-operator">:</span>gpt(inp<span class="org-mlpl-operator">,</span> range(len(inp))<span class="org-mlpl-operator">,</span> mask)<span class="org-mlpl-operator">,</span> tgt)
 }
 </pre>
 </div>
@@ -923,18 +947,18 @@ of the single masked pass.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">row = u:doc_tokens(d, 0);
-n = len(row) - 1;
-print("untrained loss on emma:", u:fmt_fixed4(u:loss(u:doc_in(row, n), u:doc_tgt(row, n), u:causal_mask(n))), " ln 27 =", u:fmt_fixed4(log(27)));
-full = u:gpt(u:doc_in(row, n), range(n), u:causal_mask(n));
-worst = 0;
-t = 0;
-repeat n {
-  prefix = u:gpt(u:doc_in(row, t + 1), range(t + 1), u:causal_mask(t + 1));
-  worst = worst + reduce_add(abs(last_row(prefix) - take(full, 0, t)));
-  t = t + 1
-};
-print("sum |prefix-by-prefix - masked| over all positions:", worst);
+<pre class="src src-mlpl">row <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>doc_tokens(d<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>)<span class="org-mlpl-operator">;</span>
+n <span class="org-mlpl-operator">=</span> len(row) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"untrained loss on emma:"</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(u<span class="org-mlpl-operator">:</span>loss(u<span class="org-mlpl-operator">:</span>doc_in(row<span class="org-mlpl-operator">,</span> n)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>doc_tgt(row<span class="org-mlpl-operator">,</span> n)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>causal_mask(n)))<span class="org-mlpl-operator">,</span> <span class="org-string">" ln 27 ="</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(<span class="org-mlpl-builtin">log</span>(<span class="org-mlpl-number">27</span>)))<span class="org-mlpl-operator">;</span>
+full <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>gpt(u<span class="org-mlpl-operator">:</span>doc_in(row<span class="org-mlpl-operator">,</span> n)<span class="org-mlpl-operator">,</span> range(n)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>causal_mask(n))<span class="org-mlpl-operator">;</span>
+worst <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+t <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+<span class="org-mlpl-keyword">repeat</span> n {
+  prefix <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>gpt(u<span class="org-mlpl-operator">:</span>doc_in(row<span class="org-mlpl-operator">,</span> t <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> range(t <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>causal_mask(t <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>))<span class="org-mlpl-operator">;</span>
+  worst <span class="org-mlpl-operator">=</span> worst <span class="org-mlpl-operator">+</span> <span class="org-mlpl-builtin">reduce_add</span>(<span class="org-mlpl-builtin">abs</span>(last_row(prefix) <span class="org-mlpl-operator">-</span> take(full<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> t)))<span class="org-mlpl-operator">;</span>
+  t <span class="org-mlpl-operator">=</span> t <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
+}<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"sum |prefix-by-prefix - masked| over all positions:"</span><span class="org-mlpl-operator">,</span> worst)<span class="org-mlpl-operator">;</span>
 </pre>
 </div>
 
@@ -945,15 +969,15 @@ sum |prefix-by-prefix - masked| over all positions: 0
 </div>
 </div>
 </div>
-<div id="outline-container-org5ef7116" class="outline-2">
-<h2 id="org5ef7116"><span class="section-number-2">8.</span> 6. Adam: built in</h2>
+<div id="outline-container-orge4aef88" class="outline-2">
+<h2 id="orge4aef88"><span class="section-number-2">8.</span> 6. Adam: built in</h2>
 <div class="outline-text-2" id="text-8">
 <div class="org-src-container">
-<pre class="src src-python">m[i] = beta1 * m[i] + (1 - beta1) * p.grad
-v[i] = beta2 * v[i] + (1 - beta2) * p.grad ** 2
-m_hat = m[i] / (1 - beta1 ** (step + 1))
-v_hat = v[i] / (1 - beta2 ** (step + 1))
-p.data -= lr_t * m_hat / (v_hat ** 0.5 + eps_adam)
+<pre class="src src-python"><span class="org-variable-name">m</span>[i] <span class="org-operator">=</span> beta1 <span class="org-operator">*</span> m[i] <span class="org-operator">+</span> (1 <span class="org-operator">-</span> beta1) <span class="org-operator">*</span> p.grad
+<span class="org-variable-name">v</span>[i] <span class="org-operator">=</span> beta2 <span class="org-operator">*</span> v[i] <span class="org-operator">+</span> (1 <span class="org-operator">-</span> beta2) <span class="org-operator">*</span> p.grad <span class="org-operator">**</span> 2
+<span class="org-variable-name">m_hat</span> <span class="org-operator">=</span> m[i] <span class="org-operator">/</span> (1 <span class="org-operator">-</span> beta1 <span class="org-operator">**</span> (step <span class="org-operator">+</span> 1))
+<span class="org-variable-name">v_hat</span> <span class="org-operator">=</span> v[i] <span class="org-operator">/</span> (1 <span class="org-operator">-</span> beta2 <span class="org-operator">**</span> (step <span class="org-operator">+</span> 1))
+p.<span class="org-variable-name">data</span> <span class="org-operator">-=</span> lr_t <span class="org-operator">*</span> m_hat <span class="org-operator">/</span> (v_hat <span class="org-operator">**</span> 0.5 <span class="org-operator">+</span> eps_adam)
 </pre>
 </div>
 
@@ -968,22 +992,22 @@ is Python's <code>loss.data</code>.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">learning_rate = 0.01;
-beta1 = 0.85;
-beta2 = 0.99;
-eps_adam = 0.00000001;
+<pre class="src src-mlpl">learning_rate <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.01</span><span class="org-mlpl-operator">;</span>
+beta<span class="org-mlpl-operator">1</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.85</span><span class="org-mlpl-operator">;</span>
+beta<span class="org-mlpl-operator">2</span> <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.99</span><span class="org-mlpl-operator">;</span>
+eps_adam <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.00000001</span><span class="org-mlpl-operator">;</span>
 </pre>
 </div>
 </div>
 </div>
-<div id="outline-container-org527a129" class="outline-2">
-<h2 id="org527a129"><span class="section-number-2">9.</span> 7. Training</h2>
+<div id="outline-container-orgb84471e" class="outline-2">
+<h2 id="orgb84471e"><span class="section-number-2">9.</span> 7. Training</h2>
 <div class="outline-text-2" id="text-9">
 <div class="org-src-container">
-<pre class="src src-python">for step in range(num_steps):
-    doc = docs[step % len(docs)]
+<pre class="src src-python"><span class="org-keyword">for</span> step <span class="org-keyword">in</span> <span class="org-builtin">range</span>(num_steps):
+    <span class="org-variable-name">doc</span> <span class="org-operator">=</span> docs[step <span class="org-operator">%</span> <span class="org-builtin">len</span>(docs)]
     ... forward, loss.backward(), Adam ...
-    print(f"step {step+1:4d} / {num_steps:4d} | loss {loss.data:.4f}", end='\r')
+    <span class="org-builtin">print</span>(f<span class="org-string">"step </span>{step<span class="org-operator">+</span>1:4d}<span class="org-string"> / </span>{num_steps:4d}<span class="org-string"> | loss </span>{loss.data:.4f}<span class="org-string">"</span>, end<span class="org-operator">=</span><span class="org-string">'</span><span class="org-constant">\r</span><span class="org-string">'</span>)
 </pre>
 </div>
 
@@ -1004,15 +1028,15 @@ Both are recorded as upstream issues.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">num_steps = 1000;
-train_ids = u:gather1(shuffle(range(d.n_docs), 42), mod(range(num_steps), d.n_docs));
-train_docs = u:doc_batch(d, train_ids, block_size);
-train_tokens = train_docs.tokens;
-train_n = train_docs.n;
-uchars = d.uchars;
-BOS = d.bos;
-n_docs = d.n_docs;
-expunge(["d", "train_ids", "train_docs", "txt"]);
+<pre class="src src-mlpl">num_steps <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">1000</span><span class="org-mlpl-operator">;</span>
+train_ids <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(shuffle(range(d<span class="org-mlpl-operator">.</span>n_docs)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">42</span>)<span class="org-mlpl-operator">,</span> mod(range(num_steps)<span class="org-mlpl-operator">,</span> d<span class="org-mlpl-operator">.</span>n_docs))<span class="org-mlpl-operator">;</span>
+train_docs <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>doc_batch(d<span class="org-mlpl-operator">,</span> train_ids<span class="org-mlpl-operator">,</span> block_size)<span class="org-mlpl-operator">;</span>
+train_tokens <span class="org-mlpl-operator">=</span> train_docs<span class="org-mlpl-operator">.</span>tokens<span class="org-mlpl-operator">;</span>
+train_n <span class="org-mlpl-operator">=</span> train_docs<span class="org-mlpl-operator">.</span>n<span class="org-mlpl-operator">;</span>
+uchars <span class="org-mlpl-operator">=</span> d<span class="org-mlpl-operator">.</span>uchars<span class="org-mlpl-operator">;</span>
+BOS <span class="org-mlpl-operator">=</span> d<span class="org-mlpl-operator">.</span>bos<span class="org-mlpl-operator">;</span>
+n_docs <span class="org-mlpl-operator">=</span> d<span class="org-mlpl-operator">.</span>n_docs<span class="org-mlpl-operator">;</span>
+expunge([<span class="org-string">"d"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"train_ids"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"train_docs"</span><span class="org-mlpl-operator">,</span> <span class="org-string">"txt"</span>])<span class="org-mlpl-operator">;</span>
 </pre>
 </div>
 
@@ -1025,15 +1049,15 @@ not kept here; the next block summarizes it.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">train num_steps {
-  row = take(train_tokens, 0, step);
-  n = at(train_n, step);
-  inp = u:doc_in(row, n);
-  tgt = u:doc_tgt(row, n);
-  mask = u:causal_mask(n);
-  lr_t = learning_rate * (1 - step / num_steps);
-  loss = adam(u:loss(inp, tgt, mask), [wte, wpe, lm_head, layer0_attn_wq, layer0_attn_wk, layer0_attn_wv, layer0_attn_wo, layer0_mlp_fc1, layer0_mlp_fc2], lr_t, beta1, beta2, eps_adam);
-  u:write(str_concat(str_concat(str_concat(str_concat(str_concat("step ", u:fmt_int(step + 1, 4)), " / "), u:fmt_int(num_steps, 4)), " | loss "), str_concat(u:fmt_fixed4(loss), "\r")));
+<pre class="src src-mlpl"><span class="org-mlpl-keyword">train</span> num_steps {
+  row <span class="org-mlpl-operator">=</span> take(train_tokens<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">,</span> step)<span class="org-mlpl-operator">;</span>
+  n <span class="org-mlpl-operator">=</span> at(train_n<span class="org-mlpl-operator">,</span> step)<span class="org-mlpl-operator">;</span>
+  inp <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>doc_in(row<span class="org-mlpl-operator">,</span> n)<span class="org-mlpl-operator">;</span>
+  tgt <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>doc_tgt(row<span class="org-mlpl-operator">,</span> n)<span class="org-mlpl-operator">;</span>
+  mask <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>causal_mask(n)<span class="org-mlpl-operator">;</span>
+  lr_t <span class="org-mlpl-operator">=</span> learning_rate * (<span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> step <span class="org-mlpl-operator">/</span> num_steps)<span class="org-mlpl-operator">;</span>
+  loss <span class="org-mlpl-operator">=</span> adam(u<span class="org-mlpl-operator">:</span>loss(inp<span class="org-mlpl-operator">,</span> tgt<span class="org-mlpl-operator">,</span> mask)<span class="org-mlpl-operator">,</span> [wte<span class="org-mlpl-operator">,</span> wpe<span class="org-mlpl-operator">,</span> lm_head<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wq<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wk<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wv<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_attn_wo<span class="org-mlpl-operator">,</span> layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">1,</span> layer<span class="org-mlpl-operator">0</span>_mlp_fc<span class="org-mlpl-operator">2</span>]<span class="org-mlpl-operator">,</span> lr_t<span class="org-mlpl-operator">,</span> beta<span class="org-mlpl-operator">1,</span> beta<span class="org-mlpl-operator">2,</span> eps_adam)<span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>write(str_concat(str_concat(str_concat(str_concat(str_concat(<span class="org-string">"step "</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_int(step <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>))<span class="org-mlpl-operator">,</span> <span class="org-string">" / "</span>)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_int(num_steps<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>))<span class="org-mlpl-operator">,</span> <span class="org-string">" | loss "</span>)<span class="org-mlpl-operator">,</span> str_concat(u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(loss)<span class="org-mlpl-operator">,</span> <span class="org-string">"\r"</span>)))<span class="org-mlpl-operator">;</span>
   loss
 }
 </pre>
@@ -1045,17 +1069,17 @@ windows:
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">w = 0;
-while lt(w, 10) {
-  m = reduce_add(last_losses * ge(range(num_steps), 100 * w) * lt(range(num_steps), 100 * w + 100)) / 100;
-  print(str_concat(str_concat(str_concat("steps ", u:fmt_int(100 * w + 1, 4)), str_concat("-", u:fmt_int(100 * w + 100, 4))), str_concat("  mean loss ", u:fmt_fixed4(m))));
-  w = w + 1
-};
-print(str_concat("step 1000 loss ", u:fmt_fixed4(at(last_losses, num_steps - 1))));
+<pre class="src src-mlpl">w <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+while <span class="org-mlpl-builtin">lt</span>(w<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">10</span>) {
+  m <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reduce_add</span>(last_losses * ge(range(num_steps)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">100</span> * w) * <span class="org-mlpl-builtin">lt</span>(range(num_steps)<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">100</span> * w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">100</span>)) <span class="org-mlpl-operator">/</span> <span class="org-mlpl-number">100</span><span class="org-mlpl-operator">;</span>
+  print(str_concat(str_concat(str_concat(<span class="org-string">"steps "</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_int(<span class="org-mlpl-number">100</span> * w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>))<span class="org-mlpl-operator">,</span> str_concat(<span class="org-string">"-"</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_int(<span class="org-mlpl-number">100</span> * w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">100</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">4</span>)))<span class="org-mlpl-operator">,</span> str_concat(<span class="org-string">"  mean loss "</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(m))))<span class="org-mlpl-operator">;</span>
+  w <span class="org-mlpl-operator">=</span> w <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
+}<span class="org-mlpl-operator">;</span>
+print(str_concat(<span class="org-string">"step 1000 loss "</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_fixed<span class="org-mlpl-operator">4</span>(at(last_losses<span class="org-mlpl-operator">,</span> num_steps <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>))))<span class="org-mlpl-operator">;</span>
 </pre>
 </div>
 
-<pre class="example" id="org8b80525">
+<pre class="example" id="org155cbcf">
 steps    1- 100  mean loss 2.7501
 steps  101- 200  mean loss 2.5411
 steps  201- 300  mean loss 2.5331
@@ -1077,16 +1101,16 @@ streams.
 </p>
 </div>
 </div>
-<div id="outline-container-orgaa0278d" class="outline-2">
-<h2 id="orgaa0278d"><span class="section-number-2">10.</span> 8. Inference</h2>
+<div id="outline-container-orgab2b9ff" class="outline-2">
+<h2 id="orgab2b9ff"><span class="section-number-2">10.</span> 8. Inference</h2>
 <div class="outline-text-2" id="text-10">
 <div class="org-src-container">
-<pre class="src src-python">token_id = BOS
-for pos_id in range(block_size):
-    logits = gpt(token_id, pos_id, keys, values)
-    probs = softmax([l / temperature for l in logits])
-    token_id = random.choices(range(vocab_size), weights=[p.data for p in probs])[0]
-    if token_id == BOS: break
+<pre class="src src-python"><span class="org-variable-name">token_id</span> <span class="org-operator">=</span> BOS
+<span class="org-keyword">for</span> pos_id <span class="org-keyword">in</span> <span class="org-builtin">range</span>(block_size):
+    <span class="org-variable-name">logits</span> <span class="org-operator">=</span> gpt(token_id, pos_id, keys, values)
+    <span class="org-variable-name">probs</span> <span class="org-operator">=</span> softmax([l <span class="org-operator">/</span> temperature <span class="org-keyword">for</span> l <span class="org-keyword">in</span> logits])
+    <span class="org-variable-name">token_id</span> <span class="org-operator">=</span> random.choices(<span class="org-builtin">range</span>(vocab_size), weights<span class="org-operator">=</span>[p.data <span class="org-keyword">for</span> p <span class="org-keyword">in</span> probs])[0]
+    <span class="org-keyword">if</span> token_id <span class="org-operator">==</span> BOS: <span class="org-keyword">break</span>
 </pre>
 </div>
 
@@ -1100,36 +1124,36 @@ is what <code>random.choices</code> and microgpt-rs's <code>choices</code> do.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">def u:sample_token(logits, temperature, u) {
-  "First token id whose cumulative softmax(logits / temperature) weight reaches u * total.";
-  cdf = running_sum(softmax(logits / temperature, 0));
-  k = reduce_add(lt(cdf, u * at(cdf, len(cdf) - 1)));
-  k - relu(k - (len(cdf) - 1))
+<pre class="src src-mlpl">def u<span class="org-mlpl-operator">:</span>sample_token(logits<span class="org-mlpl-operator">,</span> temperature<span class="org-mlpl-operator">,</span> u) {
+  <span class="org-string">"First token id whose cumulative softmax(logits / temperature) weight reaches u * total."</span><span class="org-mlpl-operator">;</span>
+  cdf <span class="org-mlpl-operator">=</span> running_sum(<span class="org-mlpl-builtin">softmax</span>(logits <span class="org-mlpl-operator">/</span> temperature<span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">0</span>))<span class="org-mlpl-operator">;</span>
+  k <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">reduce_add</span>(<span class="org-mlpl-builtin">lt</span>(cdf<span class="org-mlpl-operator">,</span> u * at(cdf<span class="org-mlpl-operator">,</span> len(cdf) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>)))<span class="org-mlpl-operator">;</span>
+  k <span class="org-mlpl-operator">-</span> relu(k <span class="org-mlpl-operator">-</span> (len(cdf) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>))
 }
 
-def u:generate(uniforms, start, temperature) {
-  "Token ids (BOS excluded) of one sample, drawing uniforms[start], uniforms[start + 1], ...; it consumes u:consumed(ids) of them.";
-  seq = [BOS];
-  pos = 0;
-  done = 0;
-  while lt(pos, block_size) * (1 - done) {
-    n = pos + 1;
-    logits = last_row(u:gpt(seq, range(n), u:causal_mask(n)));
-    tok = u:sample_token(logits, temperature, at(uniforms, start + pos));
-    if eq(tok, BOS) { done = 1 } else { seq = concat(seq, [tok]) };
-    pos = pos + 1
-  };
-  u:gather1(seq, range(len(seq) - 1) + 1)
+def u<span class="org-mlpl-operator">:</span>generate(uniforms<span class="org-mlpl-operator">,</span> start<span class="org-mlpl-operator">,</span> temperature) {
+  <span class="org-string">"Token ids (BOS excluded) of one sample, drawing uniforms[start], uniforms[start + 1], ...; it consumes u:consumed(ids) of them."</span><span class="org-mlpl-operator">;</span>
+  seq <span class="org-mlpl-operator">=</span> [BOS]<span class="org-mlpl-operator">;</span>
+  pos <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+  done <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+  while <span class="org-mlpl-builtin">lt</span>(pos<span class="org-mlpl-operator">,</span> block_size) * (<span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> done) {
+    n <span class="org-mlpl-operator">=</span> pos <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">;</span>
+    logits <span class="org-mlpl-operator">=</span> last_row(u<span class="org-mlpl-operator">:</span>gpt(seq<span class="org-mlpl-operator">,</span> range(n)<span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>causal_mask(n)))<span class="org-mlpl-operator">;</span>
+    tok <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>sample_token(logits<span class="org-mlpl-operator">,</span> temperature<span class="org-mlpl-operator">,</span> at(uniforms<span class="org-mlpl-operator">,</span> start <span class="org-mlpl-operator">+</span> pos))<span class="org-mlpl-operator">;</span>
+    if <span class="org-mlpl-builtin">eq</span>(tok<span class="org-mlpl-operator">,</span> BOS) { done <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">1</span> } else { seq <span class="org-mlpl-operator">=</span> concat(seq<span class="org-mlpl-operator">,</span> [tok]) }<span class="org-mlpl-operator">;</span>
+    pos <span class="org-mlpl-operator">=</span> pos <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
+  }<span class="org-mlpl-operator">;</span>
+  u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(seq<span class="org-mlpl-operator">,</span> range(len(seq) <span class="org-mlpl-operator">-</span> <span class="org-mlpl-number">1</span>) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>)
 }
 
-def u:consumed(ids) {
-  "Uniforms a sample used: one per token plus the closing BOS draw, unless it ran to block_size.";
-  len(ids) + 1 - eq(len(ids), block_size)
+def u<span class="org-mlpl-operator">:</span>consumed(ids) {
+  <span class="org-string">"Uniforms a sample used: one per token plus the closing BOS draw, unless it ran to block_size."</span><span class="org-mlpl-operator">;</span>
+  len(ids) <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span> <span class="org-mlpl-operator">-</span> <span class="org-mlpl-builtin">eq</span>(len(ids)<span class="org-mlpl-operator">,</span> block_size)
 }
 
-def u:ids_to_text(ids) {
-  "Characters for token ids (empty string for no ids).";
-  if len(ids) { decode_bytes(u:gather1(uchars, ids)) } else { "" }
+def u<span class="org-mlpl-operator">:</span>ids_to_text(ids) {
+  <span class="org-string">"Characters for token ids (empty string for no ids)."</span><span class="org-mlpl-operator">;</span>
+  if len(ids) { decode_bytes(u<span class="org-mlpl-operator">:</span>gather<span class="org-mlpl-operator">1</span>(uchars<span class="org-mlpl-operator">,</span> ids)) } else { <span class="org-string">""</span> }
 }
 </pre>
 </div>
@@ -1141,25 +1165,25 @@ loop (upstream issue j; a fix is queued).
 </p>
 
 <div class="org-src-container">
-<pre class="src src-mlpl">temperature = 0.5;
-num_samples = 20;
-sample_uniforms = random(4242, [num_samples * block_size]);
-cursor = 0;
-print("");
-print("--- inference (new, hallucinated names) ---");
-sample_idx = 0;
-while lt(sample_idx, num_samples) {
-  ids = u:generate(sample_uniforms, cursor, temperature);
-  cursor = cursor + u:consumed(ids);
-  name = u:ids_to_text(ids);
-  print(str_concat(str_concat(str_concat("sample ", u:fmt_int(sample_idx + 1, 2)), ": "), name));
-  sample_idx = sample_idx + 1
-};
+<pre class="src src-mlpl">temperature <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0.5</span><span class="org-mlpl-operator">;</span>
+num_samples <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">20</span><span class="org-mlpl-operator">;</span>
+sample_uniforms <span class="org-mlpl-operator">=</span> <span class="org-mlpl-builtin">random</span>(<span class="org-mlpl-number">4242</span><span class="org-mlpl-operator">,</span> [num_samples * block_size])<span class="org-mlpl-operator">;</span>
+cursor <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+print(<span class="org-string">""</span>)<span class="org-mlpl-operator">;</span>
+print(<span class="org-string">"--- inference (new, hallucinated names) ---"</span>)<span class="org-mlpl-operator">;</span>
+sample_idx <span class="org-mlpl-operator">=</span> <span class="org-mlpl-number">0</span><span class="org-mlpl-operator">;</span>
+while <span class="org-mlpl-builtin">lt</span>(sample_idx<span class="org-mlpl-operator">,</span> num_samples) {
+  ids <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>generate(sample_uniforms<span class="org-mlpl-operator">,</span> cursor<span class="org-mlpl-operator">,</span> temperature)<span class="org-mlpl-operator">;</span>
+  cursor <span class="org-mlpl-operator">=</span> cursor <span class="org-mlpl-operator">+</span> u<span class="org-mlpl-operator">:</span>consumed(ids)<span class="org-mlpl-operator">;</span>
+  name <span class="org-mlpl-operator">=</span> u<span class="org-mlpl-operator">:</span>ids_to_text(ids)<span class="org-mlpl-operator">;</span>
+  print(str_concat(str_concat(str_concat(<span class="org-string">"sample "</span><span class="org-mlpl-operator">,</span> u<span class="org-mlpl-operator">:</span>fmt_int(sample_idx <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span><span class="org-mlpl-operator">,</span> <span class="org-mlpl-number">2</span>))<span class="org-mlpl-operator">,</span> <span class="org-string">": "</span>)<span class="org-mlpl-operator">,</span> name))<span class="org-mlpl-operator">;</span>
+  sample_idx <span class="org-mlpl-operator">=</span> sample_idx <span class="org-mlpl-operator">+</span> <span class="org-mlpl-number">1</span>
+}<span class="org-mlpl-operator">;</span>
 sample_idx
 </pre>
 </div>
 
-<pre class="example" id="orgb477f7c">
+<pre class="example" id="org03cfe9f">
 --- inference (new, hallucinated names) ---
 sample  1: aline
 sample  2: erish
@@ -1184,8 +1208,8 @@ sample 20: rikia
 </pre>
 </div>
 </div>
-<div id="outline-container-org7e1933b" class="outline-2">
-<h2 id="org7e1933b"><span class="section-number-2">11.</span> 9. Three implementations, side by side</h2>
+<div id="outline-container-org94db627" class="outline-2">
+<h2 id="org94db627"><span class="section-number-2">11.</span> 9. Three implementations, side by side</h2>
 <div class="outline-text-2" id="text-11">
 <table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
 
@@ -1288,7 +1312,7 @@ walkthrough), <a href="benchmarks.md">benchmarks.md</a> (speed log), <a href="pl
 <div id="postamble" class="status">
 <p class="date">Date: 2026-09-22</p>
 <p class="author">Author: Mike Wright</p>
-<p class="date">Created: 2026-09-22 Tue 23:16</p>
+<p class="date">Created: 2026-09-23 Wed 08:10</p>
 </div>
 </body>
 </html>

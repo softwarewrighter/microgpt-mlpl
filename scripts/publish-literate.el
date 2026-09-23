@@ -11,6 +11,17 @@
        (mlpl-command (nth 2 args)))
   (setq command-line-args-left nil)
   (load (expand-file-name "mlpl-all.el" elisp-dir) nil t)
+  ;; htmlize (NonGNU ELPA) colors the exported source blocks. -Q skips
+  ;; package activation, so put an installed copy on the load path.
+  (dolist (dir (file-expand-wildcards (expand-file-name "~/.emacs.d/elpa/htmlize-*")))
+    (add-to-list 'load-path dir))
+  (if (require 'htmlize nil t)
+      ;; Batch Emacs has no display, so faces carry no colors: emit
+      ;; class names (org-keyword, org-string, ...) and let the
+      ;; stylesheet in docs/microgpt.org color them.
+      (setq org-html-htmlize-output-type 'css
+            org-html-htmlize-font-prefix "org-")
+    (message "publish-literate: htmlize not found; source blocks will be plain"))
   (require 'ob)
   (require 'org)
   (require 'ox-html)

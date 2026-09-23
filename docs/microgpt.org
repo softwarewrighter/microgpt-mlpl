@@ -4,6 +4,30 @@
 #+DATE: 2026-09-22
 #+OPTIONS: toc:2 num:t ^:{}
 #+PROPERTY: header-args:mlpl :session microgpt :results output :exports both :tangle microgpt-literate.mlpl
+#+HTML_HEAD: <style>
+#+HTML_HEAD: pre.src, pre.example { background: #fafafa; border: 1px solid #e0e0e0; border-radius: 4px; }
+#+HTML_HEAD: .org-mlpl-builtin, .org-builtin { color: #6f42c1; }
+#+HTML_HEAD: .org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #d73a49; font-weight: bold; }
+#+HTML_HEAD: .org-mlpl-number, .org-constant { color: #005cc5; }
+#+HTML_HEAD: .org-string, .org-doc { color: #22863a; }
+#+HTML_HEAD: .org-comment, .org-comment-delimiter { color: #6a737d; font-style: italic; }
+#+HTML_HEAD: .org-mlpl-operator, .org-operator { color: #8a8f98; }
+#+HTML_HEAD: .org-function-name { color: #e36209; }
+#+HTML_HEAD: .org-variable-name, .org-type { color: #b08800; }
+#+HTML_HEAD: @media (prefers-color-scheme: dark) {
+#+HTML_HEAD:   body { background: #16181c; color: #d8dade; } a { color: #79b8ff; }
+#+HTML_HEAD:   pre.src, pre.example { background: #1f2227; border-color: #33373e; color: #d8dade; }
+#+HTML_HEAD:   .org-mlpl-builtin, .org-builtin { color: #b392f0; }
+#+HTML_HEAD:   .org-mlpl-keyword, .org-keyword, .org-mlpl-context-keyword { color: #f97583; }
+#+HTML_HEAD:   .org-mlpl-number, .org-constant { color: #79b8ff; }
+#+HTML_HEAD:   .org-string, .org-doc { color: #85e89d; }
+#+HTML_HEAD:   .org-comment, .org-comment-delimiter { color: #8b949e; }
+#+HTML_HEAD:   .org-mlpl-operator, .org-operator { color: #7d8590; }
+#+HTML_HEAD:   .org-function-name { color: #ffab70; }
+#+HTML_HEAD:   .org-variable-name, .org-type { color: #ffdf5d; }
+#+HTML_HEAD:   table, th, td { border-color: #33373e; }
+#+HTML_HEAD: }
+#+HTML_HEAD: </style>
 
 * Introduction
 

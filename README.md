@@ -32,7 +32,8 @@ whole output is byte-identical to microgpt-rs's.
 - [`docs/microgpt.org`](docs/microgpt.org): the literate program -- the
   whole implementation as runnable Org-babel (ob-mlpl) blocks with their
   output, compared section by section with Python and Rust. `just
-  literate` publishes `docs/microgpt.html`; its tangled blocks produce
+  literate` publishes `docs/microgpt.html` (syntax colors via
+  htmlize from NonGNU ELPA); its tangled blocks produce
   output byte-identical to `microgpt.mlpl` (`just check-literate`).
 - [`docs/python-vs-mlpl.md`](docs/python-vs-mlpl.md): section-by-section
   walkthrough against microgpt.py, including why the masked whole-name

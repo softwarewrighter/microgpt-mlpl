@@ -2,7 +2,9 @@
 # Evaluate every block of docs/microgpt.org in one MLPL session (results
 # are baked into the .org) and export docs/microgpt.html.
 # Needs Emacs (scripts/select-emacs) and sw-mlpl's elisp/ (next to the
-# interpreter's checkout, or $MLPL_ELISP).
+# interpreter's checkout, or $MLPL_ELISP). Syntax colors need htmlize
+# (NonGNU ELPA, found in ~/.emacs.d/elpa); without it blocks are plain:
+#   emacs --batch --eval "(progn (package-refresh-contents) (package-install 'htmlize))"
 set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
