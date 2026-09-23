@@ -1,0 +1,11 @@
+{
+  "task_type": "docs",
+  "state": {
+    "number": 5,
+    "step": "variant-compact"
+  },
+  "action": "wrote variant, fixed perf, wrote org, baseline, published",
+  "result": "success",
+  "reward": 1,
+  "timestamp": "2026-09-23T09:05:45"
+}

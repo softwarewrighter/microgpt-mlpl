@@ -1,0 +1,1 @@
+Compact variant: microgpt-compact.mlpl (32 lines: stream + shift_pairs windows, DSL chain w/o positions, KV-cached sampling); 0.53s (0.95s before pre-gathering windows -- issue e); loss 2.56; 4043 params. Literate org with equations + window demo; baseline; tangle check.
