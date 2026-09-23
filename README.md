@@ -24,34 +24,50 @@ one masked forward over the whole document -- mathematically the same
 computation, expressed the way an array language wants it.
 
 Correctness is checked three ways: finite-difference gradient checks,
-the untrained-loss sanity check (ln 27 ~= 3.30), and a parity run that
-loads microgpt-rs's exact initial weights and document order and
-compares the per-step loss trajectory.
+the untrained-loss sanity check (ln 27 ~= 3.30), and exact parity with
+microgpt-rs: with `-- --rs-parity` the port draws every random number
+from microgpt-rs's SplitMix64 stream (implemented in pure MLPL) and its
+whole output is byte-identical to microgpt-rs's.
 
-See [`docs/plan.md`](docs/plan.md) for the design decisions and step plan.
+- [`docs/python-vs-mlpl.md`](docs/python-vs-mlpl.md): section-by-section
+  walkthrough against microgpt.py, including why the masked whole-name
+  forward equals the per-token KV-cache loop.
+- [`docs/plan.md`](docs/plan.md): design decisions and the step plan.
+- [`docs/benchmarks.md`](docs/benchmarks.md): speed log per step.
+- [`docs/upstream-issues.md`](docs/upstream-issues.md): sw-MLPL findings,
+  with reproducers and status.
+
+## Results
+
+Apple M1 Max (64 GB), macOS 26.5; one machine, one session; 1000 training
+steps + 20 samples; wall time, median of 7 runs (CPython: 1 run).
+
+| implementation | wall time | step-1000 loss | first samples |
+|---|---|---|---|
+| `microgpt.py`, CPython 3.14.6 | 61.9 s | 2.6497 | kamon, ann, karai |
+| microgpt-rs (release build) | 0.593 s | 1.9146 | amanion, alik, zarani |
+| **microgpt.mlpl**, mlpl-repl 0.22.0 | **0.697 s** | 2.2948 | aline, garien, anisn |
+| **microgpt.mlpl `-- --rs-parity`** | 1.395 s | **1.9146** | **amanion, alik, zarani** |
+
+- The step-1000 loss is a single name's loss, so it is noisy. Means over
+  the last 100 steps agree: CPython 2.28, microgpt-rs 2.36, MLPL 2.37.
+  The three differ only in their RNG streams (init, doc order,
+  sampling).
+- `--rs-parity` output is byte-identical to microgpt-rs's, all 1000 loss
+  lines and 20 names (`just parity`). It costs ~0.7 s extra to replay
+  microgpt-rs's 32k-doc Fisher-Yates shuffle in MLPL.
+- The MLPL interpreter runs within 1.2x of compiled Rust and ~90x
+  faster than CPython: each MLPL op processes a whole array, while
+  Python pays interpreter overhead per scalar.
+- Measured at load average ~12, with the CPython run on another core;
+  lower-load repeats agree within ~5% (`docs/benchmarks.md`).
 
 ## Status
 
-The port runs end to end: `scripts/run.sh` prints the same lines as
-`microgpt.py` -- `num docs: 32033`, `vocab size: 27`, `num params: 4192`,
-1000 training steps, then 20 sampled names -- in about 0.73 s
-(microgpt-rs: 0.59 s; CPython: 60.6 s on the same machine).
-
-- Gradients match central finite differences for all 9 matrices.
-- The masked whole-name forward equals microgpt.py's token-by-token
-  KV-cache loop to 1e-12.
-- MLPL's `adam` matches microgpt.py's bias-corrected update (tested).
-- **Exact parity with microgpt-rs:** `microgpt.mlpl -- --rs-parity` draws
-  every random number from microgpt-rs's SplitMix64 stream, implemented
-  in pure MLPL (`lib/splitmix64`), and its entire output -- 1000 loss
-  lines ending `loss 1.9146` and 20 sampled names -- is byte-identical to
-  microgpt-rs's (`just parity`).
-- In default mode (MLPL's own RNG) the loss per 100-step window tracks
-  CPython and microgpt-rs (last 100 steps: 2.37 / 2.28 / 2.36).
-
-Speed log: [`docs/benchmarks.md`](docs/benchmarks.md). sw-MLPL findings
-(with reproducers): [`docs/upstream-issues.md`](docs/upstream-issues.md).
-Work is tracked as an agentrail saga in `.agentrail/` (`agentrail status`):
+Complete: all ten saga steps are done (`agentrail status`). Remaining
+work is upstream-dependent cleanup: when sw-MLPL fixes issues (e) and
+(j) (`docs/upstream-issues.md`), the `expunge` of the corpus and the
+`while` sampling loop can go.
 
 | step | slug | status |
 |---|---|---|
@@ -64,7 +80,7 @@ Work is tracked as an agentrail saga in `.agentrail/` (`agentrail status`):
 | 7 | inference | done |
 | 8 | remove-loss-workaround | done |
 | 9 | parity-vs-rust | done |
-| 10 | docs-and-results | pending |
+| 10 | docs-and-results | done |
 
 ## Build and run
 

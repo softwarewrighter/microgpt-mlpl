@@ -1,6 +1,6 @@
 number = 10
 slug = "docs-and-results"
-status = "pending"
+status = "in-progress"
 description = "docs/plan.md step 9. Write docs/python-vs-mlpl.md (side-by-side of each micro..."
 role = "production"
 context_files = []

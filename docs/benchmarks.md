@@ -24,6 +24,7 @@ Host: Apple Silicon (Darwin arm64), mlpl-repl 0.22.0 (ab858695).
 | 7 | + 20 samples (complete program) | 0.72-0.74 s | load ~3; microgpt-rs 0.58-0.60 s |
 | 8 | globals workaround removed | 0.70-0.72 s direct, ~0.745 s via run.sh | same as step 7 within noise |
 | 9 | `--rs-parity` mode (default unchanged) | ~1.5 s parity, ~0.8 s default | parity adds the SplitMix64 shuffle trace |
+| 10 | final table (README) | 0.697 s default, 1.395 s parity | medians of 7; microgpt-rs 0.593 s, CPython 61.9 s; load ~12 |
 
 Step 3 per-operation timings:
 

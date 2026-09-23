@@ -191,9 +191,10 @@ says so in its commit message.
    the whole output (1000 loss lines + 20 samples) is byte-identical to
    microgpt-rs's, checked live by `scripts/parity.sh` and pinned by the
    `microgpt-parity` reg-rs baseline.
-10. **docs-and-results** -- `docs/python-vs-mlpl.md` side-by-side,
-   README results table (Python / Rust / MLPL wall time, loss, samples),
-   status section updated.
+10. **docs-and-results** -- `docs/python-vs-mlpl.md` (section-by-section
+   walkthrough incl. the KV-cache vs causal-mask equivalence), README
+   results table (CPython / microgpt-rs / MLPL / MLPL --rs-parity on one
+   machine) and final status.
 
 ## Out of scope / future
 

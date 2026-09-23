@@ -1,5 +1,7 @@
 # Upstream issues (sw-mlpl, mlplunit)
 
+Last checked against sw-mlpl d9ad501d (2026-09-22).
+
 Bugs, gaps, and surprises found while porting microgpt to sw-MLPL, with
 minimal reproducers, status, and what this repo does about each. Found
 against `mlpl-repl` 0.22.0 (builds ab858695 and later). This repo never
@@ -13,14 +15,14 @@ upstream, queued), **fixed** (landed; workaround removed), **by design**,
 |---|---|---|---|---|
 | a | grad | `u:` argument used as `cross_entropy` targets is "undefined" | fixed (sw-mlpl 67c2ca86) | removed in step 8: `u:loss(inp, tgt, mask)` |
 | b | grad | infix `<` rejected inside `grad`; `lt()` works | fixed (sw-mlpl 67c2ca86) | `u:causal_mask` uses infix `>` |
-| c | docs | "tape-lowered for heads=1" is stale | fixing | none needed |
-| d | kv-cache | `gen_state` works only on Model DSL chains | by design | recompute prefix |
-| e | perf | reading a large array copies it; every `u:` call copies all globals | fix queued upstream | `u:doc_batch` + `expunge` big globals |
+| c | docs | "tape-lowered for heads=1" is stale | fixed (sw-mlpl 67c2ca86) | none needed |
+| d | kv-cache | `gen_state` works only on Model DSL chains | by design; sw-mlpl future saga `user-forward-kv-cache` (LOW) | recompute prefix |
+| e | perf | reading a large array copies it; every `u:` call copies all globals | reported; not yet in sw-mlpl saga/queue (checked d9ad501d) | `u:doc_batch` + `expunge` big globals |
 | f | lang | a list of param leaves cannot be stored in a variable | open | write `adam`'s list inline |
 | g | mlplbench | sandbox root fixed to the benchmark file's directory | open | `lib/bench.mlpl` |
 | h | perf | eager `u:gpt` slower than tape forward + backward | not a bug (was e) | none needed |
 | i | docs | `adam` returns the pre-update loss (undocumented) | open | relied on (step 6) |
-| j | eval | `repeat`/`train`/`for` bodies reject string-valued statements | fix queued upstream | use `while` |
+| j | eval | `repeat`/`train`/`for` bodies reject string-valued statements | queued: sw-mlpl step `005-loop-body-string-stmts`; still reproduces at d9ad501d | use `while` |
 | k | json | `parse_json` rejects nested arrays (matrices) | info | flat arrays + `reshape` |
 
 ## a. `u:` argument as `cross_entropy` targets inside `grad`
@@ -60,7 +62,7 @@ as masks; `u:causal_mask` uses infix `>` since step 8.
 `docs/lang-reference.md:713` says `causal_attention` is "tape-lowered for
 heads=1". Verified false: `causal_attention(16, 4, 7)` trains with
 `adam` (loss 9.48 -> 3.23 in 5 steps). The layer is also bias-free.
-sw-mlpl is removing the sentence. No effect here: the forward pass is
+**Fixed** in sw-mlpl 67c2ca86 (with a multi-head regression test). No effect here: the forward pass is
 hand-written to match microgpt.py's state_dict exactly (plan decision 1).
 
 ## d. `gen_state` KV cache is Model-DSL-only
