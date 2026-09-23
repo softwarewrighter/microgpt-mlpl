@@ -308,6 +308,52 @@ names = raw |> str_split("\n") |> select(:u:nonempty);
   `error-spans`). The loop-body string bug (issue j) was slow to find
   because the error named no statement.
 
+### 14. Compile to a native binary: close the gaps microgpt hits
+
+`mlpl build` compiles a defined subset of MLPL to a standalone binary via
+generated Rust (`sw-mlpl/docs/compiler-coverage.md`). No microgpt variant
+compiles today. For each gap below, sw-mlpl can judge whether closing it
+is possible, easy or hard, and worthwhile. Tried with `mlpl-build` built
+2026-09-16 (`target/release`), so newer builds may have moved.
+
+| gap | hit by | coverage doc says |
+|---|---|---|
+| `load` | compact (first construct that fails) | interpreter-only I/O (`read_bytes` compiles) |
+| `gather_rows`, `concat`, `compress`, `shuffle`, `grade_up`, `running_sum` | every variant's data pipeline | "remaining pure array / codec builtins" |
+| `mod`, `sqrt`, `log`, `cos`, `exp`, `softmax` | splitmix64 (`mod`, Box-Muller), the model | not listed as compiling |
+| `print(a, b)` with two or more arguments | every variant's output lines | `print` compiles (single argument only) |
+| `for`, `repeat`, `train` | training loops | "only `if` / `while` lower today" |
+| `param`, `grad`, `adam`, Model DSL (`embed`, `chain`, `apply`, ...) | all training | "a separate, large project" |
+| KV cache (`gen_state`, ...), `sample` | compact / idiomatic inference | not listed |
+
+Two structural observations from the attempt:
+- **Lowering is whole-program.** `examples/splitmix64-demo.mlpl` calls only
+  `u:sm64_uniform` / `u:sm64_mod`, but the `include`d library's unused
+  `u:sm64_gauss` (`sqrt` / `log` / `cos`) blocks the build. Suggestion:
+  lower only functions reachable from top-level code, or report every
+  unsupported construct at once with its function, rather than the first
+  one only.
+- **Generated code that does not compile.** After swapping `mod` for
+  `band` / `shr` / `floor` and removing the float functions, the
+  SplitMix64 integer core (records, bit ops, `if`, `u:` calls) lowered,
+  but the generated Rust failed with 47 `E0308` type errors. That is a
+  lowering bug rather than a coverage gap, and worth a regression test:
+  `lib/splitmix64` is a small, self-contained, pure-integer program whose
+  expected output is known exactly (`tests/test_splitmix64.mlpl`).
+
+Suggested order, smallest first:
+1. Variadic `print`, `mod`, and the scalar math functions (`sqrt`, `log`,
+   `exp`, `cos`, `sin`), which map directly onto Rust `f64` methods.
+2. The pure array builtins (`gather_rows`, `concat`, `compress`,
+   `grade_up`, `running_sum`, `shuffle`) and `for` / `repeat`.
+3. **A compiled inference path**, which the coverage doc already
+   recommends: a forward-only `apply` of a trained model, plus `sample`
+   and the KV cache, loaded from a checkpoint. microgpt would then train
+   in the interpreter and ship a native name generator.
+4. Compiled training (autograd plus optimizers) only if a real use needs
+   it. Training already runs within 1.2x of compiled Rust here, because
+   the interpreter's array ops are native.
+
 ## Not requesting (declined or by design)
 
 - `x[i]` subscripts (declined; see #2 for the function forms).
@@ -350,3 +396,4 @@ train num_steps {
 | 11 macros | P3 | not tracked | little, after #1-#4 |
 | 12 composition | P3 | queued | -- |
 | 13 literate / math tooling | P3 | math-view future; error spans queued | duplicated lib code in the org files |
+| 14 compile-to-binary gaps | P3 (sw-mlpl to assess) | inference path recommended upstream; rest interpreter-only | nothing yet; would enable a native sampler |

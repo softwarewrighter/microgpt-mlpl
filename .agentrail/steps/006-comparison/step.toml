@@ -1,6 +1,6 @@
 number = 6
 slug = "comparison"
-status = "pending"
+status = "in-progress"
 description = "docs/plan-literate.md step 6. docs/literate.md comparing the three variants (..."
 role = "production"
 context_files = []

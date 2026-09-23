@@ -45,6 +45,25 @@ whole output is byte-identical to microgpt-rs's.
 - [`docs/upstream-issues.md`](docs/upstream-issues.md): sw-MLPL findings,
   with reproducers and status.
 
+## Three variants
+
+Besides the faithful port, two alternative implementations show more
+compact, idiomatic MLPL. They keep microgpt's capability but not its
+exact structure. Each has a literate Org document with equations and
+`@formula` annotations, and output checked by a reg-rs baseline:
+
+| variant | code lines | wall time | literate doc |
+|---|---|---|---|
+| faithful (`microgpt.mlpl`) | 230 | 0.718 s | [microgpt-faithful](docs/literate/microgpt-faithful.org) |
+| idiomatic (`microgpt-idiomatic.mlpl`), Model DSL | 48 | 0.468 s | [microgpt-idiomatic](docs/literate/microgpt-idiomatic.org) |
+| compact (`microgpt-compact.mlpl`), stream + KV cache | 32 | 0.539 s | [microgpt-compact](docs/literate/microgpt-compact.org) |
+
+The idiomatic variant is faster than compiled microgpt-rs (0.589 s),
+because the DSL's layers are native array operations while the Rust port
+keeps microgpt's scalar autograd. The comparison covers lines of code,
+speed, idioms, divergences, compiling to a binary, and pros and cons:
+[`docs/literate.md`](docs/literate.md).
+
 ## Results
 
 Apple M1 Max (64 GB), macOS 26.5; one machine, one session; 1000 training

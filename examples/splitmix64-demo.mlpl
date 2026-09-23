@@ -1,0 +1,9 @@
+# splitmix64-demo.mlpl -- print microgpt-rs's first SplitMix64 draws (seed 42).
+# A small pure-integer program, kept as the test case for compiling MLPL
+# to a native binary with `mlpl build`, which cannot build it yet
+# (docs/sw-mlpl-requests.md #14).
+include "../lib/splitmix64/splitmix64.mlpl";
+
+print("uniforms k=1..3:", u:sm64_uniform(42, [1, 2, 3]));
+print("next % 1000, k=1..4:", u:sm64_mod(42, [1, 2, 3, 4], 1000));
+exit(0)

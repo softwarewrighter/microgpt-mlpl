@@ -34,8 +34,8 @@
 How short can microgpt get in MLPL and still do the same job: train a
 1-layer, 4-head, 16-wide causal transformer on 32,033 names, then invent
 new ones? The answer is 32 lines of code, about a seventh of the
-[[file:microgpt-faithful.html][faithful port]] (230) and two thirds of the [[file:microgpt-idiomatic.html][idiomatic one]] (48), at the same
-speed as the idiomatic one.
+[[file:microgpt-faithful.html][faithful port]] (230) and two thirds of the [[file:microgpt-idiomatic.html][idiomatic one]] (48), running in
+0.54 s (idiomatic: 0.47 s; faithful: 0.72 s).
 
 Three simplifications get it there, each an MLPL idiom:
 

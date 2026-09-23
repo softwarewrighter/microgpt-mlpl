@@ -3,7 +3,7 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
-<!-- 2026-09-23 Wed 09:05 -->
+<!-- 2026-09-23 Wed 09:12 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>microgpt in compact MLPL</title>
@@ -260,24 +260,24 @@ table, th, td { border-color: #33373e; }
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
-<li><a href="#orgc922ec5">1. Introduction</a></li>
-<li><a href="#orgeccfa53">2. 1. Data: a stream and its windows</a></li>
-<li><a href="#org46f4c55">3. 2. The model</a></li>
-<li><a href="#org676cc73">4. 3. Training: one line</a></li>
-<li><a href="#org1bee9db">5. 4. Sampling with the KV cache</a></li>
-<li><a href="#orga840997">6. Trade-offs</a></li>
+<li><a href="#org708e47e">1. Introduction</a></li>
+<li><a href="#orgdd3d354">2. 1. Data: a stream and its windows</a></li>
+<li><a href="#orgb846523">3. 2. The model</a></li>
+<li><a href="#org1fc04f9">4. 3. Training: one line</a></li>
+<li><a href="#org2229b5b">5. 4. Sampling with the KV cache</a></li>
+<li><a href="#orgb9f402c">6. Trade-offs</a></li>
 </ul>
 </div>
 </div>
-<div id="outline-container-orgc922ec5" class="outline-2">
-<h2 id="orgc922ec5"><span class="section-number-2">1.</span> Introduction</h2>
+<div id="outline-container-org708e47e" class="outline-2">
+<h2 id="org708e47e"><span class="section-number-2">1.</span> Introduction</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 How short can microgpt get in MLPL and still do the same job: train a
 1-layer, 4-head, 16-wide causal transformer on 32,033 names, then invent
 new ones? The answer is 32 lines of code, about a seventh of the
-<a href="microgpt-faithful.html">faithful port</a> (230) and two thirds of the <a href="microgpt-idiomatic.html">idiomatic one</a> (48), at the same
-speed as the idiomatic one.
+<a href="microgpt-faithful.html">faithful port</a> (230) and two thirds of the <a href="microgpt-idiomatic.html">idiomatic one</a> (48), running in
+0.54 s (idiomatic: 0.47 s; faithful: 0.72 s).
 </p>
 
 <p>
@@ -363,8 +363,8 @@ missing positions cost something too.
 </p>
 </div>
 </div>
-<div id="outline-container-orgeccfa53" class="outline-2">
-<h2 id="orgeccfa53"><span class="section-number-2">2.</span> 1. Data: a stream and its windows</h2>
+<div id="outline-container-orgdd3d354" class="outline-2">
+<h2 id="orgdd3d354"><span class="section-number-2">2.</span> 1. Data: a stream and its windows</h2>
 <div class="outline-text-2" id="text-2">
 <p>
 \[
@@ -413,8 +413,8 @@ input shifted by one position.)
 </p>
 </div>
 </div>
-<div id="outline-container-org46f4c55" class="outline-2">
-<h2 id="org46f4c55"><span class="section-number-2">3.</span> 2. The model</h2>
+<div id="outline-container-orgb846523" class="outline-2">
+<h2 id="orgb846523"><span class="section-number-2">3.</span> 2. The model</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 One expression, from token ids to logits:
@@ -450,8 +450,8 @@ plus the DSL's 107 biases.
 </p>
 </div>
 </div>
-<div id="outline-container-org676cc73" class="outline-2">
-<h2 id="org676cc73"><span class="section-number-2">4.</span> 3. Training: one line</h2>
+<div id="outline-container-org1fc04f9" class="outline-2">
+<h2 id="org1fc04f9"><span class="section-number-2">4.</span> 3. Training: one line</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 \[
@@ -474,8 +474,8 @@ mean loss, steps 901-1000: 2.558
 </pre>
 </div>
 </div>
-<div id="outline-container-org1bee9db" class="outline-2">
-<h2 id="org1bee9db"><span class="section-number-2">5.</span> 4. Sampling with the KV cache</h2>
+<div id="outline-container-org2229b5b" class="outline-2">
+<h2 id="org2229b5b"><span class="section-number-2">5.</span> 4. Sampling with the KV cache</h2>
 <div class="outline-text-2" id="text-5">
 <p>
 <code>gen_state(model, [BOS])</code> runs the prompt once and caches every
@@ -513,7 +513,7 @@ i
 </pre>
 </div>
 
-<pre class="example" id="orgac17ec4">
+<pre class="example" id="org21c3429">
 --- inference (new, hallucinated names) ---
 sample 1: an
 sample 2: cren
@@ -538,8 +538,8 @@ sample 20: kataliay
 </pre>
 </div>
 </div>
-<div id="outline-container-orga840997" class="outline-2">
-<h2 id="orga840997"><span class="section-number-2">6.</span> Trade-offs</h2>
+<div id="outline-container-orgb9f402c" class="outline-2">
+<h2 id="orgb9f402c"><span class="section-number-2">6.</span> Trade-offs</h2>
 <div class="outline-text-2" id="text-6">
 <ul class="org-ul">
 <li><b>Gained:</b>
@@ -568,7 +568,7 @@ spelled out.</li>
 <div id="postamble" class="status">
 <p class="date">Date: 2026-09-23</p>
 <p class="author">Author: Mike Wright</p>
-<p class="date">Created: 2026-09-23 Wed 09:05</p>
+<p class="date">Created: 2026-09-23 Wed 09:12</p>
 </div>
 </body>
 </html>
