@@ -1,6 +1,6 @@
 number = 2
 slug = "requests-doc"
-status = "pending"
+status = "in-progress"
 description = "docs/plan-literate.md step 2. Write docs/sw-mlpl-requests.md: language/librar..."
 role = "production"
 context_files = []
